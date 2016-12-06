@@ -17,9 +17,15 @@ str(tr_compl)
 
 # remove training items (VideoTrial == 0)
 tr_compl <- tr_compl[tr_compl$VideoTrial != 0, ]
+# no recordings for participant 14
+tr_compl[tr_compl$Subject == "14", ]
+# keep track of original row number in the transcribed data file
+tr_compl$rownb <- row.names(tr_compl)
 
-# drop some columns to have a df that's easier to work with
-tr <- tr_compl %>% select(Subject:VideoName, Target)
+# drop some columns to have a df that's easier to work with, and remove all 
+# rows with empty transcriptions
+tr <- tr_compl %>% filter(Target != "")  %>% 
+  select(rownb, Subject:VideoName, Target)
 
 head(tr)
 str(tr)

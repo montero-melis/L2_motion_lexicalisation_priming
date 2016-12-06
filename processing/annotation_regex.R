@@ -32,26 +32,44 @@ tr$Matches <- ""
 
 # Main verbs --------------------------------------------------------------
 
-seematch("arrastrar_V", "(ha arrastrado|está arrastrando|(?<!mientras )arrastra(\\b|ba)|arrastró)")
-annotate("arrastrar_V", "(ha arrastrado|está arrastrando|(?<!mientras )arrastra(\\b|ba)|arrastró)")
+seematch("arrastrar_V", "(ha arrastrado|est(á|aba) arrastrando|acaba de arrastrar|(?<!mientras )arrastra(\\b|ba)|arrastró)")
+annotate("arrastrar_V", "(ha arrastrado|est(á|aba) arrastrando|acaba de arrastrar|(?<!mientras )arrastra(\\b|ba)|arrastró)")
 
-seematch("bajar_V", "(ha bajado|est(á|aba) bajando|(?<!mientras )baja(\\b|ba)|bajó)")
-annotate("bajar_V", "(ha bajado|est(á|aba) bajando|(?<!mientras )baja(\\b|ba)|bajó)")
+seematch("ascender_V", "asciende")
+annotate("ascender_V", "asciende")
 
-seematch("caminar_V", "camin(a|ó)")
+seematch("atravesar_V", "(está atravesando|ha atravesado|atraviesa)")
+annotate("atravesar_V", "(está atravesando|ha atravesado|atraviesa)")
+
+seematch("bajar_V", "(ha bajado|est(á|aba) bajando|acaba de bajar|(?<!mientras )baja(\\b|ba)|bajó)")
+annotate("bajar_V", "(ha bajado|est(á|aba) bajando|acaba de bajar|(?<!mientras )baja(\\b|ba)|bajó)")
+
+seematch("caminar_V", "(camin(a|ó)|vuelve a caminar)")
 annotate("caminar_V", "camin(a|ó)")
 
-seematch("coger_V", "coge")
-annotate(throwanerror!)
+seematch("cargar_V", "(está cargando|\\bcarga\\b)")
+annotate("cargar_V", "(está cargando|\\bcarga\\b)")
+
+seematch("coger_V", "\\bcog")
+annotate("coger_V", "\\bcog")
 
 seematch("cruzar_V", "((ha vuelto|vuelve) a cruzar|ha cruzado|está cruzando|cruza(\\b|ba)|cruzó)")
 annotate("cruzar_V", "((ha vuelto|vuelve) a cruzar|ha cruzado|está cruzando|cruza(\\b|ba)|cruzó)")
 
-seematch("empujar_V", "(ha empujado|est(á|aba) empujando|(?<!mientras )empuja(\\b|ba)|empujó)")
+seematch("dar-vuelta_V", "está dando vuelta")
+annotate("dar-vuelta_V", "está dando vuelta")
+
+seematch("descender_V", "desciende")
+annotate("descender_V", "desciende")
+
+seematch("deslizar_V", "(está deslizando|desliza\\b)")
+annotate("deslizar_V", "(está deslizando|desliza\\b)")
+
+seematch("empujar_V", "(ha empujado|(ha )?est(á|aba|ado) empujando|(?<!mientras )empuja(\\b|ba)|empujó)")
 annotate("empujar_V", "(ha empujado|est(á|aba) empujando|(?<!mientras )empuja(\\b|ba)|empujó)")
 
-seematch("entrar_V", "(ha entrado( (a|en))?|está entrando( (a|en))?|entra(\\b|ba)( (a|en))?|entró( (a|en))?)")
-annotate("entrar_V", "(ha entrado( (a|en))?|está entrando( (a|en))?|entra(\\b|ba)( (a|en))?|entró( (a|en))?)")
+seematch("entrar_V", "(vuelve a entrar|ha entrado( (a|en))?|está entrando( (a|en))?|entra(\\b|ba)( (a|en))?|entró( (a|en))?)")
+annotate("entrar_V", "(vuelve a entrar|ha entrado( (a|en))?|está entrando( (a|en))?|entra(\\b|ba)( (a|en))?|entró( (a|en))?)")
 
 seematch("estirar_V", "ha estirado")
 annotate("estirar_V", "ha estirado")
@@ -59,8 +77,14 @@ annotate("estirar_V", "ha estirado")
 seematch("girar_V", "gira\\b")
 annotate("girar_V", "gira\\b")
 
-seematch("guardar_V", "guarda")
-annotate(throwanerror!)
+seematch("guardar_V", "(?<!donde se )guarda\\b")
+annotate("guardar_V", "(?<!donde se )guarda\\b")
+
+seematch("hacer-descender_V", "hace descender")
+annotate("hacer-descender_V", "hace descender")
+
+seematch("hacer-deslizar_V", "hace deslizar")
+annotate("hacer-deslizar_V", "hace deslizar")
 
 seematch("hacer-girar_V", "(?<!mientras )hace girar")
 annotate("hacer-girar_V", "(?<!mientras )hace girar")
@@ -68,14 +92,20 @@ annotate("hacer-girar_V", "(?<!mientras )hace girar")
 seematch("hacer-rodar_V", "((está haciendo|hace|ha hecho) rodar)")
 annotate("hacer-rodar_V", "((está haciendo|hace|ha hecho) rodar)")
 
+seematch("hacer-subir_V", "hace subir")
+annotate("hacer-subir_V", "hace subir")
+
 seematch("introducir_V", "(está introduciendo|introduce)")
 annotate("introducir_V", "(está introduciendo|introduce)")
 
-seematch("ir_V", "va")
-annotate(throwanerror!)
+seematch("ir_V", "(ha venido|(?<!que (lo )?)\\bva\\b)")
+annotate("ir_V", "(ha venido|(?<!que (lo )?)\\bva\\b)")
 
-seematch("llevar_V", "(ha llevado|está llevando|(?<!mientras (la )?)lleva(\\b|ba)|llevó)")
-annotate("llevar_V", "(ha llevado|está llevando|(?<!mientras )lleva(\\b|ba)|llevó)")
+seematch("jugar_V", "(está jugando|juega)")
+annotate("jugar_V", "(está jugando|juega)")
+
+seematch("llevar_V", "(ha llevado|est(á|aba) llev[aá]ndo(se)?|(?<!mientras (la )?)lleva(\\b|ba)|llevó)")
+annotate("llevar_V", "(ha llevado|est(á|aba) llev[aá]ndo(se)?|(?<!mientras (la )?)lleva(\\b|ba)|llevó)")
 
 seematch("meter_V", "(ha metido|está metiendo|mete\\b|metió)")
 annotate("meter_V", "(ha metido|está metiendo|mete\\b|metió)")
@@ -83,14 +113,17 @@ annotate("meter_V", "(ha metido|está metiendo|mete\\b|metió)")
 seematch("mover_V", "(ha movido|está moviendo|mueve)")
 annotate("mover_V", "(ha movido|está moviendo|mueve)")
 
-seematch("pasar_V", "pasa")
-annotate(throwanerror!)
+seematch("pasar_V", "(ha pasado|está pasando|\\bpasa\\b)")
+annotate("pasar_V", "(ha pasado|está pasando|\\bpasa\\b)")
 
-seematch("rodar_V", "(ha rodado|(?<!(una?|la|mientras|su|gran|con|de) )rueda\\b)")
-annotate("rodar_V", "(ha rodado|(?<!(una?|la|mientras|su|gran|con|de) )rueda\\b)")
+seematch("pasear_V", "pasea")
+annotate("pasear_V", "pasea")
 
-seematch("subir_V", "(ha subido|est(á( ahora)?|aba) subiendo|sube\\b|subió)")
-annotate("subir_V", "(ha subido|est(á|aba) subiendo|sube\\b|subió)")
+seematch("rodar_V", "(ha rodado|está rodando|(?<!(una?|la|mientras|su|gran|con|de) )rueda\\b)")
+annotate("rodar_V", "(ha rodado|está rodando|(?<!(una?|la|mientras|su|gran|con|de) )rueda\\b)")
+
+seematch("subir_V", "((vuelve|ha vuelto) a subir|ha subido|(ha )?est(á( ahora)?|aba|ado) subiendo|sube\\b|subió)")
+annotate("subir_V", "((vuelve|ha vuelto) a subir|ha subido|(ha )?est(á( ahora)?|aba|ado) subiendo|sube\\b|subió)")
 
 seematch("tirar-de_V", "(ha tirado|est(á|aba) tirando( de)?|tira(\\b|ba)( de)?)")
 annotate("tirar-de_V", "(ha tirado|est(á|aba) tirando( de)?|tira(\\b|ba)( de)?)")
@@ -98,8 +131,19 @@ annotate("tirar-de_V", "(ha tirado|est(á|aba) tirando( de)?|tira(\\b|ba)( de)?)
 seematch("traer_V", "(trae\\b|traído)")
 annotate("traer_V", "(trae\\b|traído)")
 
+seematch("transportar_V", "transporta")
+annotate("transportar_V", "transporta")
+
+seematch("trasladar_V", "traslad")
+annotate("trasladar_V", "traslad")
+
 seematch("venir_V", "(ha venido|viene)")
 annotate("venir_V", "(ha venido|viene)")
+
+seematch("volver_v", "vuelve (?!a (caminar|cruzar|subir))")
+annotate("volver_v", "vuelve (?!a (caminar|cruzar|subir))")
+
+
 
 
 
