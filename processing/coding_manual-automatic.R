@@ -61,7 +61,7 @@ rm(target)
 # the data annotation is done by calling the script "annotation_regex.R"
 source("processing/annotation_regex.R", encoding = "UTF-8")
 
-tr[1:500,]
+tr[1:50,]
 
 #  ------------------------------------------------------------------------
 #  The basic function

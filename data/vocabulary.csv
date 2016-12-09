@@ -16,6 +16,10 @@ andando_Ger,andar,Manner,WALK,Adjunct,V_ger,
 arrastrando_Ger,arrastrar,Manner,DRAG,Adjunct,V_ger,967
 atravesando_Ger,atravesar,Path,ACROSS,Adjunct,V_ger,
 bajando_Ger,bajar,Path,DOWN,Adjunct,V_ger,
+cargando_Ger,cargar,Other,CARRY,Adjunct,V_ger,
+cruzando_Ger,cruzar,Path,ACROSS,Adjunct,V_ger,
+dejando_Ger,dejar,Other,LEAVE,Adjunct,V_ger,
+empujando_Ger,empujar,Manner,PUSH,Adjunct,V_ger,
 entrando_Ger,entrar,Path,INTO,Adjunct,V_ger,333
 estirando_Ger,estirar,Manner,PULL,Adjunct,V_ger,1619
 haciendo-girar_Ger,hacer-girar,Manner,MAKE-TURN,Adjunct,V_ger,
