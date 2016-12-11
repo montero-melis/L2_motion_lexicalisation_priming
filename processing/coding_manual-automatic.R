@@ -62,6 +62,7 @@ rm(target)
 source("processing/annotation_regex.R", encoding = "UTF-8")
 
 tr[1:50,]
+tail(tr, 50)
 
 #  ------------------------------------------------------------------------
 #  The basic function

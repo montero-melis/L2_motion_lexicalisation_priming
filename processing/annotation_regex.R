@@ -4,7 +4,6 @@
 library(stringr)
 
 
-
 # Functions ---------------------------------------------------------------
 
 seematch <- function(entry = NULL, regex = NULL, df = tr) {
@@ -32,11 +31,20 @@ annotate <- function(entry = NULL, regex = NULL) {
 }
 
 
-
 # Prepare and clear annotation column -------------------------------------
 
 # Add empty column for matches
 tr$Matches <- ""
+
+# Some of the regex idioms used below:
+# (?<!pattern)  # negative look-behind of "pattern"
+# (?!pattern)  # negative look-ahead of "pattern"
+
+
+
+#  ------------------------------------------------------------------------
+#  Data annotation
+#  ------------------------------------------------------------------------
 
 
 # Main verbs --------------------------------------------------------------
@@ -71,9 +79,6 @@ annotate("conducir_V", "conduce")
 seematch("cruzar_V", "((ha vuelto|vuelve) a cruzar|ha cruzado|está cruzando|cruza(\\b|ba)|cruzó)")
 annotate("cruzar_V", "((ha vuelto|vuelve) a cruzar|ha cruzado|está cruzando|cruza(\\b|ba)|cruzó)")
 
-seematch("dar-vuelta_VPhrase", "está dando vuelta")
-annotate("dar-vuelta_VPhrase", "está dando vuelta")
-
 seematch("dejar_V", "(ha dejado|\\bdeja\\b)")
 annotate("dejar_V", "(ha dejado|\\bdeja\\b)")
 
@@ -86,11 +91,11 @@ annotate("descender_V", "desciende")
 seematch("deslizar_V", "(está deslizando|desliza\\b)")
 annotate("deslizar_V", "(está deslizando|desliza\\b)")
 
-seematch("empujar_V", "(ha empujado|(ha )?est(á|aba|ado) empujando|(?<!mientras )empuja(\\b|ba)|empujó)")
-annotate("empujar_V", "(ha empujado|(ha )?est(á|aba|ado) empujando|(?<!mientras )empuja(\\b|ba)|empujó)")
+seematch("empujar_V", "(ha empujado|(?<!mientras )(ha )?est(á|aba|ado) empujando|(?<!mientras )empuja(\\b|ba)|empujó)")
+annotate("empujar_V", "(ha empujado|(?<!mientras )(ha )?est(á|aba|ado) empujando|(?<!mientras )empuja(\\b|ba)|empujó)")
 
-seematch("entrar_V", "(vuelve a entrar|ha entrado( (a|en))?|est(á|aba) entrando( (a|en))?|entra(\\b|ba)( (a|en))?|entró( (a|en))?)")
-annotate("entrar_V", "(vuelve a entrar|ha entrado( (a|en))?|est(á|aba) entrando( (a|en))?|entra(\\b|ba)( (a|en))?|entró( (a|en))?)")
+seematch("entrar_V", "(vuelve a entrar|ha entrado( (a|en))?|est(á|aba) entrando( (a|en))?|entra(\\b|ba)( (a|en|dentro))?|entró( (a|en))?)")
+annotate("entrar_V", "(vuelve a entrar|ha entrado( (a|en))?|est(á|aba) entrando( (a|en))?|entra(\\b|ba)( (a|en|dentro))?|entró( (a|en))?)")
 
 seematch("estirar_V", "ha estirado")
 annotate("estirar_V", "ha estirado")
@@ -100,21 +105,6 @@ annotate("girar_V", "gira\\b")
 
 seematch("guardar_V", "(?<!donde se )guarda\\b")
 annotate("guardar_V", "(?<!donde se )guarda\\b")
-
-seematch("hacer-descender_Vphrase", "hace descender")
-annotate("hacer-descender_Vphrase", "hace descender")
-
-seematch("hacer-deslizar_Vphrase", "hace deslizar")
-annotate("hacer-deslizar_Vphrase", "hace deslizar")
-
-seematch("hacer-girar_Vphrase", "(?<!mientras )hace girar")
-annotate("hacer-girar_Vphrase", "(?<!mientras )hace girar")
-
-seematch("hacer-rodar_Vphrase", "((está haciendo|hace|ha hecho) rodar)")
-annotate("hacer-rodar_Vphrase", "((está haciendo|hace|ha hecho) rodar)")
-
-seematch("hacer-subir_Vphrase", "hace subir")
-annotate("hacer-subir_Vphrase", "hace subir")
 
 seematch("introducir_V", "(está introduciendo|introduce)")
 annotate("introducir_V", "(está introduciendo|introduce)")
@@ -152,14 +142,8 @@ annotate("poner_V", "(está poniendo|\\bpone\\b|puso)")
 seematch("rodar_V", "(ha rodado|está rodando|rodaba|rodó|(?<!(una?|la|mientras|su|gran|con|de) )rueda\\b)")
 annotate("rodar_V", "(ha rodado|está rodando|rodaba|rodó|(?<!(una?|la|mientras|su|gran|con|de) )rueda\\b)")
 
-seematch("salir-de-paseo_VPhrase", "sale de paseo")
-annotate("salir-de-paseo_VPhrase", "sale de paseo")
-
-seematch("salir-de-viaje_VPhrase", "sale de viaje")
-annotate("salir-de-viaje_VPhrase", "sale de viaje")
-
-seematch("subir_V", "((vuelve|ha vuelto) a subir|ha subido|(ha )?est(á( ahora)?|aba|ado) subi(e|é)ndo|sube\\b|subió)")
-annotate("subir_V", "((vuelve|ha vuelto) a subir|ha subido|(ha )?est(á( ahora)?|aba|ado) subi(e|é)ndo|sube\\b|subió)")
+seematch("subir_V", "((vuelve|ha vuelto) a subir|ha subido|(?<!mientras )(ha )?est(á( ahora)?|aba|ado) subi(e|é)ndo|sube\\b|subió)")
+annotate("subir_V", "((vuelve|ha vuelto) a subir|ha subido|(?<!mientras )(ha )?est(á( ahora)?|aba|ado) subi(e|é)ndo|sube\\b|subió)")
 
 seematch("tirar-de_V", "(ha tirado|est(á|aba) tirando( de)?|tira(\\b|ba)( de)?)")
 annotate("tirar-de_V", "(ha tirado|est(á|aba) tirando( de)?|tira(\\b|ba)( de)?)")
@@ -176,15 +160,98 @@ annotate("trasladar_V", "traslad")
 seematch("venir_V", "(ha venido|viene)")
 annotate("venir_V", "(ha venido|viene)")
 
-seematch("volver_v", "vuelve (?!a (caminar|cruzar|subir))")
-annotate("volver_v", "vuelve (?!a (caminar|cruzar|subir))")
+seematch("volver_V", "vuelve (?!a (caminar|cruzar|entrar|subir))")
+annotate("volver_V", "vuelve (?!a (caminar|cruzar|entrar|subir))")
 
 
+# Verb phrases as main verbs ----------------------------------------------
 
-## targets with no matches
-sum(tr$Matches == "")  # how many?
-tr[tr$Matches == "", ]  # show
+seematch("dar-vuelta_VPhrase", "está dando vuelta")
+annotate("dar-vuelta_VPhrase", "está dando vuelta")
 
+seematch("hacer-descender_Vphrase", "hace descender")
+annotate("hacer-descender_Vphrase", "hace descender")
+
+seematch("hacer-deslizar_Vphrase", "hace deslizar")
+annotate("hacer-deslizar_Vphrase", "hace deslizar")
+
+seematch("hacer-girar_Vphrase", "(?<!mientras )hace girar")
+annotate("hacer-girar_Vphrase", "(?<!mientras )hace girar")
+
+seematch("hacer-rodar_Vphrase", "((está haciendo|hace|ha hecho) rodar)")
+annotate("hacer-rodar_Vphrase", "((está haciendo|hace|ha hecho) rodar)")
+
+seematch("hacer-subir_Vphrase", "hace subir")
+annotate("hacer-subir_Vphrase", "hace subir")
+
+seematch("salir-de-paseo_VPhrase", "sale de paseo")
+annotate("salir-de-paseo_VPhrase", "sale de paseo")
+
+seematch("salir-de-viaje_VPhrase", "sale de viaje")
+annotate("salir-de-viaje_VPhrase", "sale de viaje")
+
+
+# Adverbial phrases (adjuncts) --------------------------------------------
+
+seematch("(a)dentro_AdvP", "(?<!(cosas|desde|hacia|hasta|para|por) )\\ba?dentro(?! el pueblo)")
+annotate("(a)dentro_AdvP", "(?<!(cosas|desde|hacia|hasta|para|por) )\\ba?dentro(?! el pueblo)")
+
+seematch("a-cuestas_AdvP", "a cuestas")
+annotate("a-cuestas_AdvP", "a cuestas")
+
+seematch("a-rastras_AdvP", "a rastras")
+annotate("a-rastras_AdvP", "a rastras")
+
+seematch("abajo_AdvP", "(?<!(desde|hacia|hasta|para) )\\babajo")
+annotate("abajo_AdvP", "(?<!(desde|hacia|hasta|para) )\\babajo")
+
+seematch("arriba_AdvP", "(?<!(de|desde|hacia|hasta|para( el parte más)?|por) )arriba")
+annotate("arriba_AdvP", "(?<!(de|desde|hacia|hasta|para( el parte más)?|por) )arriba")
+
+seematch("delante_AdvP", "delante")
+annotate("delante_AdvP", "delante")
+
+seematch("detrás/atrás_AdvP", "(\\bcon\\b.*)?(a|de)trás( de sí)?")
+annotate("detrás/atrás_AdvP", "(\\bcon\\b.*)?(a|de)trás( de sí)?")
+
+seematch("en-frente_AdvP", "en frente( de (sí|él))?")
+annotate("en-frente_AdvP", "en frente( de (sí|él))?")
+
+
+# Prepositional phrases (adjuncts) ----------------------------------------
+
+seematch("a-lo-alto_PP", "(a|hacia|hasta) lo alto")
+annotate("a-lo-alto_PP", "(a|hacia|hasta) lo alto")
+
+seematch("a-través-de_PP", "a través(?! de una cuerda)")
+annotate("a-través-de_PP", "a través(?! de una cuerda)")
+
+seematch("al-otro-lado_PP", "al otro lado( de.*)?")
+annotate("al-otro-lado_PP", "al otro lado( de.*)?")
+
+seematch("al-topp@sw_PP", "al topp@sw")
+annotate("al-topp@sw_PP", "al topp@sw")
+
+seematch("con-una-cuerda_PP", "((atado|sujeto) )?((en|a|con|por|de) )?una cuerda")
+annotate("con-una-cuerda_PP", "((atado|sujeto) )?((en|a|con|por|de) )?una cuerda")
+
+seematch("encima_PP", "((hacia|por) )?encima(?!.*(agua|caballo|camino|río))")
+annotate("encima_PP", "((hacia|por) )?encima(?!.*(agua|caballo|camino|río))")
+
+seematch("hacia-el-interior_PP", "hacia el interior( de.*)?")
+annotate("hacia-el-interior_PP", "hacia el interior( de.*)?")
+
+seematch("hacia-la-cumbre_PP", "(a|hacia) la cumbre")
+annotate("hacia-la-cumbre_PP", "(a|hacia) la cumbre")
+
+seematch("PREP-(a)dentro_PP", "(hacia|hasta|para|por) a?dentro")
+annotate("PREP-(a)dentro_PP", "(hacia|hasta|para|por) a?dentro")
+
+seematch("PREP-abajo_PP", "(hacia|hasta|para|por) abajo")
+annotate("PREP-abajo_PP", "(hacia|hasta|para|por) abajo")
+
+seematch("PREP-arriba_PP", "(hacia|hasta|para|por) arriba")
+annotate("PREP-arriba_PP", "(hacia|hasta|para|por) arriba")
 
 
 # Gerunds (adjuncts) ------------------------------------------------------
@@ -212,98 +279,87 @@ annotate("dejando_Ger", "dejándola")
 
 seematch("empujando_Ger", "(?<!est(á|aba) )empuj[aá]ndo(lo|la|se)?")
 annotate("empujando_Ger", "(?<!est(á|aba) )empuj[aá]ndo(lo|la|se)?")
-# 
-# seematch("entrando_Ger", "(vuelve a entrar|ha entrado( (a|en))?|est(á|aba) entrando( (a|en))?|entra(\\b|ba)( (a|en))?|entró( (a|en))?)")
-# annotate("entrando_Ger", "(vuelve a entrar|ha entrado( (a|en))?|est(á|aba) entrando( (a|en))?|entra(\\b|ba)( (a|en))?|entró( (a|en))?)")
-# 
-# seematch("estirando_Ger", "ha estirado")
-# annotate("estirando_Ger", "ha estirado")
-# 
-# seematch("girando_Ger", "gira\\b")
-# annotate("girando_Ger", "gira\\b")
-# 
-# seematch("guardando_Ger", "(?<!donde se )guarda\\b")
-# annotate("guardando_Ger", "(?<!donde se )guarda\\b")
-# 
-# seematch("hacer-descender_Vphrase", "hace descender")
-# annotate("hacer-descender_Vphrase", "hace descender")
-# 
-# seematch("hacer-deslizar_Vphrase", "hace deslizar")
-# annotate("hacer-deslizar_Vphrase", "hace deslizar")
-# 
-# seematch("hacer-girar_Vphrase", "(?<!mientras )hace girar")
-# annotate("hacer-girar_Vphrase", "(?<!mientras )hace girar")
-# 
-# seematch("hacer-rodar_Vphrase", "((está haciendo|hace|ha hecho) rodar)")
-# annotate("hacer-rodar_Vphrase", "((está haciendo|hace|ha hecho) rodar)")
-# 
-# seematch("hacer-subir_Vphrase", "hace subir")
-# annotate("hacer-subir_Vphrase", "hace subir")
-# 
-# seematch("introduciendo_Ger", "(está introduciendo|introduce)")
-# annotate("introduciendo_Ger", "(está introduciendo|introduce)")
-# 
-# seematch("yendo_Ger", "(ha ido|(?<!que (lo )?)\\bva\\b)")
-# annotate("yendo_Ger", "(ha ido|(?<!que (lo )?)\\bva\\b)")
-# 
-# seematch("jugando_Ger", "(está jugando|juega)")
-# annotate("jugando_Ger", "(está jugando|juega)")
-# 
-# seematch("llevando_Ger", "(ha llevado|est(á|aba) llev[aá]ndo(se)?|(?<!mientras (la )?)lleva(\\b|ba)|llevó)")
-# annotate("llevando_Ger", "(ha llevado|est(á|aba) llev[aá]ndo(se)?|(?<!mientras (la )?)lleva(\\b|ba)|llevó)")
-# 
-# seematch("metiendo_Ger", "(ha metido|está metiendo|mete\\b|metió)")
-# annotate("metiendo_Ger", "(ha metido|está metiendo|mete\\b|metió)")
-# 
-# seematch("montando_Ger", "ha montado")
-# annotate("montando_Ger", "ha montado")
-# 
-# seematch("moviendo_Ger", "(ha movido|está moviendo|mueve|movió)")
-# annotate("moviendo_Ger", "(ha movido|está moviendo|mueve|movió)")
-# 
-# seematch("mudando_Ger", "\\bmud")
-# annotate("mudando_Ger", "\\bmud")
-# 
-# seematch("pasando_Ger", "(ha pasado|está pasando|\\bpasa\\b)")
-# annotate("pasando_Ger", "(ha pasado|está pasando|\\bpasa\\b)")
-# 
-# seematch("paseando_Ger", "pasea")
-# annotate("paseando_Ger", "pasea")
-# 
-# seematch("poniendo_Ger", "(está poniendo|\\bpone\\b|puso)")
-# annotate("poniendo_Ger", "(está poniendo|\\bpone\\b|puso)")
-# 
-# seematch("rodando_Ger", "(ha rodado|está rodando|rodaba|rodó|(?<!(una?|la|mientras|su|gran|con|de) )rueda\\b)")
-# annotate("rodando_Ger", "(ha rodado|está rodando|rodaba|rodó|(?<!(una?|la|mientras|su|gran|con|de) )rueda\\b)")
-# 
-# seematch("salir-de-paseo_VPhrase", "sale de paseo")
-# annotate("salir-de-paseo_VPhrase", "sale de paseo")
-# 
-# seematch("salir-de-viaje_VPhrase", "sale de viaje")
-# annotate("salir-de-viaje_VPhrase", "sale de viaje")
-# 
-# seematch("subiendo_Ger", "((vuelve|ha vuelto) a subir|ha subido|(ha )?est(á( ahora)?|aba|ado) subi(e|é)ndo|sube\\b|subió)")
-# annotate("subiendo_Ger", "((vuelve|ha vuelto) a subir|ha subido|(ha )?est(á( ahora)?|aba|ado) subi(e|é)ndo|sube\\b|subió)")
-# 
-# seematch("tirar-de_V", "(ha tirado|est(á|aba) tirando( de)?|tira(\\b|ba)( de)?)")
-# annotate("tirar-de_V", "(ha tirado|est(á|aba) tirando( de)?|tira(\\b|ba)( de)?)")
-# 
-# seematch("trayendo_Ger", "(trae\\b|traído)")
-# annotate("trayendo_Ger", "(trae\\b|traído)")
-# 
-# seematch("transportando_Ger", "transporta")
-# annotate("transportando_Ger", "transporta")
-# 
-# seematch("trasladando_Ger", "traslad")
-# annotate("trasladando_Ger", "traslad")
-# 
-# seematch("viniendo_Ger", "(ha venido|viene)")
-# annotate("viniendo_Ger", "(ha venido|viene)")
-# 
-# seematch("volviendo_Ger", "vuelve (?!a (caminar|cruzar|subir))")
-# annotate("volviendo_Ger", "vuelve (?!a (caminar|cruzar|subir))")
+
+seematch("entrando_Ger", "(?<!est(á|aba) )entr[áa]ndo(lo)?( (en|a))?")
+annotate("entrando_Ger", "(?<!est(á|aba) )entr[áa]ndo(lo)?( (en|a))?")
+
+seematch("estirando_Ger", "estirando")
+annotate("estirando_Ger", "estirando")
+
+seematch("introduciendo_Ger", "(?<!est(á|aba) )introduciendo")
+annotate("introduciendo_Ger", "(?<!est(á|aba) )introduciendo")
+
+seematch("llevando_Ger", "(?<!est(á|aba) )llev[áa]ndo(lo|la|se)?")
+annotate("llevando_Ger", "(?<!est(á|aba) )llev[áa]ndo(lo|la|se)?")
+
+seematch("metiendo_Ger", "(?<!est(á|aba) )meti[ée]ndo(lo|la|se)?")
+annotate("metiendo_Ger", "(?<!est(á|aba) )meti[ée]ndo(lo|la|se)?")
+
+seematch("pasando_Ger", "(?<!(está|y) )pasando")
+annotate("pasando_Ger", "(?<!(está|y) )pasando")
+
+seematch("portando_Ger", "portando")
+annotate("portando_Ger", "portando")
+
+seematch("rodando_Ger", "(?<!est(á|aba) )rodándo(lo|la|se)?")
+annotate("rodando_Ger", "(?<!est(á|aba) )rodándo(lo|la|se)?")
+
+seematch("subiendo_Ger", "(?<!est(á|aba|amos) )subi[ée]ndo(lo|la|se)?")
+annotate("subiendo_Ger", "(?<!est(á|aba|amos) )subi[ée]ndo(lo|la|se)?")
+
+seematch("tirando-de_Ger", "(?<!est(á|aba) )tirando( de)?")
+annotate("tirando-de_Ger", "(?<!est(á|aba) )tirando( de)?")
+
+seematch("trayendo_Ger", "trayendo")
+annotate("trayendo_Ger", "trayendo")
+
+seematch("yendo_Ger", "\\byendo")
+annotate("yendo_Ger", "\\byendo")
 
 
+# Verbs in infinitive (part of adjuncts) ----------------------------------
+
+
+# guardar_Inf
+# introducir_Inf
+# jugar_Inf
+# recoger_Inf
+
+
+# Subordinate finite verbs (adjuncts) -------------------------------------
+
+seematch("arrastrar_SubordV", "mientras arrastra(ba)?")
+annotate("arrastrar_SubordV", "mientras arrastra(ba)?")
+
+seematch("bajar_SubordV", "mientras baja")
+annotate("bajar_SubordV", "mientras baja")
+
+seematch("empujar_SubordV", "mientras (está empujando|empuja)")
+annotate("empujar_SubordV", "mientras está empujando")
+
+seematch("llevar_SubordV", "mientras (la)? lleva")
+annotate("llevar_SubordV", "mientras lleva")
+
+seematch("rodar_SubordV", "mientras rueda")
+annotate("rodar_SubordV", "mientras rueda")
+
+seematch("subir_SubordV", "mientras está subiendo")
+annotate("subir_SubordV", "mientras está subiendo")
+
+
+# Verb phrases in gerundive form (adjuncts) -------------------------------
+
+seematch("haciendo-girar_Vphrase-Ger", "haciendo girar")
+annotate("haciendo-girar_Vphrase-Ger", "haciendo girar")
+
+seematch("haciendo-rodar_Vphrase-Ger", "(?<!est(á|aba) )haci[eé]ndo(la)? rodar")
+annotate("haciendo-rodar_Vphrase-Ger", "(?<!est(á|aba) )haci[eé]ndo(la)? rodar")
+
+
+
+## targets with no matches
+sum(tr$Matches == "")  # how many?
+tr[tr$Matches == "", ]  # show
 
 
 
