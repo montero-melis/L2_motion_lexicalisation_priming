@@ -235,14 +235,11 @@ annotate("al-topp@sw_PP", "al topp@sw")
 seematch("con-una-cuerda_PP", "((atado|sujeto) )?((en|a|con|por|de) )?una cuerda")
 annotate("con-una-cuerda_PP", "((atado|sujeto) )?((en|a|con|por|de) )?una cuerda")
 
+seematch("de-un-lado-al-otro_PP", "\\bde un lado\\b.*otro")
+annotate("de-un-lado-al-otro_PP", "\\bde un lado\\b.*otro")
+
 seematch("encima_PP", "((hacia|por) )?encima(?!.*(agua|caballo|camino|río))")
 annotate("encima_PP", "((hacia|por) )?encima(?!.*(agua|caballo|camino|río))")
-
-seematch("hacia-el-interior_PP", "hacia el interior( de.*)?")
-annotate("hacia-el-interior_PP", "hacia el interior( de.*)?")
-
-seematch("hacia-la-cumbre_PP", "(a|hacia) la cumbre")
-annotate("hacia-la-cumbre_PP", "(a|hacia) la cumbre")
 
 seematch("PREP-(a)dentro_PP", "(hacia|hasta|para|por) a?dentro")
 annotate("PREP-(a)dentro_PP", "(hacia|hasta|para|por) a?dentro")
@@ -252,6 +249,18 @@ annotate("PREP-abajo_PP", "(hacia|hasta|para|por) abajo")
 
 seematch("PREP-arriba_PP", "(hacia|hasta|para|por) arriba")
 annotate("PREP-arriba_PP", "(hacia|hasta|para|por) arriba")
+
+seematch("PREP-el-interior_PP", "((al|hacia (el|un)|hasta el) )interior( de.*)?")
+annotate("PREP-el-interior_PP", "((al|hacia (el|un)|hasta el) )interior( de.*)?")
+
+seematch("PREP-la-cima_PP", "(\\ba|hacia|hasta|para|por) (la|el) cima")
+annotate("PREP-la-cima_PP", "(\\ba|hacia|hasta|para|por) (la|el) cima")
+
+seematch("PREP-la-cumbre_PP", "(a|hacia) la cumbre")
+annotate("PREP-la-cumbre_PP", "(a|hacia) la cumbre")
+
+seematch("PREP-otro-lado_PP", "((al|hacia el|hasta el|para el) )?otro lado(?! (de una iglesia|de la paja|del agua|del mar))")
+seematch("PREP-otro-lado_PP", "((al|hacia el|hasta el|para el) )?otro lado(?! (de una iglesia|de la paja|del agua|del mar))")
 
 
 # Gerunds (adjuncts) ------------------------------------------------------
@@ -319,11 +328,11 @@ annotate("yendo_Ger", "\\byendo")
 
 # Verbs in infinitive (part of adjuncts) ----------------------------------
 
+seematch("guardar_Inf", "para guardar(lo|la)?")
+annotate("guardar_Inf", "para guardar(lo|la)?")
 
-# guardar_Inf
-# introducir_Inf
-# jugar_Inf
-# recoger_Inf
+seematch("introducir_Inf", "para introducirlo")
+annotate("introducir_Inf", "para introducirlo")
 
 
 # Subordinate finite verbs (adjuncts) -------------------------------------

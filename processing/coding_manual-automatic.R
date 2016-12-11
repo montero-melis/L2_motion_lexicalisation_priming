@@ -64,6 +64,23 @@ source("processing/annotation_regex.R", encoding = "UTF-8")
 tr[1:50,]
 tail(tr, 50)
 
+
+#  ------------------------------------------------------------------------
+#  Check coding
+#  ------------------------------------------------------------------------
+
+# We have to manually check the coding row per row to discover errors.
+# These can be of the following types:
+
+# To spot errors, save data in random order to csv file which can then be
+# checked on google drive.
+# save all descriptions in randomized order
+set.seed(33)
+tr_random <- tr[sample(nrow(tr)), ]
+# to file
+write.csv(tr_random, "processing/targets_random.csv", fileEncoding = "UTF-8")
+
+
 #  ------------------------------------------------------------------------
 #  The basic function
 #  ------------------------------------------------------------------------
