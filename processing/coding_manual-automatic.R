@@ -19,8 +19,8 @@ str(tr_compl)
 tr_compl <- tr_compl[tr_compl$VideoTrial != 0, ]
 # no recordings for participant 14
 tr_compl[tr_compl$Subject == "14", ]
-# keep track of original row number in the transcribed data file
-tr_compl$rownb <- row.names(tr_compl)
+# keep track of original row number in the transcribed data file (+1 to match)
+tr_compl$rownb <- as.numeric(row.names(tr_compl)) + 1
 
 # drop some columns to have a df that's easier to work with, and remove all 
 # rows with empty transcriptions
@@ -71,12 +71,21 @@ tail(tr, 50)
 
 # We have to manually check the coding row per row to discover errors.
 # These can be of the following types:
+# - Missed targets, i.e. vocabulary that is not captured by a regex; subtypes:
+#   - Missing vocabulary items (have to be added to Vocabulary)
+#   - Target is in Vocabulary but is not captured, e.g. b/c of misspellings
+# - False alarms, i.e. words erroneously identified as targets
 
 # To spot errors, save data in random order to csv file which can then be
 # checked on google drive.
 # save all descriptions in randomized order
 set.seed(33)
 tr_random <- tr[sample(nrow(tr)), ]
+# add columns needed for checking the coding:
+tr_random$Checked_KS <- ""
+tr_random$Comment_KS <- ""
+tr_random$Comment_GMM <- ""
+
 # to file
 write.csv(tr_random, "processing/targets_random.csv", fileEncoding = "UTF-8")
 

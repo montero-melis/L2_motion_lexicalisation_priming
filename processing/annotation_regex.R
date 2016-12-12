@@ -10,7 +10,7 @@ seematch <- function(entry = NULL, regex = NULL, df = tr) {
   match_rows <- str_detect(df$Target, regex)
   sum(match_rows)
   if (sum(match_rows) == 0) stop("No matches for this regex!")
-  out <- df[match_rows,] %>% select(-Matches)
+  out <- df[match_rows,] %>% select(-Match)
   out$VocabEntry <- entry
   out$MyMatch <- str_extract(out$Target, regex)
   out
@@ -19,22 +19,22 @@ seematch <- function(entry = NULL, regex = NULL, df = tr) {
 annotate <- function(entry = NULL, regex = NULL) {
   match_rows <- str_detect(tr$Target, regex)
 #   # for print only (does the same as seematch())
-#   df4print <- tr[match_rows,] %>% select(-Matches)
+#   df4print <- tr[match_rows,] %>% select(-Match)
 #   df4print$VocabEntry <- entry
 #   df4print$MyMatch <- str_extract(df4print$Target, regex)
 #   print(df4print)
   # do the annotation
   current_match <- str_extract(tr$Target[match_rows], regex)
-  old_match <- tr$Matches[match_rows]
+  old_match <- tr$Match[match_rows]
   new_match <- paste(old_match, paste(current_match, entry, sep = ":"), sep = "%")
-  tr[match_rows, "Matches"] <<- new_match
+  tr[match_rows, "Match"] <<- new_match
 }
 
 
 # Prepare and clear annotation column -------------------------------------
 
 # Add empty column for matches
-tr$Matches <- ""
+tr$Match <- ""
 
 # Some of the regex idioms used below:
 # (?<!pattern)  # negative look-behind of "pattern"
@@ -145,8 +145,8 @@ annotate("rodar_V", "(ha rodado|está rodando|rodaba|rodó|(?<!(una?|la|mientras
 seematch("subir_V", "((vuelve|ha vuelto) a subir|ha subido|(?<!mientras )(ha )?est(á( ahora)?|aba|ado) subi(e|é)ndo|sube\\b|subió)")
 annotate("subir_V", "((vuelve|ha vuelto) a subir|ha subido|(?<!mientras )(ha )?est(á( ahora)?|aba|ado) subi(e|é)ndo|sube\\b|subió)")
 
-seematch("tirar-de_V", "(ha tirado|est(á|aba) tirando( de)?|tira(\\b|ba)( de)?)")
-annotate("tirar-de_V", "(ha tirado|est(á|aba) tirando( de)?|tira(\\b|ba)( de)?)")
+seematch("tirar-de_V", "(ha tirado( de)?|est(á|aba) tirando( de)?|tira(\\b|ba)( de)?)")
+annotate("tirar-de_V", "(ha tirado( de)?|est(á|aba) tirando( de)?|tira(\\b|ba)( de)?)")
 
 seematch("traer_V", "(trae\\b|traído)")
 annotate("traer_V", "(trae\\b|traído)")
@@ -367,8 +367,8 @@ annotate("haciendo-rodar_Vphrase-Ger", "(?<!est(á|aba) )haci[eé]ndo(la)? rodar
 
 
 ## targets with no matches
-sum(tr$Matches == "")  # how many?
-tr[tr$Matches == "", ]  # show
+sum(tr$Match == "")  # how many?
+tr[tr$Match == "", ]  # show
 
 
 
