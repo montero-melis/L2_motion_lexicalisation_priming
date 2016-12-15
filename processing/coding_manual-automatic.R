@@ -10,19 +10,30 @@ library(stringr)
 #  ------------------------------------------------------------------------
 
 # load transcriptions
-tr_compl <- read.csv("data/data_verbal_transcribed.csv", fileEncoding = "UTF-8",
+tr_compl <- read.csv("data/data_verbal_transcribed_full.csv", fileEncoding = "UTF-8",
                stringsAsFactors = FALSE)
 head(tr_compl)
 str(tr_compl)
 
-# keep track of original row number in the transcribed data file (+1 to match)
-tr_compl$rownb <- as.numeric(row.names(tr_compl)) + 1
 # remove training items (VideoTrial == 0)
 tr_compl <- tr_compl[tr_compl$VideoTrial != 0, ]
 # Note there are no recordings for participant 14
 tr_compl[tr_compl$Subject == "14", ]
 # remove that participant
 tr_compl <- tr_compl[tr_compl$Subject != "14", ]
+# NA for all observations where there is no data b/c of experimental error
+tr_compl[tr_compl$Target == "", "Target"] <- NA
+
+# save simplified version to file
+tr_compl %>% 
+  select(Subject:Target_Object, Target) %>%
+  write.csv("data/data_verbal_transcribed.csv", row.names = FALSE,
+            fileEncoding = "UTF-8")
+
+
+# because later I will be randomizing rows, create a column to keep track of
+# original row number in the transcribed data file (+1 to match)
+tr_compl$rownb <- as.numeric(row.names(tr_compl)) + 1
 
 # drop some columns to have a df that's easier to work with
 tr <- tr_compl %>% select(rownb, Subject:VideoName, Target)
@@ -37,21 +48,6 @@ str(tr)
 # # to file
 # write.csv(tr_random, "processing/targets_random.csv", fileEncoding = "UTF-8")
 
-
-
-#  ------------------------------------------------------------------------
-#  Check out unique words
-#  ------------------------------------------------------------------------
-
-## How many unique words and their frequency?
-
-# all descriptions into a single string vector of words
-target <- unlist(strsplit(tr$Target, " "))
-sort(table(target))
-# count of unique words
-length(unique(target))
-
-rm(target)
 
 
 #  ------------------------------------------------------------------------
@@ -95,6 +91,7 @@ write.csv(tr_random, "processing/targets_random.csv", fileEncoding = "UTF-8")
 rm(tr_random)
 
 
+
 #  ------------------------------------------------------------------------
 #  Annotated data in long format (one row per match)
 #  ------------------------------------------------------------------------
@@ -114,7 +111,8 @@ tolong <- function(df = tr) {
       # combine with that row's info
       curr_df <- data.frame(df[i, c("Subject", "Group", "Condition",
                                     "VideoTrial", "VideoName")],
-                            row_match_matrix, row.names = NULL)
+                            row_match_matrix,
+                            row.names = NULL, stringsAsFactors = FALSE)
       out <- rbind(out, curr_df)
     }
   }
@@ -128,6 +126,8 @@ tolong(tr[33:39,])
 
 # do for the whole data set (slow ~ 15s)
 tr_long <- tolong()
+head(tr_long)
+str(tr_long)
 
 
 #  ------------------------------------------------------------------------
@@ -150,24 +150,33 @@ tr_long <- tolong()
 # SyntCateg: The broad syntactic category -- wil be mostly main verb or adjunct
 # SyntForm: The specific syntactic form
 
+vocab <- read.csv("data/vocabulary.csv", fileEncoding = "UTF-8",
+                  stringsAsFactors = FALSE)
 
+# check that all vocabulary used in annotation is in the vocabulary sheet
+sum(! unique(tr_long$VocabEntry) %in% vocab$VocabEntry)  # zero? If not:
+mymissing <- ! unique(tr_long$VocabEntry) %in% vocab$VocabEntry
+unique(tr_long$VocabEntry)[mymissing]
+# ... and that all items in vocabulary sheet are used for annotation
+sum(! vocab$VocabEntry %in% unique(tr_long$VocabEntry))  # zero? If not:
+mymissing <- ! vocab$VocabEntry %in% unique(tr_long$VocabEntry)
+vocab$VocabEntry[mymissing]
+rm(mymissing)
 
+# merge with vocabulary information
+tr_long <- left_join(tr_long, vocab)
+head(tr_long)
 
-
-
-
-
-#  ------------------------------------------------------------------------
-#  
-#  ------------------------------------------------------------------------
-
-
-
-
-#  ------------------------------------------------------------------------
-#  
-#  ------------------------------------------------------------------------
-
+# tr_long now contains the annotated data, which can be saved to file
+# Note, however, that it is not really useful in the current format,
+# because target descriptions which do not contain any annotated information
+# do not appear in this data frame (each row represents one annotation).
+# So to actually use it, it has to be merged back with the original list of
+# participants and their utterances, excluding transcriptions for which there 
+# was a technical error so that speech was not recorded (e.g., because the 
+# participant pushed the space bar).
+write.csv(tr_long, "data/data_annotated_long.csv", fileEncoding = "UTF-8",
+          row.names = FALSE)
 
 
 

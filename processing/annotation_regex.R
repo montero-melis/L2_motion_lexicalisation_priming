@@ -226,17 +226,14 @@ annotate("a-lo-alto_PP", "(a|hacia|hasta) lo alto")
 seematch("a-través-de_PP", "a través(?! de una cuerda)")
 annotate("a-través-de_PP", "a través(?! de una cuerda)")
 
-seematch("al-otro-lado_PP", "al otro lado( de.*)?")
-annotate("al-otro-lado_PP", "al otro lado( de.*)?")
-
 seematch("al-topp@sw_PP", "al topp@sw")
 annotate("al-topp@sw_PP", "al topp@sw")
 
 seematch("con-una-cuerda_PP", "((atado|sujeto) )?((en|a|con|por|de) )?una cuerda")
 annotate("con-una-cuerda_PP", "((atado|sujeto) )?((en|a|con|por|de) )?una cuerda")
 
-seematch("de-un-lado-al-otro_PP", "\\bde un lado\\b.*otro")
-annotate("de-un-lado-al-otro_PP", "\\bde un lado\\b.*otro")
+seematch("de-un-lado-al-otro_PP", "\\bde un lado\\b.*otro(?! lado)")
+annotate("de-un-lado-al-otro_PP", "\\bde un lado\\b.*otro(?! lado)")
 
 seematch("encima_PP", "((hacia|por) )?encima(?!.*(agua|caballo|camino|río))")
 annotate("encima_PP", "((hacia|por) )?encima(?!.*(agua|caballo|camino|río))")
@@ -259,8 +256,8 @@ annotate("PREP-la-cima_PP", "(\\ba|hacia|hasta|para|por) (la|el) cima")
 seematch("PREP-la-cumbre_PP", "(a|hacia) la cumbre")
 annotate("PREP-la-cumbre_PP", "(a|hacia) la cumbre")
 
-seematch("PREP-otro-lado_PP", "((al|hacia el|hasta el|para el) )?otro lado(?! (de una iglesia|de la paja|del agua|del mar))")
-seematch("PREP-otro-lado_PP", "((al|hacia el|hasta el|para el) )?otro lado(?! (de una iglesia|de la paja|del agua|del mar))")
+seematch("PREP-otro-lado_PP", "((al|hacia el|hasta el|para el) )?otro lado(?! (de una iglesia|de la paja|del agua|del mar))( de.*)?")
+annotate("PREP-otro-lado_PP", "((al|hacia el|hasta el|para el) )?otro lado(?! (de una iglesia|de la paja|del agua|del mar))( de.*)?")
 
 
 # Gerunds (adjuncts) ------------------------------------------------------
