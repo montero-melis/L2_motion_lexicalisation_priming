@@ -96,6 +96,7 @@
 "3","L2","Path",25,"tgm_sacdun","sube","subir_V","subir","Path","UP","V","V_fin"
 "3","L2","Path",26,"tre_cadmai","entra en","entrar_V","entrar","Path","INTO","V","V_fin"
 "3","L2","Path",27,"pgt_panrue","cruza","cruzar_V","cruzar","Path","ACROSS","V","V_fin"
+"3","L2","Path",28,"tgm_sactoi","sube","subir_V","subir","Path","UP","V","V_fin"
 "3","L2","Path",29,"tre_cadgro","entra en","entrar_V","entrar","Path","INTO","V","V_fin"
 "3","L2","Path",30,"pgm_paqdun","está subiendo","subir_V","subir","Path","UP","V","V_fin"
 "3","L2","Path",31,"tgd_malnei","baja","bajar_V","bajar","Path","DOWN","V","V_fin"
@@ -321,9 +322,11 @@
 "9","L2","Path",2,"trt_pourou","cruza","cruzar_V","cruzar","Path","ACROSS","V","V_fin"
 "9","L2","Path",3,"tgd_malcol","baja","bajar_V","bajar","Path","DOWN","V","V_fin"
 "9","L2","Path",4,"trm_voitoi","sube","subir_V","subir","Path","UP","V","V_fin"
-"9","L2","Path",4,"trm_voitoi","a través","a-través-de_PP","a-través-de","Path","ACROSS","Adjunct","PP"
+"9","L2","Path",4,"trm_voitoi","a través","a-través-de_PP",NA,NA,NA,NA,NA
 "9","L2","Path",5,"pgt_panrue","cruza","cruzar_V","cruzar","Path","ACROSS","V","V_fin"
+"9","L2","Path",6,"trd_bronei","baja","bajar_V","bajar","Path","DOWN","V","V_fin"
 "9","L2","Path",7,"pgt_panrou","cruza","cruzar_V","cruzar","Path","ACROSS","V","V_fin"
+"9","L2","Path",8,"tre_cadgro","va","ir_V","ir","Other","GO","V","V_fin"
 "9","L2","Path",9,"tgt_cherou","cruza","cruzar_V","cruzar","Path","ACROSS","V","V_fin"
 "9","L2","Path",10,"pge_tabgro","empuja","empujar_V","empujar","Manner","PUSH","V","V_fin"
 "9","L2","Path",11,"prm_boudun","empuja","empujar_V","empujar","Manner","PUSH","V","V_fin"
@@ -422,7 +425,7 @@
 "11","L2","Control",12,"prd_balnei","está bajando","bajar_V","bajar","Path","DOWN","V","V_fin"
 "11","L2","Control",12,"prd_balnei","bajando","bajando_Ger","bajar","Path","DOWN","Adjunct","V_ger"
 "11","L2","Control",13,"tgm_sactoi","está subiendo","subir_V","subir","Path","UP","V","V_fin"
-"11","L2","Control",13,"tgm_sactoi","a través","a-través-de_PP","a-través-de","Path","ACROSS","Adjunct","PP"
+"11","L2","Control",13,"tgm_sactoi","a través","a-través-de_PP",NA,NA,NA,NA,NA
 "11","L2","Control",14,"pgt_panrou","está moviendo","mover_V","mover","Other","MOVE","V","V_fin"
 "11","L2","Control",15,"pre_pnemai","está entrando","entrar_V","entrar","Path","INTO","V","V_fin"
 "11","L2","Control",15,"pre_pnemai","adentro","(a)dentro_AdvP","adentro","Path","INTO","Adjunct","AdvP"
@@ -446,14 +449,14 @@
 "11","L2","Control",32,"pgt_panrue","cruzó","cruzar_V","cruzar","Path","ACROSS","V","V_fin"
 "11","L2","Control",32,"pgt_panrue","mudó","mudar_V","mudar","Other","?MOVE","V","V_fin"
 "12","L2","Control",1,"trd_bronei","bajó","bajar_V","bajar","Path","DOWN","V","V_fin"
-"12","L2","Control",1,"trd_bronei","con algo arrastrando detrás","detrás/atrás_AdvP","detrás","Manner","BEHIND","Adjunct","AdvP"
+"12","L2","Control",1,"trd_bronei","con algo arrastrando detrás","detrás/atrás_AdvP",NA,NA,NA,NA,NA
 "12","L2","Control",1,"trd_bronei","arrastrando","arrastrando_Ger","arrastrar","Manner","DRAG","Adjunct","V_ger"
 "12","L2","Control",2,"prt_rourue","rodaba","rodar_V","rodar","Manner","ROLL","V","V_fin"
 "12","L2","Control",3,"tre_cadmai","entra en","entrar_V","entrar","Path","INTO","V","V_fin"
-"12","L2","Control",3,"tre_cadmai","detrás","detrás/atrás_AdvP","detrás","Manner","BEHIND","Adjunct","AdvP"
+"12","L2","Control",3,"tre_cadmai","detrás","detrás/atrás_AdvP",NA,NA,NA,NA,NA
 "12","L2","Control",3,"tre_cadmai","arrastrando","arrastrando_Ger","arrastrar","Manner","DRAG","Adjunct","V_ger"
 "12","L2","Control",4,"tgt_cherue","cruzaba","cruzar_V","cruzar","Path","ACROSS","V","V_fin"
-"12","L2","Control",4,"tgt_cherue","con un caballo de juguete detrás","detrás/atrás_AdvP","detrás","Manner","BEHIND","Adjunct","AdvP"
+"12","L2","Control",4,"tgt_cherue","con un caballo de juguete detrás","detrás/atrás_AdvP",NA,NA,NA,NA,NA
 "12","L2","Control",5,"pre_pnemai","entra en","entrar_V","entrar","Path","INTO","V","V_fin"
 "12","L2","Control",5,"pre_pnemai","delante","delante_AdvP","delante","Manner","IN-FRONT","Adjunct","AdvP"
 "12","L2","Control",6,"pgd_valcol","baja","bajar_V","bajar","Path","DOWN","V","V_fin"
@@ -461,9 +464,9 @@
 "12","L2","Control",7,"prt_rourou","rueda","rodar_V","rodar","Manner","ROLL","V","V_fin"
 "12","L2","Control",8,"pgd_valnei","bajó","bajar_V","bajar","Path","DOWN","V","V_fin"
 "12","L2","Control",9,"tgt_cherou","cruzaba","cruzar_V","cruzar","Path","ACROSS","V","V_fin"
-"12","L2","Control",9,"tgt_cherou","con un caballo de juguete detrás","detrás/atrás_AdvP","detrás","Manner","BEHIND","Adjunct","AdvP"
+"12","L2","Control",9,"tgt_cherou","con un caballo de juguete detrás","detrás/atrás_AdvP",NA,NA,NA,NA,NA
 "12","L2","Control",10,"trm_voitoi","subió","subir_V","subir","Path","UP","V","V_fin"
-"12","L2","Control",10,"trm_voitoi","con un coche de juguete detrás","detrás/atrás_AdvP","detrás","Manner","BEHIND","Adjunct","AdvP"
+"12","L2","Control",10,"trm_voitoi","con un coche de juguete detrás","detrás/atrás_AdvP",NA,NA,NA,NA,NA
 "12","L2","Control",10,"trm_voitoi","arrastrándolo","arrastrando_Ger","arrastrar","Manner","DRAG","Adjunct","V_ger"
 "12","L2","Control",11,"tge_chagro","entró en","entrar_V","entrar","Path","INTO","V","V_fin"
 "12","L2","Control",11,"tge_chagro","arrastrando","arrastrando_Ger","arrastrar","Manner","DRAG","Adjunct","V_ger"
@@ -472,7 +475,7 @@
 "12","L2","Control",13,"pge_tabgro","delante","delante_AdvP","delante","Manner","IN-FRONT","Adjunct","AdvP"
 "12","L2","Control",13,"pge_tabgro","entrando en","entrando_Ger","entrar","Path","INTO","Adjunct","V_ger"
 "12","L2","Control",14,"trt_pourou","cruzaba","cruzar_V","cruzar","Path","ACROSS","V","V_fin"
-"12","L2","Control",14,"trt_pourou","con un cochecito de niño detrás","detrás/atrás_AdvP","detrás","Manner","BEHIND","Adjunct","AdvP"
+"12","L2","Control",14,"trt_pourou","con un cochecito de niño detrás","detrás/atrás_AdvP",NA,NA,NA,NA,NA
 "12","L2","Control",15,"tgm_sactoi","subió","subir_V","subir","Path","UP","V","V_fin"
 "12","L2","Control",16,"pre_pnegro","entró en","entrar_V","entrar","Path","INTO","V","V_fin"
 "12","L2","Control",16,"pre_pnegro","delante","delante_AdvP","delante","Manner","IN-FRONT","Adjunct","AdvP"
@@ -481,10 +484,10 @@
 "12","L2","Control",19,"prd_balcol","rodó","rodar_V","rodar","Manner","ROLL","V","V_fin"
 "12","L2","Control",19,"prd_balcol","bajando","bajando_Ger","bajar","Path","DOWN","Adjunct","V_ger"
 "12","L2","Control",20,"tge_chamai","entró en","entrar_V","entrar","Path","INTO","V","V_fin"
-"12","L2","Control",20,"tge_chamai","con una silla detrás","detrás/atrás_AdvP","detrás","Manner","BEHIND","Adjunct","AdvP"
+"12","L2","Control",20,"tge_chamai","con una silla detrás","detrás/atrás_AdvP",NA,NA,NA,NA,NA
 "12","L2","Control",21,"prm_boudun","subió","subir_V","subir","Path","UP","V","V_fin"
 "12","L2","Control",22,"tgd_malcol","bajó","bajar_V","bajar","Path","DOWN","V","V_fin"
-"12","L2","Control",22,"tgd_malcol","con un baúl o una caja detrás","detrás/atrás_AdvP","detrás","Manner","BEHIND","Adjunct","AdvP"
+"12","L2","Control",22,"tgd_malcol","con un baúl o una caja detrás","detrás/atrás_AdvP",NA,NA,NA,NA,NA
 "12","L2","Control",23,"pgt_panrue","cruzó","cruzar_V","cruzar","Path","ACROSS","V","V_fin"
 "12","L2","Control",23,"pgt_panrue","delante","delante_AdvP","delante","Manner","IN-FRONT","Adjunct","AdvP"
 "12","L2","Control",23,"pgt_panrue","empujándose","empujando_Ger","empujar","Manner","PUSH","Adjunct","V_ger"
@@ -545,7 +548,7 @@
 "15","L2","Manner",2,"tre_cadgro","acaba de arrastrar","arrastrar_V","arrastrar","Manner","DRAG","V","V_fin"
 "15","L2","Manner",2,"tre_cadgro","hacia dentro","PREP-(a)dentro_PP","hacia-dentro-de-GROUND","Path","INTO","Adjunct","PP"
 "15","L2","Manner",3,"prt_rourue","arrastra","arrastrar_V","arrastrar","Manner","DRAG","V","V_fin"
-"15","L2","Manner",3,"prt_rourue","a través","a-través-de_PP","a-través-de","Path","ACROSS","Adjunct","PP"
+"15","L2","Manner",3,"prt_rourue","a través","a-través-de_PP",NA,NA,NA,NA,NA
 "15","L2","Manner",4,"pgd_valcol","ha empujado","empujar_V","empujar","Manner","PUSH","V","V_fin"
 "15","L2","Manner",5,"prm_boudun","ha empujado","empujar_V","empujar","Manner","PUSH","V","V_fin"
 "15","L2","Manner",5,"prm_boudun","a la cumbre","PREP-la-cumbre_PP","PREP-la-cumbre","Path","UP","Adjunct","PP"
@@ -554,7 +557,7 @@
 "15","L2","Manner",8,"pgt_panrue","empuja","empujar_V","empujar","Manner","PUSH","V","V_fin"
 "15","L2","Manner",9,"tre_cadmai","arrastra","arrastrar_V","arrastrar","Manner","DRAG","V","V_fin"
 "15","L2","Manner",9,"tre_cadmai","entra en","entrar_V","entrar","Path","INTO","V","V_fin"
-"15","L2","Manner",9,"tre_cadmai","a través","a-través-de_PP","a-través-de","Path","ACROSS","Adjunct","PP"
+"15","L2","Manner",9,"tre_cadmai","a través","a-través-de_PP",NA,NA,NA,NA,NA
 "15","L2","Manner",10,"tgd_malcol","acaba de arrastrar","arrastrar_V","arrastrar","Manner","DRAG","V","V_fin"
 "15","L2","Manner",11,"pre_pnemai","empuja","empujar_V","empujar","Manner","PUSH","V","V_fin"
 "15","L2","Manner",11,"pre_pnemai","entra en","entrar_V","entrar","Path","INTO","V","V_fin"
@@ -573,7 +576,7 @@
 "15","L2","Manner",20,"tgm_sacdun","arrastra","arrastrar_V","arrastrar","Manner","DRAG","V","V_fin"
 "15","L2","Manner",20,"tgm_sacdun","hacia la cumbre","PREP-la-cumbre_PP","PREP-la-cumbre","Path","UP","Adjunct","PP"
 "15","L2","Manner",21,"trt_pourou","arrastra","arrastrar_V","arrastrar","Manner","DRAG","V","V_fin"
-"15","L2","Manner",21,"trt_pourou","a través","a-través-de_PP","a-través-de","Path","ACROSS","Adjunct","PP"
+"15","L2","Manner",21,"trt_pourou","a través","a-través-de_PP",NA,NA,NA,NA,NA
 "15","L2","Manner",22,"prd_balnei","rueda","rodar_V","rodar","Manner","ROLL","V","V_fin"
 "15","L2","Manner",23,"pge_tabgro","empuja","empujar_V","empujar","Manner","PUSH","V","V_fin"
 "15","L2","Manner",23,"pge_tabgro","pasa","pasar_V","pasar","?Path","?ACROSS","V","V_fin"
@@ -640,11 +643,11 @@
 "16","L2","Manner",32,"pgm_paqdun","está empujando","empujar_V","empujar","Manner","PUSH","V","V_fin"
 "17","L2","Path",1,"pge_tabmai","está empujando","empujar_V","empujar","Manner","PUSH","V","V_fin"
 "17","L2","Path",2,"tgd_malcol","va","ir_V","ir","Other","GO","V","V_fin"
-"17","L2","Path",2,"tgd_malcol","con una caja muy fuerte atrás","detrás/atrás_AdvP","detrás","Manner","BEHIND","Adjunct","AdvP"
+"17","L2","Path",2,"tgd_malcol","con una caja muy fuerte atrás","detrás/atrás_AdvP",NA,NA,NA,NA,NA
 "17","L2","Path",3,"pgt_panrue","está empujando","empujar_V","empujar","Manner","PUSH","V","V_fin"
 "17","L2","Path",4,"trm_voidun","trae","traer_V","traer","Other","BRING","V","V_fin"
 "17","L2","Path",5,"tgd_malnei","trae","traer_V","traer","Other","BRING","V","V_fin"
-"17","L2","Path",5,"tgd_malnei","atrás","detrás/atrás_AdvP","detrás","Manner","BEHIND","Adjunct","AdvP"
+"17","L2","Path",5,"tgd_malnei","atrás","detrás/atrás_AdvP",NA,NA,NA,NA,NA
 "17","L2","Path",6,"trm_voitoi","sube","subir_V","subir","Path","UP","V","V_fin"
 "17","L2","Path",7,"prt_rourou","cruza","cruzar_V","cruzar","Path","ACROSS","V","V_fin"
 "17","L2","Path",8,"tgm_sactoi","va","ir_V","ir","Other","GO","V","V_fin"
@@ -806,7 +809,7 @@
 "21","L2","Path",7,"tgt_cherou","está cruzando","cruzar_V","cruzar","Path","ACROSS","V","V_fin"
 "21","L2","Path",8,"pgm_paqdun","está subiendo","subir_V","subir","Path","UP","V","V_fin"
 "21","L2","Path",9,"tge_chagro","está entrando en","entrar_V","entrar","Path","INTO","V","V_fin"
-"21","L2","Path",9,"tge_chagro","atrás de sí","detrás/atrás_AdvP","detrás","Manner","BEHIND","Adjunct","AdvP"
+"21","L2","Path",9,"tge_chagro","atrás de sí","detrás/atrás_AdvP",NA,NA,NA,NA,NA
 "21","L2","Path",10,"trd_bronei","está bajando","bajar_V","bajar","Path","DOWN","V","V_fin"
 "21","L2","Path",11,"pge_tabgro","está entrando en","entrar_V","entrar","Path","INTO","V","V_fin"
 "21","L2","Path",12,"prm_boudun","está subiendo","subir_V","subir","Path","UP","V","V_fin"
@@ -816,7 +819,7 @@
 "21","L2","Path",16,"prt_rourou","está cruzando","cruzar_V","cruzar","Path","ACROSS","V","V_fin"
 "21","L2","Path",17,"pgd_valnei","está bajando","bajar_V","bajar","Path","DOWN","V","V_fin"
 "21","L2","Path",18,"tge_chamai","está entrando","entrar_V","entrar","Path","INTO","V","V_fin"
-"21","L2","Path",18,"tge_chamai","con una silla verde atrás de sí","detrás/atrás_AdvP","detrás","Manner","BEHIND","Adjunct","AdvP"
+"21","L2","Path",18,"tge_chamai","con una silla verde atrás de sí","detrás/atrás_AdvP",NA,NA,NA,NA,NA
 "21","L2","Path",19,"pgm_paqtoi","está subiendo","subir_V","subir","Path","UP","V","V_fin"
 "21","L2","Path",20,"tgd_malnei","está bajando","bajar_V","bajar","Path","DOWN","V","V_fin"
 "21","L2","Path",21,"trm_voitoi","está subiendo","subir_V","subir","Path","UP","V","V_fin"
@@ -943,7 +946,7 @@
 "25","L2","Control",3,"tre_cadgro","ha entrado en","entrar_V","entrar","Path","INTO","V","V_fin"
 "25","L2","Control",4,"pgt_panrue","ha empujado","empujar_V","empujar","Manner","PUSH","V","V_fin"
 "25","L2","Control",5,"tgd_malcol","ha llevado","llevar_V","llevar","Other","BRING","V","V_fin"
-"25","L2","Control",5,"tgd_malcol","detrás","detrás/atrás_AdvP","detrás","Manner","BEHIND","Adjunct","AdvP"
+"25","L2","Control",5,"tgd_malcol","detrás","detrás/atrás_AdvP",NA,NA,NA,NA,NA
 "25","L2","Control",6,"prm_boudun","ha subido","subir_V","subir","Path","UP","V","V_fin"
 "25","L2","Control",7,"trt_pourou","ha arrastrado","arrastrar_V","arrastrar","Manner","DRAG","V","V_fin"
 "25","L2","Control",7,"trt_pourou","cruzando","cruzando_Ger","cruzar","Path","ACROSS","Adjunct","V_ger"
@@ -966,6 +969,7 @@
 "25","L2","Control",21,"tgm_sacdun","ha subido","subir_V","subir","Path","UP","V","V_fin"
 "25","L2","Control",21,"tgm_sacdun","llevando","llevando_Ger","llevar","Other","BRING","Adjunct","V_ger"
 "25","L2","Control",22,"pgd_valcol","ha empujado","empujar_V","empujar","Manner","PUSH","V","V_fin"
+"25","L2","Control",22,"pgd_valcol","al bajar","bajar_Inf","bajar","Path","DOWN","Adjunct","V_inf"
 "25","L2","Control",23,"trm_voidun","ha subido","subir_V","subir","Path","UP","V","V_fin"
 "25","L2","Control",24,"tgd_malnei","ha bajado","bajar_V","bajar","Path","DOWN","V","V_fin"
 "25","L2","Control",24,"tgd_malnei","llevando","llevando_Ger","llevar","Other","BRING","Adjunct","V_ger"
@@ -973,7 +977,7 @@
 "25","L2","Control",26,"prd_balcol","ha bajado","bajar_V","bajar","Path","DOWN","V","V_fin"
 "25","L2","Control",27,"pgt_panrou","ha empujado","empujar_V","empujar","Manner","PUSH","V","V_fin"
 "25","L2","Control",28,"trd_bronei","ha bajado","bajar_V","bajar","Path","DOWN","V","V_fin"
-"25","L2","Control",28,"trd_bronei","con un carrito detrás","detrás/atrás_AdvP","detrás","Manner","BEHIND","Adjunct","AdvP"
+"25","L2","Control",28,"trd_bronei","con un carrito detrás","detrás/atrás_AdvP",NA,NA,NA,NA,NA
 "25","L2","Control",29,"pre_pnemai","ha entrado en","entrar_V","entrar","Path","INTO","V","V_fin"
 "25","L2","Control",30,"pgm_paqdun","ha subido","subir_V","subir","Path","UP","V","V_fin"
 "25","L2","Control",31,"tge_chagro","ha llevado","llevar_V","llevar","Other","BRING","V","V_fin"
@@ -1410,7 +1414,7 @@
 "36","L2","Control",20,"prd_balnei","ha bajado","bajar_V","bajar","Path","DOWN","V","V_fin"
 "36","L2","Control",21,"tge_chagro","ha dejado","dejar_V","dejar","Other","LEAVE","V","V_fin"
 "36","L2","Control",22,"trt_pourue","ha cruzado","cruzar_V","cruzar","Path","ACROSS","V","V_fin"
-"36","L2","Control",22,"trt_pourue","con un carro de un bebé pero llevando el carro detrás","detrás/atrás_AdvP","detrás","Manner","BEHIND","Adjunct","AdvP"
+"36","L2","Control",22,"trt_pourue","con un carro de un bebé pero llevando el carro detrás","detrás/atrás_AdvP",NA,NA,NA,NA,NA
 "36","L2","Control",22,"trt_pourue","llevando","llevando_Ger","llevar","Other","BRING","Adjunct","V_ger"
 "36","L2","Control",23,"pge_tabmai","ha dejado","dejar_V","dejar","Other","LEAVE","V","V_fin"
 "36","L2","Control",23,"pge_tabmai","entra en","entrar_V","entrar","Path","INTO","V","V_fin"
@@ -1474,7 +1478,7 @@
 "37","L2","Control",32,"pgm_paqdun","empuja","empujar_V","empujar","Manner","PUSH","V","V_fin"
 "38","L2","Path",1,"tgt_cherue","cruza","cruzar_V","cruzar","Path","ACROSS","V","V_fin"
 "38","L2","Path",2,"pre_pnemai","está empujando","empujar_V","empujar","Manner","PUSH","V","V_fin"
-"38","L2","Path",2,"pre_pnemai","a través","a-través-de_PP","a-través-de","Path","ACROSS","Adjunct","PP"
+"38","L2","Path",2,"pre_pnemai","a través","a-través-de_PP",NA,NA,NA,NA,NA
 "38","L2","Path",3,"tgt_cherou","está cruzando","cruzar_V","cruzar","Path","ACROSS","V","V_fin"
 "38","L2","Path",4,"trm_voitoi","está subiendo","subir_V","subir","Path","UP","V","V_fin"
 "38","L2","Path",5,"tge_chamai","entra en","entrar_V","entrar","Path","INTO","V","V_fin"
@@ -1898,13 +1902,13 @@
 "48","L2","Control",15,"pgm_paqtoi","arriba","arriba_AdvP","arriba","Path","UP","Adjunct","AdvP"
 "48","L2","Control",16,"tgd_malcol","baja","bajar_V","bajar","Path","DOWN","V","V_fin"
 "48","L2","Control",17,"prt_rourue","lleva","llevar_V","llevar","Other","BRING","V","V_fin"
-"48","L2","Control",17,"prt_rourue","a través","a-través-de_PP","a-través-de","Path","ACROSS","Adjunct","PP"
+"48","L2","Control",17,"prt_rourue","a través","a-través-de_PP",NA,NA,NA,NA,NA
 "48","L2","Control",18,"tge_chagro","entra","entrar_V","entrar","Path","INTO","V","V_fin"
 "48","L2","Control",19,"trd_bronei","baja","bajar_V","bajar","Path","DOWN","V","V_fin"
 "48","L2","Control",20,"pgm_paqdun","sube","subir_V","subir","Path","UP","V","V_fin"
 "48","L2","Control",21,"trd_brocol","baja","bajar_V","bajar","Path","DOWN","V","V_fin"
 "48","L2","Control",22,"pgt_panrou","empuja","empujar_V","empujar","Manner","PUSH","V","V_fin"
-"48","L2","Control",22,"pgt_panrou","a través","a-través-de_PP","a-través-de","Path","ACROSS","Adjunct","PP"
+"48","L2","Control",22,"pgt_panrou","a través","a-través-de_PP",NA,NA,NA,NA,NA
 "48","L2","Control",23,"prm_boutoi","sube","subir_V","subir","Path","UP","V","V_fin"
 "48","L2","Control",24,"tge_chamai","entra","entrar_V","entrar","Path","INTO","V","V_fin"
 "48","L2","Control",25,"trm_voitoi","sube","subir_V","subir","Path","UP","V","V_fin"
@@ -1966,7 +1970,7 @@
 "50","L2","Control",6,"pre_pnegro","ha entrado en","entrar_V","entrar","Path","INTO","V","V_fin"
 "50","L2","Control",6,"pre_pnegro","empujando","empujando_Ger","empujar","Manner","PUSH","Adjunct","V_ger"
 "50","L2","Control",7,"pgt_panrou","ha empujado","empujar_V","empujar","Manner","PUSH","V","V_fin"
-"50","L2","Control",7,"pgt_panrou","a través","a-través-de_PP","a-través-de","Path","ACROSS","Adjunct","PP"
+"50","L2","Control",7,"pgt_panrou","a través","a-través-de_PP",NA,NA,NA,NA,NA
 "50","L2","Control",8,"tgm_sactoi","ha subido","subir_V","subir","Path","UP","V","V_fin"
 "50","L2","Control",8,"tgm_sactoi","estirando","estirando_Ger","estirar","Manner","PULL","Adjunct","V_ger"
 "50","L2","Control",8,"tgm_sactoi","tirando","tirando-de_Ger","tirar-de","Manner","PULL","Adjunct","V_ger"
@@ -1978,13 +1982,13 @@
 "50","L2","Control",12,"pge_tabgro","ha entrado en","entrar_V","entrar","Path","INTO","V","V_fin"
 "50","L2","Control",12,"pge_tabgro","empujando","empujando_Ger","empujar","Manner","PUSH","Adjunct","V_ger"
 "50","L2","Control",13,"tgt_cherue","ha estirado","estirar_V","estirar","Manner","PULL","V","V_fin"
-"50","L2","Control",13,"tgt_cherue","a través","a-través-de_PP","a-través-de","Path","ACROSS","Adjunct","PP"
+"50","L2","Control",13,"tgt_cherue","a través","a-través-de_PP",NA,NA,NA,NA,NA
 "50","L2","Control",14,"tre_cadmai","ha entrado","entrar_V","entrar","Path","INTO","V","V_fin"
 "50","L2","Control",14,"tre_cadmai","llevando","llevando_Ger","llevar","Other","BRING","Adjunct","V_ger"
 "50","L2","Control",15,"prd_balcol","ha bajado","bajar_V","bajar","Path","DOWN","V","V_fin"
 "50","L2","Control",15,"prd_balcol","empujando","empujando_Ger","empujar","Manner","PUSH","Adjunct","V_ger"
 "50","L2","Control",16,"pgt_panrue","ha empujado","empujar_V","empujar","Manner","PUSH","V","V_fin"
-"50","L2","Control",16,"pgt_panrue","a través","a-través-de_PP","a-través-de","Path","ACROSS","Adjunct","PP"
+"50","L2","Control",16,"pgt_panrue","a través","a-través-de_PP",NA,NA,NA,NA,NA
 "50","L2","Control",17,"tre_cadgro","ha entrado en","entrar_V","entrar","Path","INTO","V","V_fin"
 "50","L2","Control",17,"tre_cadgro","llevando","llevando_Ger","llevar","Other","BRING","Adjunct","V_ger"
 "50","L2","Control",18,"pgm_paqdun","ha subido","subir_V","subir","Path","UP","V","V_fin"
@@ -2136,6 +2140,7 @@
 "54","L2","Control",7,"prt_rourue","pasando","pasando_Ger","pasar","?Path","?ACROSS","Adjunct","V_ger"
 "54","L2","Control",8,"tge_chamai","cog","coger_V","coger","Other","TAKE","V","V_fin"
 "54","L2","Control",9,"trm_voitoi","sube","subir_V","subir","Path","UP","V","V_fin"
+"54","L2","Control",10,"pre_pnegro","bajar","bajar_Inf","bajar","Path","DOWN","Adjunct","V_inf"
 "54","L2","Control",11,"trt_pourou","está pasando","pasar_V","pasar","?Path","?ACROSS","V","V_fin"
 "54","L2","Control",12,"tgm_sacdun","está subiendo","subir_V","subir","Path","UP","V","V_fin"
 "54","L2","Control",13,"trd_bronei","bajando","bajando_Ger","bajar","Path","DOWN","Adjunct","V_ger"
@@ -2548,7 +2553,7 @@
 "NS_152","NS","Control",2,"tge_chagro","está arrastrando","arrastrar_V","arrastrar","Manner","DRAG","V","V_fin"
 "NS_152","NS","Control",3,"prd_balnei","está arrastrando","arrastrar_V","arrastrar","Manner","DRAG","V","V_fin"
 "NS_152","NS","Control",4,"tgt_cherou","está arrastrando","arrastrar_V","arrastrar","Manner","DRAG","V","V_fin"
-"NS_152","NS","Control",4,"tgt_cherou","a través","a-través-de_PP","a-través-de","Path","ACROSS","Adjunct","PP"
+"NS_152","NS","Control",4,"tgt_cherou","a través","a-través-de_PP",NA,NA,NA,NA,NA
 "NS_152","NS","Control",5,"tre_cadmai","está arrastrando","arrastrar_V","arrastrar","Manner","DRAG","V","V_fin"
 "NS_152","NS","Control",5,"tre_cadmai","mete","meter_V","meter","Path","INTO","V","V_fin"
 "NS_152","NS","Control",6,"tgd_malnei","arrastra","arrastrar_V","arrastrar","Manner","DRAG","V","V_fin"
@@ -3542,9 +3547,11 @@
 "NS_175","NS","Control",8,"tgm_sacdun","arrastraba","arrastrar_V","arrastrar","Manner","DRAG","V","V_fin"
 "NS_175","NS","Control",8,"tgm_sacdun","a lo alto","a-lo-alto_PP","a-lo-alto","Path","UP","Adjunct","PP"
 "NS_175","NS","Control",9,"pgd_valnei","empujaba","empujar_V","empujar","Manner","PUSH","V","V_fin"
+"NS_175","NS","Control",9,"pgd_valnei","para bajar","bajar_Inf","bajar","Path","DOWN","Adjunct","V_inf"
 "NS_175","NS","Control",10,"tge_chagro","llevaba","llevar_V","llevar","Other","BRING","V","V_fin"
 "NS_175","NS","Control",10,"tge_chagro","al interior de una cueva","PREP-el-interior_PP","PREP-el-interior","Path","INTO","Adjunct","PP"
 "NS_175","NS","Control",11,"trd_brocol","arrastraba","arrastrar_V","arrastrar","Manner","DRAG","V","V_fin"
+"NS_175","NS","Control",11,"trd_brocol","para bajar","bajar_Inf","bajar","Path","DOWN","Adjunct","V_inf"
 "NS_175","NS","Control",12,"pre_pnegro","arrastraba","arrastrar_V","arrastrar","Manner","DRAG","V","V_fin"
 "NS_175","NS","Control",12,"pre_pnegro","al interior de una cueva","PREP-el-interior_PP","PREP-el-interior","Path","INTO","Adjunct","PP"
 "NS_175","NS","Control",13,"tgt_cherue","arrastraba","arrastrar_V","arrastrar","Manner","DRAG","V","V_fin"
@@ -3638,19 +3645,19 @@
 "NS_177","NS","Control",5,"pge_tabmai","arrastra","arrastrar_V","arrastrar","Manner","DRAG","V","V_fin"
 "NS_177","NS","Control",6,"tgm_sacdun","sube","subir_V","subir","Path","UP","V","V_fin"
 "NS_177","NS","Control",7,"prt_rourue","hace girar","hacer-girar_Vphrase","hacer-girar","Manner","MAKE-TURN","V","V_vphrase"
-"NS_177","NS","Control",7,"prt_rourue","a través","a-través-de_PP","a-través-de","Path","ACROSS","Adjunct","PP"
+"NS_177","NS","Control",7,"prt_rourue","a través","a-través-de_PP",NA,NA,NA,NA,NA
 "NS_177","NS","Control",8,"tgd_malnei","arrastra","arrastrar_V","arrastrar","Manner","DRAG","V","V_fin"
 "NS_177","NS","Control",9,"trm_voidun","hace subir","hacer-subir_Vphrase","hace-subir","Path","MAKE-MOVE-UP","V","V_vphrase"
 "NS_177","NS","Control",10,"pgt_panrue","empuja","empujar_V","empujar","Manner","PUSH","V","V_fin"
 "NS_177","NS","Control",11,"prm_boutoi","hace girar","hacer-girar_Vphrase","hacer-girar","Manner","MAKE-TURN","V","V_vphrase"
 "NS_177","NS","Control",12,"pgt_panrou","arrastra","arrastrar_V","arrastrar","Manner","DRAG","V","V_fin"
-"NS_177","NS","Control",12,"pgt_panrou","a través","a-través-de_PP","a-través-de","Path","ACROSS","Adjunct","PP"
+"NS_177","NS","Control",12,"pgt_panrou","a través","a-través-de_PP",NA,NA,NA,NA,NA
 "NS_177","NS","Control",13,"prd_balnei","baja","bajar_V","bajar","Path","DOWN","V","V_fin"
 "NS_177","NS","Control",14,"trm_voitoi","sube","subir_V","subir","Path","UP","V","V_fin"
 "NS_177","NS","Control",15,"tge_chagro","lleva","llevar_V","llevar","Other","BRING","V","V_fin"
 "NS_177","NS","Control",15,"tge_chagro","mete","meter_V","meter","Path","INTO","V","V_fin"
 "NS_177","NS","Control",16,"trt_pourou","arrastra","arrastrar_V","arrastrar","Manner","DRAG","V","V_fin"
-"NS_177","NS","Control",16,"trt_pourou","a través","a-través-de_PP","a-través-de","Path","ACROSS","Adjunct","PP"
+"NS_177","NS","Control",16,"trt_pourou","a través","a-través-de_PP",NA,NA,NA,NA,NA
 "NS_177","NS","Control",17,"prm_boudun","arrastra","arrastrar_V","arrastrar","Manner","DRAG","V","V_fin"
 "NS_177","NS","Control",18,"tge_chamai","arrastra","arrastrar_V","arrastrar","Manner","DRAG","V","V_fin"
 "NS_177","NS","Control",18,"tge_chamai","mete","meter_V","meter","Path","INTO","V","V_fin"
@@ -3659,16 +3666,16 @@
 "NS_177","NS","Control",20,"tgm_sactoi","hasta la cima","PREP-la-cima_PP","PREP-la-cima_PP","Path","UP","Adjunct","PP"
 "NS_177","NS","Control",21,"trd_brocol","baja","bajar_V","bajar","Path","DOWN","V","V_fin"
 "NS_177","NS","Control",22,"tgt_cherue","arrastra","arrastrar_V","arrastrar","Manner","DRAG","V","V_fin"
-"NS_177","NS","Control",22,"tgt_cherue","a través","a-través-de_PP","a-través-de","Path","ACROSS","Adjunct","PP"
+"NS_177","NS","Control",22,"tgt_cherue","a través","a-través-de_PP",NA,NA,NA,NA,NA
 "NS_177","NS","Control",23,"pgm_paqdun","sube","subir_V","subir","Path","UP","V","V_fin"
 "NS_177","NS","Control",24,"trd_bronei","baja","bajar_V","bajar","Path","DOWN","V","V_fin"
 "NS_177","NS","Control",25,"pre_pnegro","arrastra","arrastrar_V","arrastrar","Manner","DRAG","V","V_fin"
 "NS_177","NS","Control",25,"pre_pnegro","mete","meter_V","meter","Path","INTO","V","V_fin"
 "NS_177","NS","Control",26,"trt_pourue","arrastra","arrastrar_V","arrastrar","Manner","DRAG","V","V_fin"
-"NS_177","NS","Control",26,"trt_pourue","a través","a-través-de_PP","a-través-de","Path","ACROSS","Adjunct","PP"
+"NS_177","NS","Control",26,"trt_pourue","a través","a-través-de_PP",NA,NA,NA,NA,NA
 "NS_177","NS","Control",27,"prd_balcol","baja","bajar_V","bajar","Path","DOWN","V","V_fin"
 "NS_177","NS","Control",28,"tgt_cherou","arrastra","arrastrar_V","arrastrar","Manner","DRAG","V","V_fin"
-"NS_177","NS","Control",28,"tgt_cherou","a través","a-través-de_PP","a-través-de","Path","ACROSS","Adjunct","PP"
+"NS_177","NS","Control",28,"tgt_cherou","a través","a-través-de_PP",NA,NA,NA,NA,NA
 "NS_177","NS","Control",29,"pre_pnemai","arrastra","arrastrar_V","arrastrar","Manner","DRAG","V","V_fin"
 "NS_177","NS","Control",29,"pre_pnemai","mete","meter_V","meter","Path","INTO","V","V_fin"
 "NS_177","NS","Control",30,"tgd_malcol","baja","bajar_V","bajar","Path","DOWN","V","V_fin"
@@ -3686,7 +3693,7 @@
 "NS_178","NS","Manner",8,"prt_rourou","rueda","rodar_V","rodar","Manner","ROLL","V","V_fin"
 "NS_178","NS","Manner",9,"trm_voidun","sube","subir_V","subir","Path","UP","V","V_fin"
 "NS_178","NS","Manner",10,"pgt_panrou","transporta","transportar_V","transportar","Other","CARRY","V","V_fin"
-"NS_178","NS","Manner",10,"pgt_panrou","a través","a-través-de_PP","a-través-de","Path","ACROSS","Adjunct","PP"
+"NS_178","NS","Manner",10,"pgt_panrou","a través","a-través-de_PP",NA,NA,NA,NA,NA
 "NS_178","NS","Manner",11,"trm_voitoi","sube","subir_V","subir","Path","UP","V","V_fin"
 "NS_178","NS","Manner",12,"tgd_malcol","baja","bajar_V","bajar","Path","DOWN","V","V_fin"
 "NS_178","NS","Manner",13,"prt_rourue","pasa","pasar_V","pasar","?Path","?ACROSS","V","V_fin"
@@ -4006,7 +4013,7 @@
 "NS_186","NS","Control",8,"pre_pnemai","mete","meter_V","meter","Path","INTO","V","V_fin"
 "NS_186","NS","Control",9,"trd_bronei","baja","bajar_V","bajar","Path","DOWN","V","V_fin"
 "NS_186","NS","Control",10,"pgt_panrou","arrastra","arrastrar_V","arrastrar","Manner","DRAG","V","V_fin"
-"NS_186","NS","Control",10,"pgt_panrou","a través","a-través-de_PP","a-través-de","Path","ACROSS","Adjunct","PP"
+"NS_186","NS","Control",10,"pgt_panrou","a través","a-través-de_PP",NA,NA,NA,NA,NA
 "NS_186","NS","Control",11,"tgd_malcol","baja","bajar_V","bajar","Path","DOWN","V","V_fin"
 "NS_186","NS","Control",12,"pgm_paqdun","sube","subir_V","subir","Path","UP","V","V_fin"
 "NS_186","NS","Control",13,"tge_chagro","mete","meter_V","meter","Path","INTO","V","V_fin"
@@ -4098,7 +4105,7 @@
 "NS_188","NS","Control",11,"pgt_panrou","ha cruzado","cruzar_V","cruzar","Path","ACROSS","V","V_fin"
 "NS_188","NS","Control",11,"pgt_panrou","arrastrando","arrastrando_Ger","arrastrar","Manner","DRAG","Adjunct","V_ger"
 "NS_188","NS","Control",12,"trm_voitoi","ha tirado","tirar-de_V","tirar-de","Manner","PULL","V","V_fin"
-"NS_188","NS","Control",12,"trm_voitoi","a través","a-través-de_PP","a-través-de","Path","ACROSS","Adjunct","PP"
+"NS_188","NS","Control",12,"trm_voitoi","a través","a-través-de_PP",NA,NA,NA,NA,NA
 "NS_188","NS","Control",13,"pre_pnemai","ha metido","meter_V","meter","Path","INTO","V","V_fin"
 "NS_188","NS","Control",13,"pre_pnemai","ha rodado","rodar_V","rodar","Manner","ROLL","V","V_fin"
 "NS_188","NS","Control",14,"tgt_cherou","ha atravesado","atravesar_V","atravesar","Path","ACROSS","V","V_fin"
@@ -4166,7 +4173,7 @@
 "NS_189","NS","Manner",12,"tgm_sactoi","arrastrando","arrastrando_Ger","arrastrar","Manner","DRAG","Adjunct","V_ger"
 "NS_189","NS","Manner",12,"tgm_sactoi","cargando","cargando_Ger","cargar","Other","CARRY","Adjunct","V_ger"
 "NS_189","NS","Manner",13,"trt_pourou","cruza","cruzar_V","cruzar","Path","ACROSS","V","V_fin"
-"NS_189","NS","Manner",13,"trt_pourou","detrás","detrás/atrás_AdvP","detrás","Manner","BEHIND","Adjunct","AdvP"
+"NS_189","NS","Manner",13,"trt_pourou","detrás","detrás/atrás_AdvP",NA,NA,NA,NA,NA
 "NS_189","NS","Manner",13,"trt_pourou","andando","andando_Ger","andar","Manner","WALK","Adjunct","V_ger"
 "NS_189","NS","Manner",13,"trt_pourou","arrastrando","arrastrando_Ger","arrastrar","Manner","DRAG","Adjunct","V_ger"
 "NS_189","NS","Manner",13,"trt_pourou","mientras lleva","llevar_SubordV","llevar","Other","BRING","Adjunct","V_sub_fin"
@@ -4178,7 +4185,7 @@
 "NS_189","NS","Manner",16,"pgd_valcol","empuja","empujar_V","empujar","Manner","PUSH","V","V_fin"
 "NS_189","NS","Manner",16,"pgd_valcol","abajo","abajo_AdvP","abajo","Path","DOWN","Adjunct","AdvP"
 "NS_189","NS","Manner",17,"tgt_cherue","cruza","cruzar_V","cruzar","Path","ACROSS","V","V_fin"
-"NS_189","NS","Manner",17,"tgt_cherue","detrás","detrás/atrás_AdvP","detrás","Manner","BEHIND","Adjunct","AdvP"
+"NS_189","NS","Manner",17,"tgt_cherue","detrás","detrás/atrás_AdvP",NA,NA,NA,NA,NA
 "NS_189","NS","Manner",17,"tgt_cherue","arrastrando","arrastrando_Ger","arrastrar","Manner","DRAG","Adjunct","V_ger"
 "NS_189","NS","Manner",17,"tgt_cherue","mientras lleva","llevar_SubordV","llevar","Other","BRING","Adjunct","V_sub_fin"
 "NS_189","NS","Manner",18,"pgm_paqdun","sube","subir_V","subir","Path","UP","V","V_fin"
@@ -4193,11 +4200,11 @@
 "NS_189","NS","Manner",22,"tgm_sacdun","con una cuerda","con-una-cuerda_PP","con-una-cuerda","Manner","WITH-ROPE","Adjunct","PP"
 "NS_189","NS","Manner",22,"tgm_sacdun","arrastrando","arrastrando_Ger","arrastrar","Manner","DRAG","Adjunct","V_ger"
 "NS_189","NS","Manner",23,"trd_brocol","baja","bajar_V","bajar","Path","DOWN","V","V_fin"
-"NS_189","NS","Manner",23,"trd_brocol","con una carretilla detrás","detrás/atrás_AdvP","detrás","Manner","BEHIND","Adjunct","AdvP"
+"NS_189","NS","Manner",23,"trd_brocol","con una carretilla detrás","detrás/atrás_AdvP",NA,NA,NA,NA,NA
 "NS_189","NS","Manner",24,"prm_boutoi","rueda","rodar_V","rodar","Manner","ROLL","V","V_fin"
 "NS_189","NS","Manner",24,"prm_boutoi","hasta arriba","PREP-arriba_PP","PREP-arriba","Path","UP","Adjunct","PP"
 "NS_189","NS","Manner",25,"tgd_malcol","baja","bajar_V","bajar","Path","DOWN","V","V_fin"
-"NS_189","NS","Manner",25,"tgd_malcol","con una cuerda un baúl que tiene detrás","detrás/atrás_AdvP","detrás","Manner","BEHIND","Adjunct","AdvP"
+"NS_189","NS","Manner",25,"tgd_malcol","con una cuerda un baúl que tiene detrás","detrás/atrás_AdvP",NA,NA,NA,NA,NA
 "NS_189","NS","Manner",25,"tgd_malcol","con una cuerda","con-una-cuerda_PP","con-una-cuerda","Manner","WITH-ROPE","Adjunct","PP"
 "NS_189","NS","Manner",26,"pge_tabgro","empuja","empujar_V","empujar","Manner","PUSH","V","V_fin"
 "NS_189","NS","Manner",26,"pge_tabgro","mete","meter_V","meter","Path","INTO","V","V_fin"
@@ -4210,7 +4217,7 @@
 "NS_189","NS","Manner",29,"prt_rourue","cruza","cruzar_V","cruzar","Path","ACROSS","V","V_fin"
 "NS_189","NS","Manner",29,"prt_rourue","mientras rueda","rodar_SubordV","rodar","Manner","ROLL","Adjunct","V_sub_fin"
 "NS_189","NS","Manner",30,"trd_bronei","baja","bajar_V","bajar","Path","DOWN","V","V_fin"
-"NS_189","NS","Manner",30,"trd_bronei","detrás","detrás/atrás_AdvP","detrás","Manner","BEHIND","Adjunct","AdvP"
+"NS_189","NS","Manner",30,"trd_bronei","detrás","detrás/atrás_AdvP",NA,NA,NA,NA,NA
 "NS_189","NS","Manner",30,"trd_bronei","llevando","llevando_Ger","llevar","Other","BRING","Adjunct","V_ger"
 "NS_189","NS","Manner",31,"pgm_paqtoi","lleva","llevar_V","llevar","Other","BRING","V","V_fin"
 "NS_189","NS","Manner",31,"pgm_paqtoi","sube","subir_V","subir","Path","UP","V","V_fin"
@@ -4419,11 +4426,11 @@
 "NS_194","NS","Manner",17,"tre_cadgro","tira de","tirar-de_V","tirar-de","Manner","PULL","V","V_fin"
 "NS_194","NS","Manner",17,"tre_cadgro","al interior de una cueva","PREP-el-interior_PP","PREP-el-interior","Path","INTO","Adjunct","PP"
 "NS_194","NS","Manner",18,"prt_rourue","rueda","rodar_V","rodar","Manner","ROLL","V","V_fin"
-"NS_194","NS","Manner",18,"prt_rourue","a través","a-través-de_PP","a-través-de","Path","ACROSS","Adjunct","PP"
+"NS_194","NS","Manner",18,"prt_rourue","a través","a-través-de_PP",NA,NA,NA,NA,NA
 "NS_194","NS","Manner",19,"pge_tabgro","empuja","empujar_V","empujar","Manner","PUSH","V","V_fin"
 "NS_194","NS","Manner",19,"pge_tabgro","al interior de la cueva","PREP-el-interior_PP","PREP-el-interior","Path","INTO","Adjunct","PP"
 "NS_194","NS","Manner",20,"prt_rourou","rueda","rodar_V","rodar","Manner","ROLL","V","V_fin"
-"NS_194","NS","Manner",20,"prt_rourou","a través","a-través-de_PP","a-través-de","Path","ACROSS","Adjunct","PP"
+"NS_194","NS","Manner",20,"prt_rourou","a través","a-través-de_PP",NA,NA,NA,NA,NA
 "NS_194","NS","Manner",21,"tge_chamai","arrastra","arrastrar_V","arrastrar","Manner","DRAG","V","V_fin"
 "NS_194","NS","Manner",21,"tge_chamai","al interior de un edificio","PREP-el-interior_PP","PREP-el-interior","Path","INTO","Adjunct","PP"
 "NS_194","NS","Manner",22,"prd_balnei","rueda","rodar_V","rodar","Manner","ROLL","V","V_fin"
@@ -4807,10 +4814,10 @@
 "NS_203","NS","Control",8,"trm_voitoi","sube","subir_V","subir","Path","UP","V","V_fin"
 "NS_203","NS","Control",9,"pge_tabmai","arrastra","arrastrar_V","arrastrar","Manner","DRAG","V","V_fin"
 "NS_203","NS","Control",10,"prt_rourou","mueve","mover_V","mover","Other","MOVE","V","V_fin"
-"NS_203","NS","Control",10,"prt_rourou","a través","a-través-de_PP","a-través-de","Path","ACROSS","Adjunct","PP"
+"NS_203","NS","Control",10,"prt_rourou","a través","a-través-de_PP",NA,NA,NA,NA,NA
 "NS_203","NS","Control",11,"pgm_paqdun","empuja","empujar_V","empujar","Manner","PUSH","V","V_fin"
 "NS_203","NS","Control",12,"tgt_cherou","arrastra","arrastrar_V","arrastrar","Manner","DRAG","V","V_fin"
-"NS_203","NS","Control",12,"tgt_cherou","a través","a-través-de_PP","a-través-de","Path","ACROSS","Adjunct","PP"
+"NS_203","NS","Control",12,"tgt_cherou","a través","a-través-de_PP",NA,NA,NA,NA,NA
 "NS_203","NS","Control",13,"pgd_valnei","empuja","empujar_V","empujar","Manner","PUSH","V","V_fin"
 "NS_203","NS","Control",14,"pre_pnemai","guarda","guardar_V","guardar","Other","PUT-AWAY","V","V_fin"
 "NS_203","NS","Control",15,"trm_voidun","arrastra","arrastrar_V","arrastrar","Manner","DRAG","V","V_fin"
@@ -4819,7 +4826,7 @@
 "NS_203","NS","Control",18,"pgt_panrue","empuja","empujar_V","empujar","Manner","PUSH","V","V_fin"
 "NS_203","NS","Control",19,"tgd_malnei","arrastra","arrastrar_V","arrastrar","Manner","DRAG","V","V_fin"
 "NS_203","NS","Control",20,"pgt_panrou","empuja","empujar_V","empujar","Manner","PUSH","V","V_fin"
-"NS_203","NS","Control",20,"pgt_panrou","a través","a-través-de_PP","a-través-de","Path","ACROSS","Adjunct","PP"
+"NS_203","NS","Control",20,"pgt_panrou","a través","a-través-de_PP",NA,NA,NA,NA,NA
 "NS_203","NS","Control",21,"tge_chagro","lleva","llevar_V","llevar","Other","BRING","V","V_fin"
 "NS_203","NS","Control",22,"prm_boudun","empuja","empujar_V","empujar","Manner","PUSH","V","V_fin"
 "NS_203","NS","Control",23,"tgt_cherue","arrastra","arrastrar_V","arrastrar","Manner","DRAG","V","V_fin"
@@ -4831,7 +4838,7 @@
 "NS_203","NS","Control",29,"trt_pourue","arrastra","arrastrar_V","arrastrar","Manner","DRAG","V","V_fin"
 "NS_203","NS","Control",30,"prd_balnei","empuja","empujar_V","empujar","Manner","PUSH","V","V_fin"
 "NS_203","NS","Control",31,"trt_pourou","arrastra","arrastrar_V","arrastrar","Manner","DRAG","V","V_fin"
-"NS_203","NS","Control",31,"trt_pourou","a través","a-través-de_PP","a-través-de","Path","ACROSS","Adjunct","PP"
+"NS_203","NS","Control",31,"trt_pourou","a través","a-través-de_PP",NA,NA,NA,NA,NA
 "NS_203","NS","Control",32,"pge_tabmai","lleva","llevar_V","llevar","Other","BRING","V","V_fin"
 "NS_204","NS","Manner",1,"prt_rourou","mueve","mover_V","mover","Other","MOVE","V","V_fin"
 "NS_204","NS","Manner",2,"pge_tabgro","empuja","empujar_V","empujar","Manner","PUSH","V","V_fin"

@@ -21,8 +21,12 @@ tr_compl <- tr_compl[tr_compl$VideoTrial != 0, ]
 tr_compl[tr_compl$Subject == "14", ]
 # remove that participant
 tr_compl <- tr_compl[tr_compl$Subject != "14", ]
-# NA for all observations where there is no data b/c of experimental error
-tr_compl[tr_compl$Target == "", "Target"] <- NA
+
+# Remove observations where there is no data b/c of experimental error.
+# First check that empty Target really corresponds to lack of recording:
+tr_compl[tr_compl$Target == "", ]  # it does, see Comments
+# So remove these
+tr_compl <- tr_compl[tr_compl$Target != "", ]
 
 # save simplified version to file
 tr_compl %>% 
@@ -30,12 +34,11 @@ tr_compl %>%
   write.csv("data/data_verbal_transcribed.csv", row.names = FALSE,
             fileEncoding = "UTF-8")
 
-
 # because later I will be randomizing rows, create a column to keep track of
 # original row number in the transcribed data file (+1 to match)
 tr_compl$rownb <- as.numeric(row.names(tr_compl)) + 1
 
-# drop some columns to have a df that's easier to work with
+# drop unnecessary columns to have a df that's easier to work with
 tr <- tr_compl %>% select(rownb, Subject:VideoName, Target)
 
 head(tr)
@@ -168,7 +171,7 @@ tr_long <- left_join(tr_long, vocab)
 head(tr_long)
 
 # tr_long now contains the annotated data, which can be saved to file
-# Note, however, that it is not really useful in the current format,
+# Note, however, that it is not ready to use in the current format,
 # because target descriptions which do not contain any annotated information
 # do not appear in this data frame (each row represents one annotation).
 # So to actually use it, it has to be merged back with the original list of
@@ -177,7 +180,6 @@ head(tr_long)
 # participant pushed the space bar).
 write.csv(tr_long, "data/data_annotated_long.csv", fileEncoding = "UTF-8",
           row.names = FALSE)
-
 
 
 #  ------------------------------------------------------------------------

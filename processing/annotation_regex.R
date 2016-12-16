@@ -325,6 +325,9 @@ annotate("yendo_Ger", "\\byendo")
 
 # Verbs in infinitive (part of adjuncts) ----------------------------------
 
+seematch("bajar_Inf", "(?<!acaba de )(al |para )?bajar")
+annotate("bajar_Inf", "(?<!acaba de )(al |para )?bajar")
+
 seematch("guardar_Inf", "para guardar(lo|la)?")
 annotate("guardar_Inf", "para guardar(lo|la)?")
 

@@ -40,6 +40,7 @@ subiendo_Ger,subir,Path,UP,Adjunct,V_ger
 tirando-de_Ger,tirar-de,Manner,PULL,Adjunct,V_ger
 trayendo_Ger,traer,Other,BRING,Adjunct,V_ger
 yendo_Ger,ir,Other,GO,Adjunct,V_ger
+bajar_Inf,bajar,Path,DOWN,Adjunct,V_inf
 guardar_Inf,guardar,Other,PUT-AWAY,Adjunct,V_inf
 introducir_Inf,introducir,Path,INTO,Adjunct,V_inf
 arrastrar_SubordV,arrastrar,Manner,DRAG,Adjunct,V_sub_fin

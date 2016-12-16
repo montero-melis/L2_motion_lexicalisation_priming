@@ -45,7 +45,6 @@
 "2","L2","Control",12,"prt_rourou","El mozo cruza una plaza con una esfera.","El mozo rueda una esfera por una plaza.","cruza","rueda","road","cartwheel","Popi cruzó la calle desde la izquierda hasta la derecha con un rueda azul"
 "2","L2","Control",13,"pgm_paqtoi","La moza sube un repecho con un sillón.","La moza empuja un sillón por un repecho.","sube","empuja","roof","package","Popi subó [=subió] el tejado con un paquete lila y amarillo"
 "2","L2","Control",14,"tgt_cherou","La anciana cruza una sala con una alfombra.","La anciana arrastra una alfombra por una sala.","cruza","arrastra","road","rocking_horse","Popi cruzó la calle desde derecha a la izquierda con un caballo de juguete"
-"2","L2","Control",15,"pgd_valnei","El chico baja una pendiente con una piedra.","El chico empuja una piedra por una pendiente.","baja","empuja","snowyhill","suitcase",NA
 "2","L2","Control",16,"tgm_sactoi","El explorador sube un desnivel con un trineo.","El explorador arrastra un trineo por un desnivel.","sube","arrastra","roof","sack","Popi subó [=subió] el tejado con un saco blanco y grande"
 "2","L2","Control",17,"pge_tabgro","El empleado entra en un almacén con un armario.","El empleado empuja un armario por un almacén.","entra en","empuja","cave","table","Popi caminó con una mesa y entró una cueva"
 "2","L2","Control",18,"tgm_sacdun","La hormiga sube una roca con una hoja.","La hormiga arrastra una hoja por una roca.","sube","arrastra","dune","sack","Popi cruzó la playa con este saco"
@@ -636,9 +635,7 @@
 "21","L2","Path",27,"pgd_valcol","El hombre baja una rampa con un sofá.","El hombre empuja un sofá por una rampa.","baja","empuja","hill","suitcase","Popi va bajando con una maleta"
 "21","L2","Path",28,"trt_pourou","El labrador cruza un puente con una carreta.","El labrador tira de una carreta por un puente.","cruza","tira de","road","stroller","Popi está cruzando la calle con una carretera [=un carrito]"
 "21","L2","Path",29,"prd_balcol","La niña baja una cuesta con un plato.","La niña rueda un plato por una cuesta.","baja","rueda","hill","balloon","Popi va bajando con una pelota con diferentes colores"
-"21","L2","Path",30,"tgt_cherue","El campesino cruza una parcela con un palo.","El campesino arrastra un palo por una parcela.","cruza","arrastra","street","rocking_horse",NA
 "21","L2","Path",31,"tre_cadmai","El nene entra en una escuela con un triciclo.","El nene tira de un triciclo por una escuela.","entra en","tira de","house","shopping_trolley","Popi va entrando la casa con una carrera [=un carrito] verde"
-"21","L2","Path",32,"prt_rourou","El mozo cruza una plaza con una esfera.","El mozo rueda una esfera por una plaza.","cruza","rueda","road","cartwheel",NA
 "22","L2","Path",1,"prd_balnei","El camarero baja unos peldaños con un barril.","El camarero rueda un barril por unos peldaños.","baja","rueda","snowyhill","balloon","Popi ha bajado la pelota inflable "
 "22","L2","Path",2,"tgt_cherou","La anciana cruza una sala con una alfombra.","La anciana arrastra una alfombra por una sala.","cruza","arrastra","road","rocking_horse","Popi lleva un caballo de juguete y otra vez ha cruzado un camino "
 "22","L2","Path",3,"tre_cadgro","El chiquillo entra en un jardín con un patinete.","El chiquillo tira de un patinete por un jardín.","entra en","tira de","cave","shopping_trolley","lleva un carrito de compra ha entrado en la cueva"
@@ -930,7 +927,6 @@
 "31","L2","Control",1,"pre_pnemai","La chiquilla entra en un aula con un hula hoop.","La chiquilla rueda un hula hoop por un aula.","entra en","rueda","house","tire","Popi lleva una rueda al almecén entra por la puerta "
 "31","L2","Control",2,"pgt_panrue","El bombero cruza un pasillo con un piano.","El bombero empuja un piano por un pasillo.","cruza","empuja","street","basket","Popi camina con una cesta llena de manzanas en la calle de un pueblo"
 "31","L2","Control",3,"prm_boutoi","El leñador sube una loma con un tronco.","El leñador rueda un tronco por una loma.","sube","rueda","roof","swimming_ring","Popi tiene una inflante hasta la cima del techo de una casa del campo"
-"31","L2","Control",4,"pgt_panrou","El niño cruza una habitación con una papelera.","El niño empuja una papelera por una habitación.","cruza","empuja","road","basket",NA
 "31","L2","Control",5,"prd_balnei","El camarero baja unos peldaños con un barril.","El camarero rueda un barril por unos peldaños.","baja","rueda","snowyhill","balloon","Popi baja de la nieve en los alpes con una pelota inflada"
 "31","L2","Control",6,"tgm_sacdun","La hormiga sube una roca con una hoja.","La hormiga arrastra una hoja por una roca.","sube","arrastra","dune","sack","el Popi carga un saco sobre el sable [=la arena] hasta el cima de la duna al lado del mar"
 "31","L2","Control",7,"trd_bronei","El muchacho baja un cerro con una moto.","El muchacho tira de una moto por un cerro.","baja","tira de","snowyhill","wheelbarrow","Popi está en los alpes y lleva un objecto que se usa para"
@@ -1312,7 +1308,6 @@
 "42","L2","Path",31,"tre_cadmai","El nene entra en una escuela con un triciclo.","El nene tira de un triciclo por una escuela.","entra en","tira de","house","shopping_trolley","Popi entra a la bodega con un carrito de compras"
 "42","L2","Path",32,"prd_balnei","El camarero baja unos peldaños con un barril.","El camarero rueda un barril por unos peldaños.","baja","rueda","snowyhill","balloon","Popi baja la cuesta nevada con la pelota de playa"
 "43","L2","Control",1,"pgm_paqtoi","La moza sube un repecho con un sillón.","La moza empuja un sillón por un repecho.","sube","empuja","roof","package","Popi ha empujado un paquete de regalo"
-"43","L2","Control",2,"pre_pnemai","La chiquilla entra en un aula con un hula hoop.","La chiquilla rueda un hula hoop por un aula.","entra en","rueda","house","tire",NA
 "43","L2","Control",3,"trt_pourou","El labrador cruza un puente con una carreta.","El labrador tira de una carreta por un puente.","cruza","tira de","road","stroller","Popi ha tirado un carrito para bebé"
 "43","L2","Control",4,"tgm_sacdun","La hormiga sube una roca con una hoja.","La hormiga arrastra una hoja por una roca.","sube","arrastra","dune","sack","Popi ha tirado un saco sobre una duna"
 "43","L2","Control",5,"tre_cadmai","El nene entra en una escuela con un triciclo.","El nene tira de un triciclo por una escuela.","entra en","tira de","house","shopping_trolley","Popi ha tirado un carrito de compras"
@@ -1375,7 +1370,6 @@
 "44","L2","Control",30,"pgt_panrou","El niño cruza una habitación con una papelera.","El niño empuja una papelera por una habitación.","cruza","empuja","road","basket","Popi llevó una cesta de manzanas al otro lado del camino"
 "44","L2","Control",31,"tge_chagro","La mujer entra en un vestíbulo con una cómoda.","La mujer arrastra una cómoda por un vestíbulo.","entra en","arrastra","cave","chair","Popi entra la cueva con una silla verde"
 "44","L2","Control",32,"trd_brocol","La muchacha baja una costana con una bicicleta.","La muchacha tira de una bicicleta por una costana.","baja","tira de","hill","wheelbarrow","Popi baja la cuesta con un carrito"
-"45","L2","Manner",1,"tgt_cherou","La anciana cruza una sala con una alfombra.","La anciana arrastra una alfombra por una sala.","cruza","arrastra","road","rocking_horse",NA
 "45","L2","Manner",2,"pge_tabmai","El informático entra en un cuarto con un ordenador.","El informático empuja un ordenador por un cuarto.","entra en","empuja","house","table","el hombrecillo mueve una mesa"
 "45","L2","Manner",3,"tgm_sacdun","La hormiga sube una roca con una hoja.","La hormiga arrastra una hoja por una roca.","sube","arrastra","dune","sack","el hombre se lleva un saco"
 "45","L2","Manner",4,"pre_pnegro","La joven entra en un gimnasio con un aro.","La joven rueda un aro por un gimnasio.","entra en","rueda","cave","tire","el hombresillo mueve una rueda en frente de sí"
@@ -1609,7 +1603,6 @@
 "52","L2","Manner",8,"prt_rourou","El mozo cruza una plaza con una esfera.","El mozo rueda una esfera por una plaza.","cruza","rueda","road","cartwheel","el Popi se cruza la carretera con una rueda"
 "52","L2","Manner",9,"trm_voitoi","La labradora sube un collado con un carro.","La labradora tira de un carro por un collado.","sube","tira de","roof","toy_car","el Popi está llevando un coche a la casa"
 "52","L2","Manner",10,"pge_tabgro","El empleado entra en un almacén con un armario.","El empleado empuja un armario por un almacén.","entra en","empuja","cave","table","el Popi se lleva una mesa dentro de la cueva"
-"52","L2","Manner",11,"tgm_sacdun","La hormiga sube una roca con una hoja.","La hormiga arrastra una hoja por una roca.","sube","arrastra","dune","sack",NA
 "52","L2","Manner",12,"pgd_valnei","El chico baja una pendiente con una piedra.","El chico empuja una piedra por una pendiente.","baja","empuja","snowyhill","suitcase","el Popi se baja la colina nevada con una maleta"
 "52","L2","Manner",13,"prm_boudun","El escarabajo sube un montículo con una pelota.","El escarabajo rueda una pelota por un montículo.","sube","rueda","dune","swimming_ring","el Popi se lleva una rueda con pescados a la colina"
 "52","L2","Manner",14,"tgt_cherou","La anciana cruza una sala con una alfombra.","La anciana arrastra una alfombra por una sala.","cruza","arrastra","road","rocking_horse","el Popi se cruza la calle con un caballo juguete"
@@ -1618,10 +1611,8 @@
 "52","L2","Manner",17,"tre_cadgro","El chiquillo entra en un jardín con un patinete.","El chiquillo tira de un patinete por un jardín.","entra en","tira de","cave","shopping_trolley","el Popi entra a la cueva con una maleta"
 "52","L2","Manner",18,"prd_balcol","La niña baja una cuesta con un plato.","La niña rueda un plato por una cuesta.","baja","rueda","hill","balloon","el Popi empuja la pelota en la colina"
 "52","L2","Manner",19,"tge_chamai","El vendedor entra en un local con una lámpara.","El vendedor arrastra una lámpara por un local.","entra en","arrastra","house","chair","el Popi arrastra la silla adentro de la casa"
-"52","L2","Manner",20,"trt_pourou","El labrador cruza un puente con una carreta.","El labrador tira de una carreta por un puente.","cruza","tira de","road","stroller",NA
 "52","L2","Manner",21,"tgd_malcol","El conserje baja una escalinata con un colchón.","El conserje arrastra un colchón por una escalinata.","baja","arrastra","hill","trunk","el Popi arrastra un paquete bajo de la colina"
 "52","L2","Manner",22,"pgm_paqdun","El señor sube unos escalones con una televisión.","El señor empuja una televisión por unos escalones.","sube","empuja","dune","package","el Popi se empuja el paquete arriba de la colina"
-"52","L2","Manner",23,"tgt_cherue","El campesino cruza una parcela con un palo.","El campesino arrastra un palo por una parcela.","cruza","arrastra","street","rocking_horse",NA
 "52","L2","Manner",24,"pre_pnemai","La chiquilla entra en un aula con un hula hoop.","La chiquilla rueda un hula hoop por un aula.","entra en","rueda","house","tire","el Popi empuja una rueda adentro de la casa"
 "52","L2","Manner",25,"trm_voidun","La pasajera sube una pasarela con un bolso con ruedas.","La pasajera tira de un bolso con ruedas por una pasarela.","sube","tira de","dune","toy_car","el Popi se arrastra un coche de juguete arriba de la colina"
 "52","L2","Manner",26,"tge_chagro","La mujer entra en un vestíbulo con una cómoda.","La mujer arrastra una cómoda por un vestíbulo.","entra en","arrastra","cave","chair","el Popi arrastra una silla a la cueva"
@@ -1870,7 +1861,6 @@
 "60","L2","Manner",13,"pgt_panrue","El bombero cruza un pasillo con un piano.","El bombero empuja un piano por un pasillo.","cruza","empuja","street","basket","Popi ha cruzado una calle con una cesta llena de manzanas"
 "60","L2","Manner",14,"tge_chagro","La mujer entra en un vestíbulo con una cómoda.","La mujer arrastra una cómoda por un vestíbulo.","entra en","arrastra","cave","chair","Popi acaba de arrastrar una silla de plástico entrando en una cueva"
 "60","L2","Manner",15,"trt_pourou","El labrador cruza un puente con una carreta.","El labrador tira de una carreta por un puente.","cruza","tira de","road","stroller","Popi ha cruzado el camino con un carro de bebé"
-"60","L2","Manner",16,"pgd_valnei","El chico baja una pendiente con una piedra.","El chico empuja una piedra por una pendiente.","baja","empuja","snowyhill","suitcase",NA
 "60","L2","Manner",17,"tgt_cherue","El campesino cruza una parcela con un palo.","El campesino arrastra un palo por una parcela.","cruza","arrastra","street","rocking_horse","Popi ha cruzado el camino arrastrando un caballo juguete"
 "60","L2","Manner",18,"pgm_paqdun","El señor sube unos escalones con una televisión.","El señor empuja una televisión por unos escalones.","sube","empuja","dune","package","Popi ha subido una duna empujando un paquete"
 "60","L2","Manner",19,"prd_balcol","La niña baja una cuesta con un plato.","La niña rueda un plato por una cuesta.","baja","rueda","hill","balloon","Popi ha rodado una pelota inflable bajando una colina"
@@ -2913,7 +2903,6 @@
 "NS_180","NS","Path",32,"pgd_valcol","El hombre baja una rampa con un sofá.","El hombre empuja un sofá por una rampa.","baja","empuja","hill","suitcase","Popi baja una cuesta con una maleta"
 "NS_181","NS","Path",1,"pge_tabgro","El empleado entra en un almacén con un armario.","El empleado empuja un armario por un almacén.","entra en","empuja","cave","table","Popi arrastra una mesa en el bosque"
 "NS_181","NS","Path",2,"tgt_cherou","La anciana cruza una sala con una alfombra.","La anciana arrastra una alfombra por una sala.","cruza","arrastra","road","rocking_horse","Popi cruza un río con un caballo"
-"NS_181","NS","Path",3,"prm_boutoi","El leñador sube una loma con un tronco.","El leñador rueda un tronco por una loma.","sube","rueda","roof","swimming_ring",NA
 "NS_181","NS","Path",4,"trd_brocol","La muchacha baja una costana con una bicicleta.","La muchacha tira de una bicicleta por una costana.","baja","tira de","hill","wheelbarrow","Popi baja una carretilla por una montaña"
 "NS_181","NS","Path",5,"tgt_cherue","El campesino cruza una parcela con un palo.","El campesino arrastra un palo por una parcela.","cruza","arrastra","street","rocking_horse","Popi cruza una calle con un caballito"
 "NS_181","NS","Path",6,"trm_voidun","La pasajera sube una pasarela con un bolso con ruedas.","La pasajera tira de un bolso con ruedas por una pasarela.","sube","tira de","dune","toy_car","Popi sube por la arena con un coche"
@@ -3326,7 +3315,6 @@
 "NS_193","NS","Control",29,"pre_pnemai","La chiquilla entra en un aula con un hula hoop.","La chiquilla rueda un hula hoop por un aula.","entra en","rueda","house","tire","Popi mete una rueda de coche en su casa"
 "NS_193","NS","Control",30,"pgd_valcol","El hombre baja una rampa con un sofá.","El hombre empuja un sofá por una rampa.","baja","empuja","hill","suitcase","Popi baja de la montaña su maleta"
 "NS_193","NS","Control",31,"tge_chamai","El vendedor entra en un local con una lámpara.","El vendedor arrastra una lámpara por un local.","entra en","arrastra","house","chair","Popi mete una silla en su casa"
-"NS_193","NS","Control",32,"pgm_paqtoi","La moza sube un repecho con un sillón.","La moza empuja un sillón por un repecho.","sube","empuja","roof","package",NA
 "NS_194","NS","Manner",1,"tgt_cherou","La anciana cruza una sala con una alfombra.","La anciana arrastra una alfombra por una sala.","cruza","arrastra","road","rocking_horse","Popi mueve un caballo balancín por la calle"
 "NS_194","NS","Manner",2,"trm_voitoi","La labradora sube un collado con un carro.","La labradora tira de un carro por un collado.","sube","tira de","roof","toy_car","Popi arrastra un coche de juguete por el tejado de una casa"
 "NS_194","NS","Manner",3,"pgt_panrou","El niño cruza una habitación con una papelera.","El niño empuja una papelera por una habitación.","cruza","empuja","road","basket","Popi mueve una cesta llena de manzanas de un lado al otro de la calle"
