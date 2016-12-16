@@ -114,7 +114,7 @@ where_manner <- function(df, liberal = FALSE) {
 manner_annot <- annot %>%
   filter(Condition == "Control") %>%
   group_by(Subject, Condition, Group, VideoTrial, VideoName) %>%
-  do(where_manner(., liberal = TRUE)) 
+  do(where_manner(., liberal = FALSE)) 
 
 head(manner_annot)
 

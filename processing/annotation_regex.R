@@ -164,6 +164,7 @@ seematch("volver_V", "vuelve (?!a (caminar|cruzar|entrar|subir))")
 annotate("volver_V", "vuelve (?!a (caminar|cruzar|entrar|subir))")
 
 
+
 # Verb phrases as main verbs ----------------------------------------------
 
 seematch("dar-vuelta_VPhrase", "está dando vuelta")
@@ -189,6 +190,7 @@ annotate("salir-de-paseo_VPhrase", "sale de paseo")
 
 seematch("salir-de-viaje_VPhrase", "sale de viaje")
 annotate("salir-de-viaje_VPhrase", "sale de viaje")
+
 
 
 # Adverbial phrases (adjuncts) --------------------------------------------
@@ -217,14 +219,18 @@ annotate("detrás/atrás_AdvP", "(\\bcon\\b.*)?(a|de)trás( de sí)?")
 seematch("en-frente_AdvP", "en frente( de (sí|él))?")
 annotate("en-frente_AdvP", "en frente( de (sí|él))?")
 
+seematch("verticalmente_AdvP", "verticalmente")
+annotate("verticalmente_AdvP", "verticalmente")
+
+
 
 # Prepositional phrases (adjuncts) ----------------------------------------
 
-seematch("a-lo-alto_PP", "(a|hacia|hasta) lo alto")
-annotate("a-lo-alto_PP", "(a|hacia|hasta) lo alto")
-
 seematch("a-través-de_PP", "a través(?! de una cuerda)")
 annotate("a-través-de_PP", "a través(?! de una cuerda)")
+
+seematch("de-una-acera-a-otra_PP", "(a la otra acera|de una acera a otra|de un lado de la acera a otro)")
+annotate("de-una-acera-a-otra_PP", "(a la otra acera|de una acera a otra|de un lado de la acera a otro)")
 
 seematch("al-topp@sw_PP", "al topp@sw")
 annotate("al-topp@sw_PP", "al topp@sw")
@@ -237,6 +243,12 @@ annotate("de-un-lado-al-otro_PP", "\\bde un lado\\b.*otro(?! lado)")
 
 seematch("encima_PP", "((hacia|por) )?encima(?!.*(agua|caballo|camino|río))")
 annotate("encima_PP", "((hacia|por) )?encima(?!.*(agua|caballo|camino|río))")
+
+seematch("hacia/hasta-BOUNDARY_PP", "(\\a|hacia|hasta) (un (almacén|garaje)|(las?|una) ((puertas de una )?casa|(oscura )?cueva))")
+annotate("hacia/hasta-BOUNDARY_PP", "(\\a|hacia|hasta) (un (almacén|garaje)|(las?|una) ((puertas de una )?casa|(oscura )?cueva))")
+
+seematch("hacia-la-parte-superior_PP", "hacia la parte superior de una ladera")
+annotate("hacia-la-parte-superior_PP", "hacia la parte superior de una ladera")
 
 seematch("PREP-(a)dentro_PP", "(hacia|hasta|para|por) a?dentro")
 annotate("PREP-(a)dentro_PP", "(hacia|hasta|para|por) a?dentro")
@@ -256,8 +268,15 @@ annotate("PREP-la-cima_PP", "(\\ba|hacia|hasta|para|por) (la|el) cima")
 seematch("PREP-la-cumbre_PP", "(a|hacia) la cumbre")
 annotate("PREP-la-cumbre_PP", "(a|hacia) la cumbre")
 
+seematch("PREP-la-punta_PP", "(hacia|hasta) la punta")
+annotate("PREP-la-punta_PP", "(hacia|hasta) la punta")
+
+seematch("PREP-lo-alto_PP", "(a|hacia|hasta) lo alto")
+annotate("PREP-lo-alto_PP", "(a|hacia|hasta) lo alto")
+
 seematch("PREP-otro-lado_PP", "((al|hacia el|hasta el|para el) )?otro lado(?! (de una iglesia|de la paja|del agua|del mar))( de.*)?")
 annotate("PREP-otro-lado_PP", "((al|hacia el|hasta el|para el) )?otro lado(?! (de una iglesia|de la paja|del agua|del mar))( de.*)?")
+
 
 
 # Gerunds (adjuncts) ------------------------------------------------------
@@ -323,16 +342,24 @@ seematch("yendo_Ger", "\\byendo")
 annotate("yendo_Ger", "\\byendo")
 
 
+
 # Verbs in infinitive (part of adjuncts) ----------------------------------
 
 seematch("bajar_Inf", "(?<!acaba de )(al |para )?bajar")
 annotate("bajar_Inf", "(?<!acaba de )(al |para )?bajar")
+
+seematch("cruzar_Inf", "para cruzar")
+annotate("cruzar_Inf", "para cruzar")
 
 seematch("guardar_Inf", "para guardar(lo|la)?")
 annotate("guardar_Inf", "para guardar(lo|la)?")
 
 seematch("introducir_Inf", "para introducirlo")
 annotate("introducir_Inf", "para introducirlo")
+
+seematch("meter_Inf", "((hasta|para) )?meter(la)?")
+annotate("meter_Inf", "((hasta|para) )?meter(la)?")
+
 
 
 # Subordinate finite verbs (adjuncts) -------------------------------------
@@ -354,6 +381,7 @@ annotate("rodar_SubordV", "mientras rueda")
 
 seematch("subir_SubordV", "mientras está subiendo")
 annotate("subir_SubordV", "mientras está subiendo")
+
 
 
 # Verb phrases in gerundive form (adjuncts) -------------------------------
