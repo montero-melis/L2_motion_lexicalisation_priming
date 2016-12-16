@@ -204,17 +204,17 @@ annotate("a-cuestas_AdvP", "a cuestas")
 seematch("a-rastras_AdvP", "a rastras")
 annotate("a-rastras_AdvP", "a rastras")
 
-seematch("abajo_AdvP", "(?<!(desde|hacia|hasta|para) )\\babajo")
-annotate("abajo_AdvP", "(?<!(desde|hacia|hasta|para) )\\babajo")
+seematch("abajo_AdvP", "(?<!(desde|hacia|hasta|para) )\\b(a|de)bajo")
+annotate("abajo_AdvP", "(?<!(desde|hacia|hasta|para) )\\b(a|de)bajo")
 
-seematch("arriba_AdvP", "(?<!(de|desde|hacia|hasta|para( el parte más)?|por) )arriba")
-annotate("arriba_AdvP", "(?<!(de|desde|hacia|hasta|para( el parte más)?|por) )arriba")
+seematch("arriba_AdvP", "(?<!(\\bde|desde|hacia|hasta|para( el parte más)?|por) )arriba")
+annotate("arriba_AdvP", "(?<!(\\bde|desde|hacia|hasta|para( el parte más)?|por) )arriba")
 
 seematch("delante_AdvP", "delante")
 annotate("delante_AdvP", "delante")
 
-seematch("detrás/atrás_AdvP", "(\\bcon\\b.*)?(a|de)trás( de sí)?")
-annotate("detrás/atrás_AdvP", "(\\bcon\\b.*)?(a|de)trás( de sí)?")
+seematch("atras/detras_AdvP", "(\\bcon\\b.*)?(a|de)trás( de (él|sí))?")
+annotate("atras/detras_AdvP", "(\\bcon\\b.*)?(a|de)trás( de (él|sí))?")
 
 seematch("en-frente_AdvP", "en frente( de (sí|él))?")
 annotate("en-frente_AdvP", "en frente( de (sí|él))?")
@@ -226,8 +226,8 @@ annotate("verticalmente_AdvP", "verticalmente")
 
 # Prepositional phrases (adjuncts) ----------------------------------------
 
-seematch("a-través-de_PP", "a través(?! de una cuerda)")
-annotate("a-través-de_PP", "a través(?! de una cuerda)")
+seematch("a-traves-de_PP", "a través(?! de una cuerda)")
+annotate("a-traves-de_PP", "a través(?! de una cuerda)")
 
 seematch("de-una-acera-a-otra_PP", "(a la otra acera|de una acera a otra|de un lado de la acera a otro)")
 annotate("de-una-acera-a-otra_PP", "(a la otra acera|de una acera a otra|de un lado de la acera a otro)")
@@ -244,8 +244,8 @@ annotate("de-un-lado-al-otro_PP", "\\bde un lado\\b.*otro(?! lado)")
 seematch("encima_PP", "((hacia|por) )?encima(?!.*(agua|caballo|camino|río))")
 annotate("encima_PP", "((hacia|por) )?encima(?!.*(agua|caballo|camino|río))")
 
-seematch("hacia/hasta-BOUNDARY_PP", "(\\a|hacia|hasta) (un (almacén|garaje)|(las?|una) ((puertas de una )?casa|(oscura )?cueva))")
-annotate("hacia/hasta-BOUNDARY_PP", "(\\a|hacia|hasta) (un (almacén|garaje)|(las?|una) ((puertas de una )?casa|(oscura )?cueva))")
+seematch("a/hacia/hasta-BOUNDARY_PP", "(\\bal?|hacia|hasta) ((un )?(almacén|garaje|granero)|(las?|una) ((puertas de una )?casa|(oscura )?cueva))")
+annotate("a/hacia/hasta-BOUNDARY_PP", "(\\bal?|hacia|hasta) ((un )?(almacén|garaje|granero)|(las?|una) ((puertas de una )?casa|(oscura )?cueva))")
 
 seematch("hacia-la-parte-superior_PP", "hacia la parte superior de una ladera")
 annotate("hacia-la-parte-superior_PP", "hacia la parte superior de una ladera")
@@ -267,6 +267,9 @@ annotate("PREP-la-cima_PP", "(\\ba|hacia|hasta|para|por) (la|el) cima")
 
 seematch("PREP-la-cumbre_PP", "(a|hacia) la cumbre")
 annotate("PREP-la-cumbre_PP", "(a|hacia) la cumbre")
+
+seematch("PREP-la-parte-de-arriba_PP", "(hasta la|para el) parte (de|más) arriba.*")
+annotate("PREP-la-parte-de-arriba_PP", "(hasta la|para el) parte (de|más) arriba.*")
 
 seematch("PREP-la-punta_PP", "(hacia|hasta) la punta")
 annotate("PREP-la-punta_PP", "(hacia|hasta) la punta")
@@ -290,8 +293,8 @@ annotate("arrastrando_Ger", "(?<!est(á|aba) )arrastr[áa]ndo(lo|la)?")
 seematch("atravesando_Ger", "(?<!est(á|aba) )atravesando")
 annotate("atravesando_Ger", "(?<!est(á|aba) )atravesando")
 
-seematch("bajando_Ger", "(?<!est(á|aba) )bajando")
-annotate("bajando_Ger", "(?<!est(á|aba) )bajando")
+seematch("bajando_Ger", "(?<!est(á|aba) )baj[aá]ndo(lo)?")
+annotate("bajando_Ger", "(?<!est(á|aba) )baj[aá]ndo(lo)?")
 
 seematch("cargando_Ger", "(?<!est(á|aba) )cargando")
 annotate("cargando_Ger", "(?<!est(á|aba) )cargando")
@@ -351,6 +354,9 @@ annotate("bajar_Inf", "(?<!acaba de )(al |para )?bajar")
 seematch("cruzar_Inf", "para cruzar")
 annotate("cruzar_Inf", "para cruzar")
 
+seematch("entrar_Inf", "(al|para) entrar")
+annotate("entrar_Inf", "(al|para) entrar")
+
 seematch("guardar_Inf", "para guardar(lo|la)?")
 annotate("guardar_Inf", "para guardar(lo|la)?")
 
@@ -360,6 +366,8 @@ annotate("introducir_Inf", "para introducirlo")
 seematch("meter_Inf", "((hasta|para) )?meter(la)?")
 annotate("meter_Inf", "((hasta|para) )?meter(la)?")
 
+seematch("subir_Inf", "para subir(lo)?")
+annotate("subir_Inf", "para subir(lo)?")
 
 
 # Subordinate finite verbs (adjuncts) -------------------------------------

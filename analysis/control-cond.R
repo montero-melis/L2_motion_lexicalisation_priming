@@ -1,8 +1,7 @@
 ## Analyse data from participants in the control (no priming) condition.
 
 library(dplyr)
-# library(stringr)
-
+library(ggplot2)
 
 #  ------------------------------------------------------------------------
 #  Load data and simplify
@@ -114,7 +113,7 @@ where_manner <- function(df, liberal = FALSE) {
 manner_annot <- annot %>%
   filter(Condition == "Control") %>%
   group_by(Subject, Condition, Group, VideoTrial, VideoName) %>%
-  do(where_manner(., liberal = FALSE)) 
+  do(where_manner(., liberal = TRUE)) 
 
 head(manner_annot)
 
@@ -128,9 +127,28 @@ head(d_wtargets)
 
 
 #  ------------------------------------------------------------------------
-#  Descriptive tables at group level
+#  Descriptive tables/figures at group level
 #  ------------------------------------------------------------------------
 
-with(d_wtargets, addmargins(table(Path, Manner, Group)))
+# simpler name for data frame without targets
+d <- d_wtargets %>% select(-Target)
 
-d_wtargets[d_wtargets$Path == "No path", ]
+with(d, addmargins(table(Path, Manner, Group)))
+
+ggplot(d, aes(x = Path)) +
+  geom_bar() +
+  facet_grid(. ~ Group)
+
+ggplot(d, aes(x = Group)) +
+  geom_bar() +
+  facet_grid(. ~ Path) +
+  ggtitle("Path encoding")
+
+ggplot(d, aes(x = Manner)) +
+  geom_bar() +
+  facet_grid(. ~ Group)
+
+ggplot(d, aes(x = Group)) +
+  geom_bar() +
+  facet_grid(. ~ Manner) +
+  ggtitle("Manner encoding")
