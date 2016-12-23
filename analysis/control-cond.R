@@ -135,18 +135,10 @@ d <- d_wtargets %>% select(-Target)
 
 with(d, addmargins(table(Path, Manner, Group)))
 
-ggplot(d, aes(x = Path)) +
-  geom_bar() +
-  facet_grid(. ~ Group)
-
 ggplot(d, aes(x = Group)) +
   geom_bar() +
   facet_grid(. ~ Path) +
   ggtitle("Path encoding")
-
-ggplot(d, aes(x = Manner)) +
-  geom_bar() +
-  facet_grid(. ~ Group)
 
 ggplot(d, aes(x = Group)) +
   geom_bar() +
