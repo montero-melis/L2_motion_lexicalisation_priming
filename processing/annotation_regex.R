@@ -136,8 +136,8 @@ annotate("pasar_V", "(ha pasado|está pasando|\\bpasa\\b)")
 seematch("pasear_V", "pasea")
 annotate("pasear_V", "pasea")
 
-seematch("poner_V", "(está poniendo|\\bpone\\b|puso)")
-annotate("poner_V", "(está poniendo|\\bpone\\b|puso)")
+seematch("poner_V", "(está poniendo|\\bpone\\b|puso|quiere poner)")
+annotate("poner_V", "(está poniendo|\\bpone\\b|puso|quiere poner)")
 
 seematch("rodar_V", "(ha rodado|está rodando|rodaba|rodó|(?<!(una?|la|mientras|su|gran|con|de) )rueda\\b)")
 annotate("rodar_V", "(ha rodado|está rodando|rodaba|rodó|(?<!(una?|la|mientras|su|gran|con|de) )rueda\\b)")
@@ -145,8 +145,8 @@ annotate("rodar_V", "(ha rodado|está rodando|rodaba|rodó|(?<!(una?|la|mientras
 seematch("subir_V", "((vuelve|ha vuelto) a subir|ha subido|(?<!mientras )(ha )?est(á( ahora)?|aba|ado) subi(e|é)ndo|sube\\b|subió)")
 annotate("subir_V", "((vuelve|ha vuelto) a subir|ha subido|(?<!mientras )(ha )?est(á( ahora)?|aba|ado) subi(e|é)ndo|sube\\b|subió)")
 
-seematch("tirar-de_V", "(ha tirado( de)?|est(á|aba) tirando( de)?|tira(\\b|ba)( de)?)")
-annotate("tirar-de_V", "(ha tirado( de)?|est(á|aba) tirando( de)?|tira(\\b|ba)( de)?)")
+seematch("tirar-de_V", "(ha tirado( de)?|est(á|aba) tirando( de)?|\\btira(\\b|ba)( de)?)")
+annotate("tirar-de_V", "(ha tirado( de)?|est(á|aba) tirando( de)?|\\btira(\\b|ba)( de)?)")
 
 seematch("traer_V", "(trae\\b|traído)")
 annotate("traer_V", "(trae\\b|traído)")
@@ -201,6 +201,9 @@ annotate("(a)dentro_AdvP", "(?<!(cosas|desde|hacia|hasta|para|por) )\\ba?dentro(
 seematch("a-cuestas_AdvP", "a cuestas")
 annotate("a-cuestas_AdvP", "a cuestas")
 
+seematch("a-la-espalda_AdvP", "(a (la|sus?)|((a|de)trás( de)? su)) espaldas?")
+annotate("a-la-espalda_AdvP", "(a (la|sus?)|((a|de)trás( de)? su)) espaldas?")
+
 seematch("a-rastras_AdvP", "a rastras")
 annotate("a-rastras_AdvP", "a rastras")
 
@@ -219,6 +222,12 @@ annotate("atras/detras_AdvP", "(\\bcon\\b.*)?(a|de)trás( de (él|sí))?")
 seematch("en-frente_AdvP", "en frente( de (sí|él))?")
 annotate("en-frente_AdvP", "en frente( de (sí|él))?")
 
+seematch("entre[=adentro]_AdvP", "entre( ((una|de la) (cueva|casa)))")
+annotate("entre[=adentro]_AdvP", "entre( ((una|de la) (cueva|casa)))")
+
+seematch("remolcado_AdvP", "(con un coche de juguete )?remolcado")
+annotate("remolcado_AdvP", "(con un coche de juguete )?remolcado")
+
 seematch("verticalmente_AdvP", "verticalmente")
 annotate("verticalmente_AdvP", "verticalmente")
 
@@ -229,14 +238,14 @@ annotate("verticalmente_AdvP", "verticalmente")
 seematch("a-traves-de_PP", "a través(?! de una cuerda)")
 annotate("a-traves-de_PP", "a través(?! de una cuerda)")
 
-seematch("de-una-acera-a-otra_PP", "(a la otra acera|de una acera a otra|de un lado de la acera a otro)")
-annotate("de-una-acera-a-otra_PP", "(a la otra acera|de una acera a otra|de un lado de la acera a otro)")
+seematch("de-una-acera-a-otra_PP", "(a la otra acera|de una acera a otra)")
+annotate("de-una-acera-a-otra_PP", "(a la otra acera|de una acera a otra)")
 
 seematch("al-topp@sw_PP", "al topp@sw")
 annotate("al-topp@sw_PP", "al topp@sw")
 
-seematch("con-una-cuerda_PP", "((atado|sujeto) )?((en|a|con|por|de) )?una cuerda")
-annotate("con-una-cuerda_PP", "((atado|sujeto) )?((en|a|con|por|de) )?una cuerda")
+seematch("con-una-cuerda_PP", "((atado|sujeto|tirado) )?((en|a|con|por|de) )?una cuerda")
+annotate("con-una-cuerda_PP", "((atado|sujeto|tirado) )?((en|a|con|por|de) )?una cuerda")
 
 seematch("de-un-lado-al-otro_PP", "\\bde un lado\\b.*otro(?! lado)")
 annotate("de-un-lado-al-otro_PP", "\\bde un lado\\b.*otro(?! lado)")
@@ -244,8 +253,8 @@ annotate("de-un-lado-al-otro_PP", "\\bde un lado\\b.*otro(?! lado)")
 seematch("encima_PP", "((hacia|por) )?encima(?!.*(agua|caballo|camino|río))")
 annotate("encima_PP", "((hacia|por) )?encima(?!.*(agua|caballo|camino|río))")
 
-seematch("a/hacia/hasta-BOUNDARY_PP", "(\\bal?|hacia|hasta) ((un )?(almacén|garaje|granero)|(las?|una) ((puertas de una )?casa|(oscura )?cueva))")
-annotate("a/hacia/hasta-BOUNDARY_PP", "(\\bal?|hacia|hasta) ((un )?(almacén|garaje|granero)|(las?|una) ((puertas de una )?casa|(oscura )?cueva))")
+seematch("a/hacia/hasta-BOUNDARY_PP", "(\\bal?|hacia|hasta) ((un )?(almacén|edificio|garaje|granero)|(las?|una) ((puertas de una )?casa|(oscura )?cueva))")
+annotate("a/hacia/hasta-BOUNDARY_PP", "(\\bal?|hacia|hasta) ((un )?(almacén|edificio|garaje|granero)|(las?|una) ((puertas de una )?casa|(oscura )?cueva))")
 
 seematch("hacia-la-parte-superior_PP", "hacia la parte superior de una ladera")
 annotate("hacia-la-parte-superior_PP", "hacia la parte superior de una ladera")
@@ -261,6 +270,9 @@ annotate("PREP-arriba_PP", "(hacia|hasta|para|por) arriba")
 
 seematch("PREP-el-interior_PP", "((al|hacia (el|un)|hasta el) )interior( de.*)?")
 annotate("PREP-el-interior_PP", "((al|hacia (el|un)|hasta el) )interior( de.*)?")
+
+seematch("PREP-el-pico_PP", "((hasta el|al) )pico( (de la (casa|duna)|del tejado))?")
+annotate("PREP-el-pico_PP", "((hasta el|al) )pico( (de la (casa|duna)|del tejado))?")
 
 seematch("PREP-la-cima_PP", "(\\ba|hacia|hasta|para|por) (la|el) cima")
 annotate("PREP-la-cima_PP", "(\\ba|hacia|hasta|para|por) (la|el) cima")
@@ -329,14 +341,17 @@ annotate("pasando_Ger", "(?<!(está|y) )pasando")
 seematch("portando_Ger", "portando")
 annotate("portando_Ger", "portando")
 
+seematch("remolcando_Ger", "remolcando")
+annotate("remolcando_Ger", "remolcando")
+
 seematch("rodando_Ger", "(?<!est(á|aba) )rod[áa]ndo(lo|la|se)?")
 annotate("rodando_Ger", "(?<!est(á|aba) )rod[áa]ndo(lo|la|se)?")
 
 seematch("subiendo_Ger", "(?<!est(á|aba|amos) )subi[ée]ndo(lo|la|se)?")
 annotate("subiendo_Ger", "(?<!est(á|aba|amos) )subi[ée]ndo(lo|la|se)?")
 
-seematch("tirando-de_Ger", "(?<!est(á|aba) )tir[áa]ndo( de)?")
-annotate("tirando-de_Ger", "(?<!est(á|aba) )tir[áa]ndo( de)?")
+seematch("tirando-de_Ger", "(?<!est(á|aba) )\\btir[áa]ndo( de)?")
+annotate("tirando-de_Ger", "(?<!est(á|aba) )\\btir[áa]ndo( de)?")
 
 seematch("trayendo_Ger", "tray[ée]ndo")
 annotate("trayendo_Ger", "tray[ée]ndo")
@@ -380,6 +395,9 @@ annotate("bajar_SubordV", "mientras baja")
 
 seematch("empujar_SubordV", "mientras (está empujando|empuja)")
 annotate("empujar_SubordV", "mientras (está empujando|empuja)")
+
+seematch("hacer-girar_SubordV", "mientras hace girar")
+annotate("hacer-girar_SubordV", "mientras hace girar")
 
 seematch("llevar_SubordV", "mientras (la)? lleva")
 annotate("llevar_SubordV", "mientras (la)? lleva")

@@ -1,12 +1,15 @@
 VocabEntry,Baseform,SemComp,Meaning,SyntCateg,SyntForm
 (a)dentro_AdvP,adentro,Path,INTO,Adjunct,AdvP
 a-cuestas_AdvP,a-cuestas,Manner,PULL,Adjunct,AdvP
+a-la-espalda_AdvP,a-la-espalda,Manner,ON-HIS-BACK,Adjunct,AdvP
 a-rastras_AdvP,a-rastras,Manner,DRAG,Adjunct,AdvP
 abajo_AdvP,abajo,Path,DOWN,Adjunct,AdvP
 arriba_AdvP,arriba,Path,UP,Adjunct,AdvP
 atras/detras_AdvP,detrás,Manner,BEHIND,Adjunct,AdvP
 delante_AdvP,delante,Manner,IN-FRONT,Adjunct,AdvP
 en-frente_AdvP,en-frente-de-sí,Manner,IN-FRONT,Adjunct,AdvP
+entre[=adentro]_AdvP,entre[=adentro],?Path,?INTO,Adjunct,AdvP
+remolcado_AdvP,remolcar,Manner,TOW,Adjunct,AdvP
 verticalmente_AdvP,verticalmente,?Path,?UP,Adjunct,AdvP
 a-traves-de_PP,a-través-de,Path,ACROSS,Adjunct,PP
 a/hacia/hasta-BOUNDARY_PP,a/hacia/hasta-BOUNDARY,?Path,?INTO,Adjunct,PP
@@ -20,6 +23,7 @@ PREP-(a)dentro_PP,hacia-dentro-de-GROUND,Path,INTO,Adjunct,PP
 PREP-abajo_PP,PREP-abajo,Path,DOWN,Adjunct,PP
 PREP-arriba_PP,PREP-arriba,Path,UP,Adjunct,PP
 PREP-el-interior_PP,PREP-el-interior,Path,INTO,Adjunct,PP
+PREP-el-pico_PP,PREP-el-pico,Path,UP,Adjunct,PP
 PREP-la-cima_PP,PREP-la-cima_PP,Path,UP,Adjunct,PP
 PREP-la-cumbre_PP,PREP-la-cumbre,Path,UP,Adjunct,PP
 PREP-la-parte-de-arriba_PP,PREP-la-parte-de-arriba,Path,UP,Adjunct,PP
@@ -41,6 +45,7 @@ llevando_Ger,llevar,Other,BRING,Adjunct,V_ger
 metiendo_Ger,meter,Path,INTO,Adjunct,V_ger
 pasando_Ger,pasar,?Path,?ACROSS,Adjunct,V_ger
 portando_Ger,portar,Other,BRING,Adjunct,V_ger
+remolcando_Ger,remolcar,Manner,TOW,Adjunct,V_ger
 rodando_Ger,rodar,Manner,ROLL,Adjunct,V_ger
 subiendo_Ger,subir,Path,UP,Adjunct,V_ger
 tirando-de_Ger,tirar-de,Manner,PULL,Adjunct,V_ger
@@ -56,6 +61,7 @@ subir_Inf,subir,Path,UP,Adjunct,V_inf
 arrastrar_SubordV,arrastrar,Manner,DRAG,Adjunct,V_sub_fin
 bajar_SubordV,bajar,Path,DOWN,Adjunct,V_sub_fin
 empujar_SubordV,empujar,Manner,PUSH,Adjunct,V_sub_fin
+hacer-girar_SubordV,hacer-girar,Manner,MAKE-TURN,Adjunct,V_sub_fin
 llevar_SubordV,llevar,Other,BRING,Adjunct,V_sub_fin
 rodar_SubordV,rodar,Manner,ROLL,Adjunct,V_sub_fin
 subir_SubordV,subir,Path,UP,Adjunct,V_sub_fin
