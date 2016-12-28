@@ -43,7 +43,9 @@ estirando_Ger,estirar,Manner,PULL,Adjunct,V_ger
 introduciendo_Ger,introducir,Path,INTO,Adjunct,V_ger
 llevando_Ger,llevar,Other,BRING,Adjunct,V_ger
 metiendo_Ger,meter,Path,INTO,Adjunct,V_ger
+moviendo_Ger,mover,Other,MOVE,Adjunct,V_ger
 pasando_Ger,pasar,?Path,?ACROSS,Adjunct,V_ger
+poniendo_Ger,poner,Other,PUT,Adjunct,V_ger
 portando_Ger,portar,Other,BRING,Adjunct,V_ger
 remolcando_Ger,remolcar,Manner,TOW,Adjunct,V_ger
 rodando_Ger,rodar,Manner,ROLL,Adjunct,V_ger
@@ -57,6 +59,7 @@ entrar_Inf,entrar,Path,INTO,Adjunct,V_inf
 guardar_Inf,guardar,?Path,?INTO,Adjunct,V_inf
 introducir_Inf,introducir,Path,INTO,Adjunct,V_inf
 meter_Inf,meter,Path,INTO,Adjunct,V_inf
+poner_Inf,poner,Other,PUT,Adjunct,V_inf
 subir_Inf,subir,Path,UP,Adjunct,V_inf
 arrastrar_SubordV,arrastrar,Manner,DRAG,Adjunct,V_sub_fin
 bajar_SubordV,bajar,Path,DOWN,Adjunct,V_sub_fin
