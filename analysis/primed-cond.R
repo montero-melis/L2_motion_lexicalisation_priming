@@ -1,4 +1,4 @@
-## Analyse data from participants in the control (no priming) condition.
+## Analyse data from participants in the primed conditions.
 
 library(dplyr)
 library(ggplot2)
@@ -12,9 +12,8 @@ tr_compl <- read.csv("data/data_verbal_transcribed.csv", fileEncoding = "UTF-8",
                      stringsAsFactors = FALSE)
 head(tr_compl)
 
-# simplify and keep only control participants; in this df include Target column
+# simplify and keep all participants; in this df include Target column
 d_wtargets <- tr_compl %>%
-  filter(Condition == "Control") %>%
   select(Subject:VideoName, Target)
 head(d_wtargets)
 
@@ -34,9 +33,9 @@ where_path <- function(df, liberal = FALSE) {
   mentions_path <- 
     if (liberal) {  # means that ?Path cases are counted as Path
       df$SemComp %in% c("?Path", "Path")
-      } else {
-        df$SemComp == "Path"
-      }
+    } else {
+      df$SemComp == "Path"
+    }
   path_constituents <- df$SyntCateg[mentions_path]
   # Is P expressed in the V (0=no, 1=yes)?
   P_V <- as.numeric(sum("V" == path_constituents) > 0)
@@ -61,7 +60,6 @@ where_path <- function(df, liberal = FALSE) {
 
 # do this for the annotated data in long format
 path_annot <- annot %>%
-  filter(Condition == "Control") %>%
   group_by(Subject, Condition, Group, VideoTrial, VideoName) %>%
   do(where_path(., liberal = FALSE)) 
 
@@ -111,7 +109,6 @@ where_manner <- function(df, liberal = FALSE) {
 
 # do this for the annotated data in long format
 manner_annot <- annot %>%
-  filter(Condition == "Control") %>%
   group_by(Subject, Condition, Group, VideoTrial, VideoName) %>%
   do(where_manner(., liberal = FALSE)) 
 
@@ -139,12 +136,102 @@ d <- d_wtargets %>% select(-Target)
 
 with(d, addmargins(table(Path, Manner, Group)))
 
-ggplot(d, aes(x = Group)) +
+my_ylim <- ylim(c(0, 600))
+
+# Control
+ggplot(d[d$Condition == "Control",], aes(x = Group)) +
   geom_bar() +
   facet_grid(. ~ Path) +
-  ggtitle("Path encoding")
+  ggtitle("Path encoding") +
+  my_ylim
 
-ggplot(d, aes(x = Group)) +
+ggplot(d[d$Condition == "Control",], aes(x = Group)) +
   geom_bar() +
   facet_grid(. ~ Manner) +
-  ggtitle("Manner encoding")
+  ggtitle("Manner encoding") +
+  my_ylim
+
+# Path-primed
+ggplot(d[d$Condition == "Path",], aes(x = Group)) +
+  geom_bar() +
+  facet_grid(. ~ Path) +
+  ggtitle("Path encoding") +
+  my_ylim
+
+ggplot(d[d$Condition == "Path",], aes(x = Group)) +
+  geom_bar() +
+  facet_grid(. ~ Manner) +
+  ggtitle("Manner encoding") +
+  my_ylim
+
+# Manner-primed
+ggplot(d[d$Condition == "Manner",], aes(x = Group)) +
+  geom_bar() +
+  facet_grid(. ~ Path) +
+  ggtitle("Path encoding") +
+  my_ylim
+
+ggplot(d[d$Condition == "Manner",], aes(x = Group)) +
+  geom_bar() +
+  facet_grid(. ~ Manner) +
+  ggtitle("Manner encoding") +
+  my_ylim
+
+
+
+#  ------------------------------------------------------------------------
+#  Semantic componentes expressed anywhere -- by speakers
+#  ------------------------------------------------------------------------
+
+compute_average <- function(df, component = NULL, method = NULL) {
+  if (is.null(component) || ! component %in% c("Path", "Manner")) {
+    stop("Specify component as Path or Manner!")
+  }
+  if (is.null(method)) {
+    stop("Specify a method for computing the average!")
+  } else if (method == "anywhere") {
+    hit <- c("V", "Adjunct", "V+Adjunct")
+  } else if (method == "V") {
+    hit <- c("V", "V+Adjunct")
+  } else if (method == "Adjunct") {
+    hit <- c("Adjunct", "V+Adjunct")
+  } else {
+    stop("The method for computing the average is not valid!")
+  }
+  # we need a trick to extract the column as a vector using dplyr, see
+  # http://stackoverflow.com/questions/21618423/extract-a-dplyr-tbl-column-as-a-vector
+  hits <- sum( (df %>% collect %>% .[[component]]) %in% hit)
+  out <- data.frame(hits)
+  names(out) <- paste(component, method, sep = "_")
+  out
+}
+
+compute_average(d, "Path", "anywhere")
+
+# Compute for each participant: a) #descriptions provided, b) #descriptions
+# containing path anywhere/in the V/in an adjunt, c) #descriptions containing
+# manner anywhere/in the V/in an adjunt
+
+# a)
+d_descr <- d %>% group_by(Subject, Group, Condition) %>% summarise(N = n())
+# b)
+d_p_any <- d %>% group_by(Subject, Group, Condition) %>%
+  do(compute_average(., "Path", "anywhere"))
+d_p_v <- d %>% group_by(Subject, Group, Condition) %>%
+  do(compute_average(., "Path", "V"))
+d_p_adj <- d %>% group_by(Subject, Group, Condition) %>%
+  do(compute_average(., "Path", "Adjunct"))
+# c)
+d_m_any <- d %>% group_by(Subject, Group, Condition) %>%
+  do(compute_average(., "manner", "anywhere"))
+d_m_v <- d %>% group_by(Subject, Group, Condition) %>%
+  do(compute_average(., "manner", "V"))
+d_m_adj <- d %>% group_by(Subject, Group, Condition) %>%
+  do(compute_average(., "manner", "Adjunct"))
+
+
+
+d[, "Path"]
+(d %>% group_by(Subject, Group, Condition))[, "Path"]
+
+
