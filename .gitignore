@@ -3,5 +3,7 @@
 
 *test.R
 
+*.pdf
+
 audiofiles/*
 *.wav
