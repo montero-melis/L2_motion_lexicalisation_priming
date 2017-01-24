@@ -58,20 +58,8 @@ bysubj(d, "P_anyw", "P_anyw") %>% head
 
 ## plotting functions
 
-# plot group patterns -- emphasis put between conditions in each group
-f_plot <- function(df, varname = NULL) {
-  p <- ggplot(df, aes(x = Group, y = M, colour = Condition)) +
-    geom_point(position = position_jitterdodge()) +
-    stat_summary(fun.data = mean_cl_boot, geom = "errorbar", size = .85, width = .5,
-                 position = "dodge") +
-    ylim(0,1) +
-    ylab(paste("Proportion of descriptions\nexpressing", varname)) + 
-    ggtitle(varname)
-  p
-}
-
 # here the emphasis is put between groups (NS vs L2)
-f_plot2 <- function(df, varname = NULL, avg_type = "mean") {
+f_plot <- function(df, varname = NULL, avg_type = "mean") {
   p <- ggplot(df, aes(x = Condition, y = M, colour = Group, group = Group,
                       shape = Group)) +
     geom_point(position = position_jitterdodge(), size = 2, alpha = .5) +
@@ -85,6 +73,18 @@ f_plot2 <- function(df, varname = NULL, avg_type = "mean") {
   p
 }
 
+# # plot group patterns -- emphasis put between conditions in each group
+# f_plot2 <- function(df, varname = NULL) {
+#   p <- ggplot(df, aes(x = Group, y = M, colour = Condition)) +
+#     geom_point(position = position_jitterdodge()) +
+#     stat_summary(fun.data = mean_cl_boot, geom = "errorbar", size = .85, width = .5,
+#                  position = "dodge") +
+#     ylim(0,1) +
+#     ylab(paste("Proportion of descriptions\nexpressing", varname)) + 
+#     ggtitle(varname)
+#   p
+# }
+
 
 # Plot effect of proficiency (cloze score)
 f_plot_prof <- function(df, varname = NULL) {
@@ -92,11 +92,24 @@ f_plot_prof <- function(df, varname = NULL) {
   p <- ggplot(df, aes(x = ClozeScore, y = M, colour = Condition)) +
     geom_jitter(height = 0) +
     geom_smooth(method = "lm") +
-    # ylim(0,1) +
     ylab(paste("Proportion of descriptions\nexpressing", varname)) + 
     ggtitle(varname)
   p
 }
+
+# Plot trial by trial averages
+f_plot_trial <- function(df, varname = NULL) {
+  if(is.null(varname)) stop("Specify varname (i.e., the name of the DV)")
+  p <- ggplot(df, aes(x = VideoTrial, y = Avg, colour = Group)) +
+    geom_point() +
+    facet_grid(. ~ Condition) +
+    geom_smooth() +
+    ylim(-.05,1.05) +
+    ylab(paste("Proportion of descriptions\nexpressing", varname)) + 
+    ggtitle(varname)
+  p
+}
+
 
 
 #  ------------------------------------------------------------------------
@@ -118,14 +131,15 @@ contrasts(d_fm$Group)
 d_fm$Condition <- factor(d_fm$Condition, levels = c("Control", "Path", "Manner"))
 colnames(contrasts(d_fm$Condition)) <- c("P_vs_C", "M_vs_C")
 contrasts(d_fm$Condition)
-
+# center predictor VideoTrial (without as.vector() it's turned into a matrix)
+d_fm$cVideoTrial <- as.vector(scale(d_fm$VideoTrial, scale = FALSE))
 
 
 # Path anywhere -----------------------------------------------------------
 
 # plot all conditions for reference
-# f_plot(bysubj(d, "P_anyw"), "Path anywhere")
-f_plot2(bysubj(d, "P_anyw"), "Path anywhere")
+# f_plot2(bysubj(d, "P_anyw"), "Path anywhere")
+f_plot(bysubj(d, "P_anyw"), "Path anywhere")
 
 # fit model
 fm_pan <- glmer(P_anyw ~ Group * Condition + (1 | Subject) + (1 | VideoName),
@@ -138,8 +152,8 @@ vif.mer(fm_pan)
 # Manner anywhere ---------------------------------------------------------
 
 # plot all conditions for reference
-# f_plot(bysubj(d, "M_anyw"), "Manner anywhere")
-f_plot2(bysubj(d, "M_anyw"), "Manner anywhere")
+# f_plot2(bysubj(d, "M_anyw"), "Manner anywhere")
+f_plot(bysubj(d, "M_anyw"), "Manner anywhere")
 
 # fit model
 fm_man <- glmer(M_anyw ~ Group * Condition + (1 | Subject) + (1 | VideoName),
@@ -153,8 +167,8 @@ vif.mer(fm_man)
 # Path in the verb --------------------------------------------------------
 
 # plot all conditions for reference
-# f_plot(bysubj(d, "P_V"), "Path in V")
-f_plot2(bysubj(d, "P_V"), "Path in V")
+# f_plot2(bysubj(d, "P_V"), "Path in V")
+f_plot(bysubj(d, "P_V"), "Path in V")
 
 # fit model
 fm_pve <- glmer(P_V ~ Group * Condition + (1 | Subject) + (1 | VideoName),
@@ -168,8 +182,8 @@ vif.mer(fm_pve)
 # Manner in the verb ------------------------------------------------------
 
 # plot all conditions for reference
-# f_plot(bysubj(d, "M_V"), "Manner in V")
-f_plot2(bysubj(d, "M_V"), "Manner in V")
+# f_plot2(bysubj(d, "M_V"), "Manner in V")
+f_plot(bysubj(d, "M_V"), "Manner in V")
 
 # fit model
 fm_mve <- glmer(M_V ~ Group * Condition + (1 | Subject) + (1 | VideoName),
@@ -183,8 +197,8 @@ vif.mer(fm_mve)
 # Path as adjunct ---------------------------------------------------------
 
 # plot all conditions for reference
-# f_plot(bysubj(d, "P_adj"), "Path as adjunct")
-f_plot2(bysubj(d, "P_adj"), "Path as adjunct")
+# f_plot2(bysubj(d, "P_adj"), "Path as adjunct")
+f_plot(bysubj(d, "P_adj"), "Path as adjunct")
 
 # fit model
 fm_pad <- glmer(P_adj ~ Group * Condition + (1 | Subject) + (1 | VideoName),
@@ -198,8 +212,8 @@ vif.mer(fm_pad)
 # Manner as adjunct -------------------------------------------------------
 
 # plot all conditions for reference
-# f_plot(bysubj(d, "M_adj"), "Manner as adjunct")
-f_plot2(bysubj(d, "M_adj"), "Manner as adjunct")
+# f_plot2(bysubj(d, "M_adj"), "Manner as adjunct")
+f_plot(bysubj(d, "M_adj"), "Manner as adjunct")
 
 # fit model
 fm_mad <- glmer(M_adj ~ Group * Condition + (1 | Subject) + (1 | VideoName),
@@ -290,7 +304,6 @@ kappa.mer(fm_pve_prof)
 vif.mer(fm_pve_prof)
 
 
-
 # Manner in verb ------------------------------------------------------------
 
 # simple plot
@@ -367,24 +380,14 @@ vif.mer(fm_mad_prof)
 # path anywhere
 trial_p_anyw <- d %>%
   group_by(Group, Condition, VideoTrial) %>%
-  summarise(P = mean(P_anyw))
-ggplot(trial_p_anyw, aes(x = VideoTrial, y = P, colour = Condition)) +
-  geom_point() +
-  facet_grid(. ~ Group) +
-  geom_smooth() +
-  ylim(0,1.05) +
-  ggtitle("Path anywhere")
+  summarise(Avg = mean(P_anyw))
+f_plot_trial(trial_p_anyw, "Path anywhere")
 
 # manner anywhere
 trial_m_anyw <- d %>%
   group_by(Group, Condition, VideoTrial) %>%
-  summarise(M = mean(M_anyw))
-ggplot(trial_m_anyw, aes(x = VideoTrial, y = M, colour = Condition)) +
-  geom_point() +
-  facet_grid(. ~ Group) +
-  geom_smooth() +
-  ylim(0,1) +
-  ggtitle("Manner anywhere")
+  summarise(Avg = mean(M_anyw))
+f_plot_trial(trial_m_anyw, "Manner anywhere")
 
 
 # Main verb ---------------------------------------------------------------
@@ -392,24 +395,30 @@ ggplot(trial_m_anyw, aes(x = VideoTrial, y = M, colour = Condition)) +
 # path in verb
 trial_p_V <- d %>%
   group_by(Group, Condition, VideoTrial) %>%
-  summarise(P = mean(P_V))
-ggplot(trial_p_V, aes(x = VideoTrial, y = P, colour = Condition)) +
-  geom_point() +
-  facet_grid(. ~ Group) +
-  geom_smooth() +
-  ylim(0,1.05) +
-  ggtitle("Path in verb")
+  summarise(Avg = mean(P_V))
+f_plot_trial(trial_p_V, "Path in verb")
+
+# fm_test <- glmer(P_V ~ poly(cVideoTrial, 3) + (1 | Subject) + (1 | VideoName),
+#                  data = d_fm %>% filter(Condition == "Path", Group == "L2"),
+#                  family = "binomial")
+# summary(fm_test)
+# 
+# fm_test <- glmer(P_V ~ poly(cVideoTrial, 3) + (1 | Subject) + (1 | VideoName),
+#                  data = d_fm %>% filter(Condition == "Path", Group == "NS"),
+#                  family = "binomial")
+# summary(fm_test)
+# 
+# fm_test <- glmer(P_V ~ Group * poly(cVideoTrial, 3) + (1 | Subject) + (1 | VideoName),
+#                  data = d_fm %>% filter(Condition == "Path"),
+#                  family = "binomial")
+# summary(fm_test)
+
 
 # manner in verb
 trial_m_V <- d %>%
   group_by(Group, Condition, VideoTrial) %>%
-  summarise(M = mean(M_V))
-ggplot(trial_m_V, aes(x = VideoTrial, y = M, colour = Condition)) +
-  geom_point() +
-  facet_grid(. ~ Group) +
-  geom_smooth() +
-  ylim(-0.05,1) +
-  ggtitle("Manner in verb")
+  summarise(Avg = mean(M_V))
+f_plot_trial(trial_m_V, "Manner in verb")
 
 
 # As adjuncts -------------------------------------------------------------
@@ -417,24 +426,14 @@ ggplot(trial_m_V, aes(x = VideoTrial, y = M, colour = Condition)) +
 # path as adjunct
 trial_p_adj <- d %>%
   group_by(Group, Condition, VideoTrial) %>%
-  summarise(P = mean(P_adj))
-ggplot(trial_p_adj, aes(x = VideoTrial, y = P, colour = Condition)) +
-  geom_point() +
-  facet_grid(. ~ Group) +
-  geom_smooth() +
-  ylim(-0.05, 1) +
-  ggtitle("Path as adjunct")
+  summarise(Avg = mean(P_adj))
+f_plot_trial(trial_p_adj, "Path as adjunct")
 
 # manner as adjunct
 trial_m_adj <- d %>%
   group_by(Group, Condition, VideoTrial) %>%
-  summarise(M = mean(M_adj))
-ggplot(trial_m_adj, aes(x = VideoTrial, y = M, colour = Condition)) +
-  geom_point() +
-  facet_grid(. ~ Group) +
-  geom_smooth() +
-  ylim(-0.05,1) +
-  ggtitle("Manner as adjunct")
+  summarise(Avg = mean(M_adj))
+f_plot_trial(trial_m_adj, "Manner as adjunct")
 
 
 

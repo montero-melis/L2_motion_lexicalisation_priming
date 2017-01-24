@@ -1,0 +1,13 @@
+2017-01-24
+
+This is how I have proceeded for data coding and annotation 
+(for more details see files in my Google Drive: work > hopi_series > motion-descriptions-priming_L2-Spanish)
+
+1) The data are transcribed and the target part of their descriptions are identified in "gitRepos/L2_motion_lexicalisation_priming/data/data_verbal_transcribed_full.csv"
+(this file is a direct download from the file "data_verbal_transcribed" in the Google Drive folder mentioned above).
+
+2) The vocabulary is listed in "gitRepos/L2_motion_lexicalisation_priming/data/vocabulary.csv" (also downloaded from Google Drive)
+
+3) The script "gitRepos/L2_motion_lexicalisation_priming/processing/coding_manual-automatic.R" reads the file with the transcriptions, uses the script "gitRepos/L2_motion_lexicalisation_priming/processing/annotation_regex.R", which is full of regexes, to search for patterns in the targets that correspond to vocabulary entries and annotates the data.
+
+4) In the same script ("coding_manual-automatic.R") the file is converted to its long format, "data_annotated_long.csv", which is what the analysis script ("gitRepos/L2_motion_lexicalisation_priming/analysis/analysis.R") takes as input.

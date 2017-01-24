@@ -329,7 +329,7 @@
 "11","L2","Control",9,"trd_bronei","Popi en las montañas de nieve bajando un carridelero no sé","Adjunct","No Manner",1,0,1,0,0,0
 "11","L2","Control",10,"pre_pnegro","él mueve una rueda de un carro bajando la cueva","Adjunct","No Manner",1,0,1,0,0,0
 "11","L2","Control",11,"pgm_paqdun","estamos con Popi moviendo un paquete en la duna y subiendo con el paquete","Adjunct","No Manner",1,0,1,0,0,0
-"11","L2","Control",12,"prd_balnei","estamos bajando [=está bajando] con un un balón de un plástico inflable","V+Adjunct","No Manner",1,1,1,0,0,0
+"11","L2","Control",12,"prd_balnei","estamos bajando [=está bajando] con un un balón de un plástico inflable","V","No Manner",1,1,0,0,0,0
 "11","L2","Control",13,"tgm_sactoi","estamos subiendo [=está subiendo] un saco con Popi a través de la colina","V+Adjunct","No Manner",1,1,1,0,0,0
 "11","L2","Control",14,"pgt_panrou","Popi está moviendo un cesto lleno de manzanas sobre éste camino está atravesando el camino de la izquierda hasta la derecha","V","No Manner",1,1,0,0,0,0
 "11","L2","Control",15,"pre_pnemai","estamos entrando [=está entrando] con la rueda adentro del garaje","V+Adjunct","No Manner",1,1,1,0,0,0
@@ -606,7 +606,7 @@
 "20","L2","Manner",30,"tgm_sacdun","Popi sube la duna de arena arrastrando un saco","V","Adjunct",1,1,0,1,0,1
 "20","L2","Manner",31,"trd_bronei","Popi baja el cerro nevado arrastrando el no sé como se llama","V","Adjunct",1,1,0,1,0,1
 "20","L2","Manner",32,"prm_boutoi","Popi rueda el juguete inflable hasta el pico del tejado","Adjunct","V",1,0,1,1,1,0
-"21","L2","Path",1,"prd_balnei","Popi está bajando una pelota y va bajando","V+Adjunct","No Manner",1,1,1,0,0,0
+"21","L2","Path",1,"prd_balnei","Popi está bajando una pelota","V","No Manner",1,1,0,0,0,0
 "21","L2","Path",2,"pge_tabmai","Popi está cargando una mesa a la casa","No Path","No Manner",0,0,0,0,0,0
 "21","L2","Path",3,"prt_rourue","Popi tiene una rueda y está cruzando la calle","V","No Manner",1,1,0,0,0,0
 "21","L2","Path",4,"tre_cadgro","Popi tiene una carrera en la mano y está entrando en una cueva","V","No Manner",1,1,0,0,0,0
@@ -630,7 +630,7 @@
 "21","L2","Path",22,"tgd_malcol","Popi está bajando una cosa negra redonda y grande ","V","No Manner",1,1,0,0,0,0
 "21","L2","Path",23,"trt_pourue","Popi está cruzando la calle con una carretera de niño","V","No Manner",1,1,0,0,0,0
 "21","L2","Path",24,"prm_boutoi","Popi está subiendo el techo de la casa con una redonda cosa que es naranja","V","No Manner",1,1,0,0,0,0
-"21","L2","Path",25,"pgt_panrou","Popi va un lado al otro con manzanas","No Path","No Manner",0,0,0,0,0,0
+"21","L2","Path",25,"pgt_panrou","Popi va un lado al otro [de un lado al otro] con manzanas","Adjunct","No Manner",1,0,1,0,0,0
 "21","L2","Path",26,"trm_voidun","Popi subió con un carro azul","V","No Manner",1,1,0,0,0,0
 "21","L2","Path",27,"pgd_valcol","Popi va bajando con una maleta","Adjunct","No Manner",1,0,1,0,0,0
 "21","L2","Path",28,"trt_pourou","Popi está cruzando la calle con una carretera [=un carrito]","V","No Manner",1,1,0,0,0,0
@@ -958,7 +958,7 @@
 "32","L2","Path",1,"pgt_panrou","Popi está empujando una caja de manzanas","No Path","V",0,0,0,1,1,0
 "32","L2","Path",2,"pre_pnemai","Popi estaba empujando una rueda en un garaje","No Path","V",0,0,0,1,1,0
 "32","L2","Path",3,"trd_brocol","Popi estaba bajando una colina con una carretilla","V","No Manner",1,1,0,0,0,0
-"32","L2","Path",4,"pre_pnegro","Popi estaba empujando una rueda a un cueva","No Path","V",0,0,0,1,1,0
+"32","L2","Path",4,"pre_pnegro","Popi estaba empujando una rueda a un cueva [a una cueva]","No Path","V",0,0,0,1,1,0
 "32","L2","Path",5,"trt_pourou","Popi cruzó un río de hielo con una carreta","V","No Manner",1,1,0,0,0,0
 "32","L2","Path",6,"prd_balcol","Popi bajó una colina con un balón inflatable","V","No Manner",1,1,0,0,0,0
 "32","L2","Path",7,"tge_chagro","Popi entró una cueva con una silla","V","No Manner",1,1,0,0,0,0
@@ -1678,7 +1678,7 @@
 "54","L2","Control",22,"pgd_valnei","baja el colmo con nieve con su maleta verde","V","No Manner",1,1,0,0,0,0
 "54","L2","Control",23,"tre_cadmai","va con su carreta [=carrito] de compras y entra en el almacén de su casa","V","No Manner",1,1,0,0,0,0
 "54","L2","Control",24,"pgt_panrue","tiene el gran cesto con manzanas y pasa la carretera en el pueblo donde está","No Path","No Manner",0,0,0,0,0,0
-"54","L2","Control",25,"prd_balcol","bajando [=está bajando] por el colmo","V+Adjunct","No Manner",1,1,1,0,0,0
+"54","L2","Control",25,"prd_balcol","está bajando por el colmo","V","No Manner",1,1,0,0,0,0
 "54","L2","Control",26,"trm_voidun","ahora está subiendo la colma [=colina] de arena con su coche para los niños","V","No Manner",1,1,0,0,0,0
 "54","L2","Control",27,"prd_balnei","él está bajando el colmo [=la colina] con nieve con su balón grandísima en frente de él","V","Adjunct",1,1,0,1,0,1
 "54","L2","Control",28,"pge_tabmai","ahora es una mesa redonda que se pone ahí [en el almacén de su casa]","No Path","No Manner",0,0,0,0,0,0
@@ -2005,8 +2005,8 @@
 "NS_152","NS","Control",30,"pge_tabmai","Popi arrastra una mesa y se mete por una puerta","V","V",1,1,0,1,1,0
 "NS_152","NS","Control",31,"prd_balcol","Popi baja una colina arrastrando una pelota","V","Adjunct",1,1,0,1,0,1
 "NS_152","NS","Control",32,"pgm_paqtoi","Popi sube un tejado arrastrando un regalo","V","Adjunct",1,1,0,1,0,1
-"NS_153","NS","Control",1,"prd_balcol","Popi ha estado empujando una bola y bajando la cuesta","Adjunct","V+Adjunct",1,0,1,1,1,1
-"NS_153","NS","Control",2,"trm_voidun","Popi ha estado subiendo la cuesta de arena con un coche","V+Adjunct","No Manner",1,1,1,0,0,0
+"NS_153","NS","Control",1,"prd_balcol","Popi ha estado empujando una bola y bajando [ha estado bajando] la cuesta","V","V",1,1,0,1,1,0
+"NS_153","NS","Control",2,"trm_voidun","Popi ha estado subiendo la cuesta de arena con un coche","V","No Manner",1,1,0,0,0,0
 "NS_153","NS","Control",3,"prt_rourou","Popi ha cruzado el río con una rueda","V","No Manner",1,1,0,0,0,0
 "NS_153","NS","Control",4,"tre_cadgro","Popi va con su carro de la compra y ha pasado la cueva","No Path","No Manner",0,0,0,0,0,0
 "NS_153","NS","Control",5,"tgd_malnei","Popi ha bajado la nieve a cuestas con una caja","V","Adjunct",1,1,0,1,0,1
@@ -2019,7 +2019,7 @@
 "NS_153","NS","Control",12,"tgm_sactoi","Popi ha subido hasta el tejado a cuestas con un saco","V","Adjunct",1,1,0,1,0,1
 "NS_153","NS","Control",13,"prd_balnei","Popi ha bajado en la nieve con una pelota grande de colores morado verde y amarillo ","V","No Manner",1,1,0,0,0,0
 "NS_153","NS","Control",14,"tgt_cherue","Popi ha cruzado la calle con un caballo de juguete de color marrón verde y rojo","V","No Manner",1,1,0,0,0,0
-"NS_153","NS","Control",15,"pgm_paqdun","Popi ha subido a una duna cuestas de un regalo con un lazo amarillo y la caja morada","V","Adjunct",1,1,0,1,0,1
+"NS_153","NS","Control",15,"pgm_paqdun","Popi ha subido la duna a cuestas de un regalo con un lazo amarillo y la caja morada","V","Adjunct",1,1,0,1,0,1
 "NS_153","NS","Control",16,"trt_pourou","Popi ha cruzado el río hasta la izquierda con el carrito de bebé de color morado","V","No Manner",1,1,0,0,0,0
 "NS_153","NS","Control",17,"tgd_malcol","Popi ha bajado la cuesta del campo con un cofre grande","V","No Manner",1,1,0,0,0,0
 "NS_153","NS","Control",18,"prm_boutoi","Popi ha subido al tejado de la casa en el campo con un flotador naranja","V","No Manner",1,1,0,0,0,0
@@ -2856,7 +2856,7 @@
 "NS_179","NS","Manner",17,"tgd_malcol","Popi baja la pendiente del bosque junto con un cofre","V","No Manner",1,1,0,0,0,0
 "NS_179","NS","Manner",18,"pge_tabgro","Popi arrastra una mesa hacia la cueva","No Path","V",0,0,0,1,1,0
 "NS_179","NS","Manner",19,"tgm_sacdun","Popi sube una pendiente de arena un saco","V","No Manner",1,1,0,0,0,0
-"NS_179","NS","Manner",20,"prt_rourou","Popi traslada una rueda de una a otra","No Path","No Manner",0,0,0,0,0,0
+"NS_179","NS","Manner",20,"prt_rourou","Popi traslada una rueda de un lado a otro","Adjunct","No Manner",1,0,1,0,0,0
 "NS_179","NS","Manner",21,"tre_cadmai","Popi guarda el carrito de la compra en la xxx","No Path","No Manner",0,0,0,0,0,0
 "NS_179","NS","Manner",22,"pgm_paqdun","Popi sube la pendiente de arena con un regalo","V","No Manner",1,1,0,0,0,0
 "NS_179","NS","Manner",23,"trd_brocol","Popi baja la pendiente del bosque arrastrando una carrilla","V","Adjunct",1,1,0,1,0,1
@@ -3173,7 +3173,7 @@
 "NS_189","NS","Manner",15,"prt_rourou","Popi rueda una rueda cruzando el río","Adjunct","V",1,0,1,1,1,0
 "NS_189","NS","Manner",16,"pgd_valcol","Popi empuja una maleta ladera abajo","Adjunct","V",1,0,1,1,1,0
 "NS_189","NS","Manner",17,"tgt_cherue","Popi cruza una carretera en su pueblo mientras lleva consigo un balancín de un caballito que lo va arrastrando detrás suyo","V","Adjunct",1,1,0,1,0,1
-"NS_189","NS","Manner",18,"pgm_paqdun","Popi sube arrrastrando una duna de Tarifa","V","No Manner",1,1,0,0,0,0
+"NS_189","NS","Manner",18,"pgm_paqdun","Popi sube arrastrando una duna de Tarifa","V","Adjunct",1,1,0,1,0,1
 "NS_189","NS","Manner",19,"pre_pnegro","Popi mete rodando una rueda dentro de una cueva en el bosque","V+Adjunct","Adjunct",1,1,1,1,0,1
 "NS_189","NS","Manner",20,"trm_voitoi","Popi sube al tejado de su casa en el bosque mientras arrastra un coche de juguetes azul gigante con una cuerda","V","Adjunct",1,1,0,1,0,1
 "NS_189","NS","Manner",21,"pre_pnemai","Popi mete una rueda de camión de un Renault gigante dentro de su garaje en su pueblo mientras la lleva rodando","V+Adjunct","Adjunct",1,1,1,1,0,1
@@ -3426,7 +3426,7 @@
 "NS_197","NS","Path",13,"prm_boutoi","Popi ha vuelto a subir por el tejado de antes empujando un flotador de playa enorme con delfines azules","V","Adjunct",1,1,0,1,0,1
 "NS_197","NS","Path",14,"tgd_malcol","Popi ha bajado una ladera de un cerro arrastrando un baúl","V","Adjunct",1,1,0,1,0,1
 "NS_197","NS","Path",15,"prt_rourue","Popi ha vuelto a cruzar la calle de antes empujando una rueda","V","Adjunct",1,1,0,1,0,1
-"NS_197","NS","Path",16,"tre_cadmai","Popi entra en un edificio que tiene la puerta roja y ha estado arrastrando un carrito","V","Adjunct",1,1,0,1,0,1
+"NS_197","NS","Path",16,"tre_cadmai","Popi entra en un edificio que tiene la puerta roja y ha estado arrastrando un carrito","V","V",1,1,0,1,1,0
 "NS_197","NS","Path",17,"prd_balnei","Popi ha bajado en una ladera de una montañita de nieve empujando una pelota de plástico","V","Adjunct",1,1,0,1,0,1
 "NS_197","NS","Path",18,"tgt_cherue","Popi ha vuelto a cruzar la calle empedrada arrastrando un caballito de madera de juguete","V","Adjunct",1,1,0,1,0,1
 "NS_197","NS","Path",19,"pge_tabmai","Popi ha entrado en un edificio que tiene una puerta roja empujando una mesa redonda","V","Adjunct",1,1,0,1,0,1
@@ -3442,7 +3442,7 @@
 "NS_197","NS","Path",29,"trm_voitoi","Popi vuelve a subir por un tejado arrastrando un cochecito de juguete","V","Adjunct",1,1,0,1,0,1
 "NS_197","NS","Path",30,"pre_pnegro","Popi entra en la boca de una cueva empujando una rueda gigante","V","Adjunct",1,1,0,1,0,1
 "NS_197","NS","Path",31,"trd_brocol","Popi ha bajado la ladera de un pequeño cerro arrastrando un carrito amarillo de mano","V","Adjunct",1,1,0,1,0,1
-"NS_197","NS","Path",32,"pgt_panrue","Popi ha cruzado una calle y ha estado empujando una cesta de manzanas","V","V+Adjunct",1,1,0,1,1,1
+"NS_197","NS","Path",32,"pgt_panrue","Popi ha cruzado una calle y ha estado empujando una cesta de manzanas","V","V",1,1,0,1,1,0
 "NS_198","NS","Control",1,"tre_cadmai","Popi entra en una casa con un carro de la compra","V","No Manner",1,1,0,0,0,0
 "NS_198","NS","Control",2,"prd_balcol","Popi baja una colina empujando una pelota","V","Adjunct",1,1,0,1,0,1
 "NS_198","NS","Control",3,"tgt_cherue","Popi cruza la calle arrastrando un balancín de un caballo de madera","V","Adjunct",1,1,0,1,0,1
