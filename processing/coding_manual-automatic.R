@@ -90,7 +90,7 @@ tr_random$Comment_KS <- ""
 tr_random$Comment_GMM <- ""
 
 # to file
-write.csv(tr_random, "processing/targets_random.csv", fileEncoding = "UTF-8")
+# write.csv(tr_random, "processing/targets_random.csv", fileEncoding = "UTF-8")
 rm(tr_random)
 
 
@@ -180,8 +180,3 @@ head(tr_long)
 # participant pushed the space bar).
 write.csv(tr_long, "data/data_annotated_long.csv", fileEncoding = "UTF-8",
           row.names = FALSE)
-
-
-#  ------------------------------------------------------------------------
-#  
-#  ------------------------------------------------------------------------
