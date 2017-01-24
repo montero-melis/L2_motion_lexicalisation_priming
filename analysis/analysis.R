@@ -4,6 +4,7 @@ library(dplyr)
 library(lazyeval)  # lazy evaluation used in bysubj() function [summarise_]
 library(ggplot2)
 library(lme4)
+library(boot)  # for inv.logit()
 
 #  ------------------------------------------------------------------------
 #  Load data and process
@@ -20,7 +21,8 @@ d$Condition <- factor(d$Condition, levels = c("Path", "Control", "Manner"))
 d$Group <- factor(d$Group, levels = c("NS", "L2"))
 
 # participant data
-ppts <- read.csv("data/participants.csv", fileEncoding = "UTF-8", stringsAsFactors = FALSE)
+ppts <- read.csv("data/participants.csv", fileEncoding = "UTF-8",
+                 stringsAsFactors = FALSE)
 head(ppts)
 
 # add speakers' clozescore to d:
@@ -34,6 +36,9 @@ tail(d)
 #  Functions
 #  ------------------------------------------------------------------------
 
+# source functions to compute collinearity diagnostics
+source("analysis/functions/kappa_mer_fnc.R")
+source("analysis/functions/vif_mer_fnc.R")
 
 # Convenience function to compute by-speaker averages for a given variable
 bysubj <- function(df, myvar = NULL, varname = NULL) {
@@ -65,14 +70,20 @@ f_plot <- function(df, varname = NULL) {
   p
 }
 
-# f_plot2 <- function(df, varname = NULL) {
-#   p <- ggplot(df, aes(x = Condition, y = M, colour = Group)) +
-#     geom_point(position = position_jitterdodge()) +
-#     stat_summary(fun.data = mean_cl_boot, geom = "errorbar", size = .85, width = .5,
-#                  position = "dodge") +
-#     ggtitle(varname)
-#   p
-# }
+# here the emphasis is put between groups (NS vs L2)
+f_plot2 <- function(df, varname = NULL, avg_type = "mean") {
+  p <- ggplot(df, aes(x = Condition, y = M, colour = Group, group = Group,
+                      shape = Group)) +
+    geom_point(position = position_jitterdodge(), size = 2, alpha = .5) +
+    stat_summary(fun.data = mean_cl_boot, geom = "errorbar", size = 1.5,
+                 position = "dodge", width = .5) +
+    stat_summary(fun.y = avg_type, geom = "line",  size = 1,
+                 position = position_dodge(width = .5)) +
+    ylim(0,1) +
+    ylab(paste("Proportion of descriptions\nexpressing", varname)) + 
+    ggtitle(varname)
+  p
+}
 
 
 # Plot effect of proficiency (cloze score)
@@ -89,124 +100,114 @@ f_plot_prof <- function(df, varname = NULL) {
 
 
 #  ------------------------------------------------------------------------
-#  Plots
-#  ------------------------------------------------------------------------
-
-# group patterns
-f_plot(bysubj(d, "P_anyw"), "Path anywhere")
-f_plot(bysubj(d, "P_V"), "Path in V")
-f_plot(bysubj(d, "P_adj"), "Path in adjunct")
-
-f_plot(bysubj(d, "M_anyw"), "Manner anywhere")
-f_plot(bysubj(d, "M_V"), "Manner in V")
-f_plot(bysubj(d, "M_adj"), "Manner in adjunct")
-
-# proficiency
-f_plot_prof(bysubj(d, "P_anyw"), "Path anywhere")
-f_plot_prof(bysubj(d, "P_V"), "Path in V")
-f_plot_prof(bysubj(d, "P_adj"), "Path in adjunct")
-
-f_plot_prof(bysubj(d, "M_anyw"), "Manner anywhere")
-f_plot_prof(bysubj(d, "M_V"), "Manner in V")
-f_plot_prof(bysubj(d, "M_adj"), "Manner in adjunct")
-
-
-
-#  ------------------------------------------------------------------------
 #  Logit mixed models and corresponding plots
 #  ------------------------------------------------------------------------
 
-
 # Create data subsets for the different comparisons -----------------------
 
-# Path vs control
-d_pc <- d %>% filter(Condition != "Manner")
-# contrast coding for group
-contrasts(d_pc$Group) <- - contr.sum(2)
-colnames(contrasts(d_pc$Group)) <- "L2_vs_NS"
-contrasts(d_pc$Group)
-# contrast coding for conditions
-d_pc$Condition <- factor(d_pc$Condition)
-contrasts(d_pc$Condition) <- contr.sum(2)
-colnames(contrasts(d_pc$Condition)) <- "P_vs_C"
-contrasts(d_pc$Condition)
 
-# Manner vs control
-d_mc <- d %>% filter(Condition != "Path")
+# Data set for model fitting ----------------------------------------------
+
+# Make some adjustments to the dataset for model fitting:
+d_fm <- d
 # contrast coding for group
-contrasts(d_mc$Group) <- - contr.sum(2)
-colnames(contrasts(d_mc$Group)) <- "L2_vs_NS"
-contrasts(d_mc$Group)
-# contrast coding for conditions
-d_mc$Condition <- factor(d_mc$Condition)
-contrasts(d_mc$Condition) <- - contr.sum(2)
-colnames(contrasts(d_mc$Condition)) <- "M_vs_C"
-contrasts(d_mc$Condition)
+contrasts(d_fm$Group) <- - contr.sum(2)
+colnames(contrasts(d_fm$Group)) <- "L2_vs_NS"
+contrasts(d_fm$Group)
+# dummy coding for conditions, using control condition as reference
+d_fm$Condition <- factor(d_fm$Condition, levels = c("Control", "Path", "Manner"))
+colnames(contrasts(d_fm$Condition)) <- c("P_vs_C", "M_vs_C")
+contrasts(d_fm$Condition)
+
+
+
+# Path anywhere -----------------------------------------------------------
+
+# plot all conditions for reference
+# f_plot(bysubj(d, "P_anyw"), "Path anywhere")
+f_plot2(bysubj(d, "P_anyw"), "Path anywhere")
+
+# fit model
+fm_pan <- glmer(P_anyw ~ Group * Condition + (1 | Subject) + (1 | VideoName),
+                data = d_fm, family = "binomial",
+                control = glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
+summary(fm_pan)
+kappa.mer(fm_pan)
+vif.mer(fm_pan)
+
+# Manner anywhere ---------------------------------------------------------
+
+# plot all conditions for reference
+# f_plot(bysubj(d, "M_anyw"), "Manner anywhere")
+f_plot2(bysubj(d, "M_anyw"), "Manner anywhere")
+
+# fit model
+fm_man <- glmer(M_anyw ~ Group * Condition + (1 | Subject) + (1 | VideoName),
+                data = d_fm, family = "binomial",
+                control = glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
+summary(fm_man)
+kappa.mer(fm_man)
+vif.mer(fm_man)
 
 
 # Path in the verb --------------------------------------------------------
 
 # plot all conditions for reference
-f_plot(bysubj(d, "P_V"), "Path in V")
+# f_plot(bysubj(d, "P_V"), "Path in V")
+f_plot2(bysubj(d, "P_V"), "Path in V")
 
-# Path-primed vs Control
-fm_pve_pc <- glmer(P_V ~ Group * Condition + (1 | Subject) + (1 | VideoName),
-                   data = d_pc, family = "binomial")
-summary(fm_pve_pc)
-
-# Manner-primed vs Control
-fm_pve_mc <- glmer(P_V ~ Group * Condition + (1 | Subject) + (1 | VideoName),
-                   data = d_mc, family = "binomial")
-summary(fm_pve_mc)
-
-
-# Path as adjunct ---------------------------------------------------------
-
-# plot all conditions for reference
-f_plot(bysubj(d, "P_adj"), "Path as adjunct")
-
-# Path-primed vs Control
-fm_pad_pc <- glmer(P_adj ~ Group * Condition + (1 | Subject) + (1 | VideoName),
-                   data = d_pc, family = "binomial")
-summary(fm_pad_pc)
-
-# Manner-primed vs Control
-fm_pad_mc <- glmer(P_adj ~ Group * Condition + (1 | Subject) + (1 | VideoName),
-                   data = d_mc, family = "binomial")
-summary(fm_pad_mc)
+# fit model
+fm_pve <- glmer(P_V ~ Group * Condition + (1 | Subject) + (1 | VideoName),
+                data = d_fm, family = "binomial", 
+                control = glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
+summary(fm_pve)
+kappa.mer(fm_pve)
+vif.mer(fm_pve)
 
 
 # Manner in the verb ------------------------------------------------------
 
 # plot all conditions for reference
-f_plot(bysubj(d, "M_V"), "Manner in V")
+# f_plot(bysubj(d, "M_V"), "Manner in V")
+f_plot2(bysubj(d, "M_V"), "Manner in V")
 
-# Manner-primed vs Control
-fm_mve_mc <- glmer(M_V ~ Group * Condition + (1 | Subject) + (1 | VideoName),
-                                data = d_mc, family = "binomial")
-summary(fm_mve_mc)
+# fit model
+fm_mve <- glmer(M_V ~ Group * Condition + (1 | Subject) + (1 | VideoName),
+                data = d_fm, family = "binomial",
+                control = glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
+summary(fm_mve)
+kappa.mer(fm_mve)
+vif.mer(fm_mve)
 
-# Path-primed vs Control
-fm_mve_pc <- glmer(M_V ~ Group * Condition + (1 | Subject) + (1 | VideoName),
-                   data = d_pc, family = "binomial")
-summary(fm_mve_pc)
+
+# Path as adjunct ---------------------------------------------------------
+
+# plot all conditions for reference
+# f_plot(bysubj(d, "P_adj"), "Path as adjunct")
+f_plot2(bysubj(d, "P_adj"), "Path as adjunct")
+
+# fit model
+fm_pad <- glmer(P_adj ~ Group * Condition + (1 | Subject) + (1 | VideoName),
+                data = d_fm, family = "binomial",
+                control = glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
+summary(fm_pad)
+kappa.mer(fm_pad)
+vif.mer(fm_pad)
 
 
 # Manner as adjunct -------------------------------------------------------
 
 # plot all conditions for reference
-f_plot(bysubj(d, "M_adj"), "Manner as adjunct")
+# f_plot(bysubj(d, "M_adj"), "Manner as adjunct")
+f_plot2(bysubj(d, "M_adj"), "Manner as adjunct")
 
-
-# Manner-primed vs Control
-fm_mad_mc <- glmer(M_adj ~ Group * Condition + (1 | Subject) + (1 | VideoName),
-                   data = d_mc, family = "binomial")
-summary(fm_mad_mc)
-
-# Path-primed vs Control
-fm_mad_pc <- glmer(M_adj ~ Group * Condition + (1 | Subject) + (1 | VideoName),
-                   data = d_pc, family = "binomial")
-summary(fm_mad_pc)
+# fit model
+fm_mad <- glmer(M_adj ~ Group * Condition + (1 | Subject) + (1 | VideoName),
+                data = d_fm, family = "binomial",
+                control = glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
+summary(fm_mad)
+kappa.mer(fm_mad)
+vif.mer(fm_mad)
 
 
 
@@ -224,55 +225,216 @@ colnames(contrasts(d_l2$Condition)) <- c("P_vs_C", "M_vs_C")
 contrasts(d_l2$Condition)
 
 
-# Path expression ---------------------------------------------------------
-
-# Path in Verb
-f_plot_prof(bysubj(d, "P_V"), "Path in V") + geom_text(aes(label = Subject))
-fm_pve_prof <- glmer(P_V ~ Condition * cCloze + (1 | Subject) + (1 | VideoName),
-                     data = d_l2, family = "binomial")
-summary(fm_pve_prof)
-# likelihood ratio test
-fm_pve_prof_null <- glmer(P_V ~ Condition + (1 | Subject) + (1 | VideoName),
-                     data = d_l2, family = "binomial")
-summary(fm_pve_prof_null)
-anova(fm_pve_prof_null, fm_pve_prof)
-
-# Path in adjunct
-f_plot_prof(bysubj(d, "P_adj"), "Path in adjunct")
-fm_pad_prof <- glmer(P_adj ~ Condition * cCloze + (1 | Subject) + (1 | VideoName),
-                     data = d_l2, family = "binomial")
-summary(fm_pad_prof)
-# likelihood ratio test
-fm_pad_prof_null <- glmer(P_adj ~ Condition + (1 | Subject) + (1 | VideoName),
-                     data = d_l2, family = "binomial")
-anova(fm_pad_prof, fm_pad_prof_null)
+# Path anywhere -----------------------------------------------------------
 
 # Path anywhere
 f_plot_prof(bysubj(d, "P_anyw"), "Path anywhere")
+
+## likelihood ratio test to test significance of proficiency
+# model with proficiency
 fm_pan_prof <- glmer(P_anyw ~ Condition * cCloze + (1 | Subject) + (1 | VideoName),
-                     data = d_l2, family = "binomial")
+                     data = d_l2, family = "binomial",
+                     control = glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
+# model without proficiency
+fm_pan_prof_null <- glmer(P_anyw ~ Condition + (1 | Subject) + (1 | VideoName),
+                          data = d_l2, family = "binomial",
+                          control = glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
+anova(fm_pan_prof_null, fm_pan_prof)
+# if significant, go ahead and interpret model with proficiency
 summary(fm_pan_prof)
+kappa.mer(fm_pan_prof)
+vif.mer(fm_pan_prof)
 
 
-# Manner expression ---------------------------------------------------------
-
-# Manner in Verb
-f_plot_prof(bysubj(d, "M_V"), "Manner in V")
-fm_mve_prof <- glmer(M_V ~ Condition * cCloze + (1 | Subject) + (1 | VideoName),
-                     data = d_l2, family = "binomial")
-summary(fm_mve_prof)
-
-# Manner in adjunct
-f_plot_prof(bysubj(d, "M_adj"), "Manner in adjunct")
-fm_mad_prof <- glmer(M_adj ~ Condition * cCloze + (1 | Subject) + (1 | VideoName),
-                     data = d_l2, family = "binomial")
-summary(fm_mad_prof)
+# Manner anywhere -----------------------------------------------------------
 
 # Manner anywhere
 f_plot_prof(bysubj(d, "M_anyw"), "Manner anywhere")
+
+## likelihood ratio test to test significance of proficiency
+# model with proficiency
 fm_man_prof <- glmer(M_anyw ~ Condition * cCloze + (1 | Subject) + (1 | VideoName),
-                     data = d_l2, family = "binomial")
+                     data = d_l2, family = "binomial",
+                     control = glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
+# model without proficiency
+fm_man_prof_null <- glmer(M_anyw ~ Condition + (1 | Subject) + (1 | VideoName),
+                          data = d_l2, family = "binomial",
+                          control = glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
+anova(fm_man_prof_null, fm_man_prof)  # trend towards significance
+
+# if significant, go ahead and interpret model with proficiency
 summary(fm_man_prof)
+kappa.mer(fm_man_prof)
+vif.mer(fm_man_prof)
+
+
+# Path in verb ------------------------------------------------------------
+
+# simple plot
+f_plot_prof(bysubj(d, "P_V"), "Path in V") + geom_text(aes(label = Subject))
+f_plot_prof(bysubj(d, "P_V"), "Path in V")
+
+## likelihood ratio test to test significance of proficiency
+# model with proficiency
+fm_pve_prof <- glmer(P_V ~ Condition * cCloze + (1 | Subject) + (1 | VideoName),
+                     data = d_l2, family = "binomial",
+                     control = glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
+# model without proficiency
+fm_pve_prof_null <- glmer(P_V ~ Condition + (1 | Subject) + (1 | VideoName),
+                          data = d_l2, family = "binomial",
+                          control = glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
+anova(fm_pve_prof_null, fm_pve_prof)
+# if significant, go ahead and interpret model with proficiency
+summary(fm_pve_prof)
+kappa.mer(fm_pve_prof)
+vif.mer(fm_pve_prof)
+
+
+
+# Manner in verb ------------------------------------------------------------
+
+# simple plot
+f_plot_prof(bysubj(d, "M_V"), "Manner in V")
+
+## likelihood ratio test to test significance of proficiency
+# model with proficiency
+fm_mve_prof <- glmer(M_V ~ Condition * cCloze + (1 | Subject) + (1 | VideoName),
+                     data = d_l2, family = "binomial",
+                     control = glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
+# model without proficiency
+fm_mve_prof_null <- glmer(M_V ~ Condition + (1 | Subject) + (1 | VideoName),
+                          data = d_l2, family = "binomial",
+                          control = glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
+anova(fm_mve_prof_null, fm_mve_prof)  # not significant
+
+# # if significant, go ahead and interpret model with proficiency
+# summary(fm_mve_prof)
+# kappa.mer(fm_mve_prof)
+# vif.mer(fm_mve_prof)
+
+
+# Path in adjunct ---------------------------------------------------------
+
+# simple plot
+f_plot_prof(bysubj(d, "P_adj"), "Path as adjunct")
+
+## likelihood ratio test to test significance of proficiency
+# model with proficiency
+fm_pad_prof <- glmer(P_adj ~ Condition * cCloze + (1 | Subject) + (1 | VideoName),
+                     data = d_l2, family = "binomial",
+                     control = glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
+# model without proficiency
+fm_pad_prof_null <- glmer(P_adj ~ Condition + (1 | Subject) + (1 | VideoName),
+                          data = d_l2, family = "binomial",
+                          control = glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
+anova(fm_pad_prof_null, fm_pad_prof)  # not significant
+
+# # if significant, go ahead and interpret model with proficiency
+# summary(fm_pad_prof)
+# kappa.mer(fm_pad_prof)
+# vif.mer(fm_pad_prof)
+
+
+# Manner in adjunct ---------------------------------------------------------
+
+# simple plot
+f_plot_prof(bysubj(d, "M_adj"), "Manner as adjunct")
+
+## likelihood ratio test to test significance of proficiency
+# model with proficiency
+fm_mad_prof <- glmer(M_adj ~ Condition * cCloze + (1 | Subject) + (1 | VideoName),
+                     data = d_l2, family = "binomial",
+                     control = glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
+# model without proficiency
+fm_mad_prof_null <- glmer(M_adj ~ Condition + (1 | Subject) + (1 | VideoName),
+                          data = d_l2, family = "binomial",
+                          control = glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
+anova(fm_mad_prof_null, fm_mad_prof)
+
+# if significant, go ahead and interpret model with proficiency
+summary(fm_mad_prof)
+kappa.mer(fm_mad_prof)
+vif.mer(fm_mad_prof)
+
+
+
+#  ------------------------------------------------------------------------
+#  Trial-by-trial averages
+#  ------------------------------------------------------------------------
+
+# Anywhere ----------------------------------------------------------------
+
+# path anywhere
+trial_p_anyw <- d %>%
+  group_by(Group, Condition, VideoTrial) %>%
+  summarise(P = mean(P_anyw))
+ggplot(trial_p_anyw, aes(x = VideoTrial, y = P, colour = Condition)) +
+  geom_point() +
+  facet_grid(. ~ Group) +
+  geom_smooth() +
+  ylim(0,1.05) +
+  ggtitle("Path anywhere")
+
+# manner anywhere
+trial_m_anyw <- d %>%
+  group_by(Group, Condition, VideoTrial) %>%
+  summarise(M = mean(M_anyw))
+ggplot(trial_m_anyw, aes(x = VideoTrial, y = M, colour = Condition)) +
+  geom_point() +
+  facet_grid(. ~ Group) +
+  geom_smooth() +
+  ylim(0,1) +
+  ggtitle("Manner anywhere")
+
+
+# Main verb ---------------------------------------------------------------
+
+# path in verb
+trial_p_V <- d %>%
+  group_by(Group, Condition, VideoTrial) %>%
+  summarise(P = mean(P_V))
+ggplot(trial_p_V, aes(x = VideoTrial, y = P, colour = Condition)) +
+  geom_point() +
+  facet_grid(. ~ Group) +
+  geom_smooth() +
+  ylim(0,1.05) +
+  ggtitle("Path in verb")
+
+# manner in verb
+trial_m_V <- d %>%
+  group_by(Group, Condition, VideoTrial) %>%
+  summarise(M = mean(M_V))
+ggplot(trial_m_V, aes(x = VideoTrial, y = M, colour = Condition)) +
+  geom_point() +
+  facet_grid(. ~ Group) +
+  geom_smooth() +
+  ylim(-0.05,1) +
+  ggtitle("Manner in verb")
+
+
+# As adjuncts -------------------------------------------------------------
+
+# path as adjunct
+trial_p_adj <- d %>%
+  group_by(Group, Condition, VideoTrial) %>%
+  summarise(P = mean(P_adj))
+ggplot(trial_p_adj, aes(x = VideoTrial, y = P, colour = Condition)) +
+  geom_point() +
+  facet_grid(. ~ Group) +
+  geom_smooth() +
+  ylim(-0.05, 1) +
+  ggtitle("Path as adjunct")
+
+# manner as adjunct
+trial_m_adj <- d %>%
+  group_by(Group, Condition, VideoTrial) %>%
+  summarise(M = mean(M_adj))
+ggplot(trial_m_adj, aes(x = VideoTrial, y = M, colour = Condition)) +
+  geom_point() +
+  facet_grid(. ~ Group) +
+  geom_smooth() +
+  ylim(-0.05,1) +
+  ggtitle("Manner as adjunct")
 
 
 
