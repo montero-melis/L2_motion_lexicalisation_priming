@@ -5,6 +5,7 @@ library(lazyeval)  # lazy evaluation used in bysubj() function [summarise_]
 library(ggplot2)
 library(lme4)
 library(boot)  # for inv.logit()
+library(knitr)  # for kable()
 
 #  ------------------------------------------------------------------------
 #  Load data and process
@@ -31,6 +32,30 @@ head(d)
 tail(d)
 
 
+
+# Outliers? ---------------------------------------------------------------
+
+# L2 speakers Cloze scores
+cloze <- ppts %>%
+  filter(Group == "L2") %>%
+  select(Subject, Condition, ClozeScore)
+# z-scores
+cloze$zClozeScore <- scale(cloze$ClozeScore)
+# Subjects ordered by clozescore
+ppts_ordered <- cloze[order(cloze$zClozeScore), "Subject"]
+# check out
+cloze[ppts_ordered, ]
+
+# Consider ClozeScore = 5 as outlier
+threshold5 <- cloze[cloze$ClozeScore < 5, "Subject"]
+# Consider ClozeScore = 10 as outlier
+threshold10 <- cloze[cloze$ClozeScore < 10, "Subject"]
+
+# Exclude participants? (Uncomment to exclude)
+d <- d[!d$Subject %in% threshold5, ]
+# d <- d[!d$Subject %in% threshold10, ]
+
+rm(cloze, ppts_ordered, threshold10, threshold5)
 
 #  ------------------------------------------------------------------------
 #  Functions
@@ -110,6 +135,27 @@ f_plot_trial <- function(df, varname = NULL) {
   p
 }
 
+# Plot trial by trial averages, but only for one of the conditions
+f_plot_trial2 <- function(df, varname = NULL) {
+  if(is.null(varname)) stop("Specify varname (i.e., the name of the DV)")
+  p <- ggplot(df, aes(x = VideoTrial, y = Avg, colour = Group)) +
+    geom_point() +
+    # facet_grid(. ~ Condition) +
+    geom_smooth() +
+    ylim(-.05,1.05) +
+    ylab(paste("Proportion of descriptions\nexpressing", varname)) + 
+    ggtitle(varname)
+  p
+}
+
+
+# create a table of the summary of fixed effects of a model
+fm_table <- function(fm) {
+  m <- round(summary(fm)$coefficients, 3)
+  tb <- as.data.frame(m)
+  names(tb) <- c("Estimate", "SE", "z-value", "p-value")
+  kable(tb)
+}
 
 
 #  ------------------------------------------------------------------------
@@ -137,31 +183,32 @@ d_fm$cVideoTrial <- as.vector(scale(d_fm$VideoTrial, scale = FALSE))
 
 # Path anywhere -----------------------------------------------------------
 
-# plot all conditions for reference
-# f_plot2(bysubj(d, "P_anyw"), "Path anywhere")
-f_plot(bysubj(d, "P_anyw"), "Path anywhere")
+# # plot all conditions for reference
+# # f_plot2(bysubj(d, "P_anyw"), "Path anywhere")
+# f_plot(bysubj(d, "P_anyw"), "Path anywhere")
+# 
+# # fit model
+# fm_pan <- glmer(P_anyw ~ Group * Condition + (1 | Subject) + (1 | VideoName),
+#                 data = d_fm, family = "binomial",
+#                 control = glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
+# summary(fm_pan)
+# kappa.mer(fm_pan)
+# vif.mer(fm_pan)
 
-# fit model
-fm_pan <- glmer(P_anyw ~ Group * Condition + (1 | Subject) + (1 | VideoName),
-                data = d_fm, family = "binomial",
-                control = glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
-summary(fm_pan)
-kappa.mer(fm_pan)
-vif.mer(fm_pan)
 
 # Manner anywhere ---------------------------------------------------------
 
-# plot all conditions for reference
-# f_plot2(bysubj(d, "M_anyw"), "Manner anywhere")
-f_plot(bysubj(d, "M_anyw"), "Manner anywhere")
-
-# fit model
-fm_man <- glmer(M_anyw ~ Group * Condition + (1 | Subject) + (1 | VideoName),
-                data = d_fm, family = "binomial",
-                control = glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
-summary(fm_man)
-kappa.mer(fm_man)
-vif.mer(fm_man)
+# # plot all conditions for reference
+# # f_plot2(bysubj(d, "M_anyw"), "Manner anywhere")
+# f_plot(bysubj(d, "M_anyw"), "Manner anywhere")
+# 
+# # fit model
+# fm_man <- glmer(M_anyw ~ Group * Condition + (1 | Subject) + (1 | VideoName),
+#                 data = d_fm, family = "binomial",
+#                 control = glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
+# summary(fm_man)
+# kappa.mer(fm_man)
+# vif.mer(fm_man)
 
 
 # Path in the verb --------------------------------------------------------
@@ -178,6 +225,27 @@ summary(fm_pve)
 kappa.mer(fm_pve)
 vif.mer(fm_pve)
 
+fm_table(fm_pve)
+
+# # which r.e. structure is justified?
+# fm_pve1 <- glmer(P_V ~ Group * Condition + (1 | Subject) + (1 + Group | VideoName),
+#                 data = d_fm, family = "binomial", 
+#                 control = glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
+# summary(fm_pve1)
+# anova(fm_pve, fm_pve1)
+# 
+# fm_pve2 <- glmer(P_V ~ Group * Condition + (1 | Subject) + (1 + Condition | VideoName),
+#                 data = d_fm, family = "binomial", 
+#                 control = glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
+# summary(fm_pve2)
+# anova(fm_pve, fm_pve2)
+# 
+# fm_pve3 <- glmer(P_V ~ Group * Condition + (1 | Subject) + (1 + Group * Condition | VideoName),
+#                 data = d_fm, family = "binomial", 
+#                 control = glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
+# summary(fm_pve3)
+# anova(fm_pve, fm_pve3)
+
 
 # Manner in the verb ------------------------------------------------------
 
@@ -192,6 +260,8 @@ fm_mve <- glmer(M_V ~ Group * Condition + (1 | Subject) + (1 | VideoName),
 summary(fm_mve)
 kappa.mer(fm_mve)
 vif.mer(fm_mve)
+
+fm_table(fm_mve)
 
 
 # Path as adjunct ---------------------------------------------------------
@@ -241,45 +311,45 @@ contrasts(d_l2$Condition)
 
 # Path anywhere -----------------------------------------------------------
 
-# Path anywhere
-f_plot_prof(bysubj(d, "P_anyw"), "Path anywhere")
-
-## likelihood ratio test to test significance of proficiency
-# model with proficiency
-fm_pan_prof <- glmer(P_anyw ~ Condition * cCloze + (1 | Subject) + (1 | VideoName),
-                     data = d_l2, family = "binomial",
-                     control = glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
-# model without proficiency
-fm_pan_prof_null <- glmer(P_anyw ~ Condition + (1 | Subject) + (1 | VideoName),
-                          data = d_l2, family = "binomial",
-                          control = glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
-anova(fm_pan_prof_null, fm_pan_prof)
-# if significant, go ahead and interpret model with proficiency
-summary(fm_pan_prof)
-kappa.mer(fm_pan_prof)
-vif.mer(fm_pan_prof)
+# # Path anywhere
+# f_plot_prof(bysubj(d, "P_anyw"), "Path anywhere")
+# 
+# ## likelihood ratio test to test significance of proficiency
+# # model with proficiency
+# fm_pan_prof <- glmer(P_anyw ~ Condition * cCloze + (1 | Subject) + (1 | VideoName),
+#                      data = d_l2, family = "binomial",
+#                      control = glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
+# # model without proficiency
+# fm_pan_prof_null <- glmer(P_anyw ~ Condition + (1 | Subject) + (1 | VideoName),
+#                           data = d_l2, family = "binomial",
+#                           control = glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
+# anova(fm_pan_prof_null, fm_pan_prof)
+# # if significant, go ahead and interpret model with proficiency
+# summary(fm_pan_prof)
+# kappa.mer(fm_pan_prof)
+# vif.mer(fm_pan_prof)
 
 
 # Manner anywhere -----------------------------------------------------------
 
-# Manner anywhere
-f_plot_prof(bysubj(d, "M_anyw"), "Manner anywhere")
-
-## likelihood ratio test to test significance of proficiency
-# model with proficiency
-fm_man_prof <- glmer(M_anyw ~ Condition * cCloze + (1 | Subject) + (1 | VideoName),
-                     data = d_l2, family = "binomial",
-                     control = glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
-# model without proficiency
-fm_man_prof_null <- glmer(M_anyw ~ Condition + (1 | Subject) + (1 | VideoName),
-                          data = d_l2, family = "binomial",
-                          control = glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
-anova(fm_man_prof_null, fm_man_prof)  # trend towards significance
-
-# if significant, go ahead and interpret model with proficiency
-summary(fm_man_prof)
-kappa.mer(fm_man_prof)
-vif.mer(fm_man_prof)
+# # Manner anywhere
+# f_plot_prof(bysubj(d, "M_anyw"), "Manner anywhere")
+# 
+# ## likelihood ratio test to test significance of proficiency
+# # model with proficiency
+# fm_man_prof <- glmer(M_anyw ~ Condition * cCloze + (1 | Subject) + (1 | VideoName),
+#                      data = d_l2, family = "binomial",
+#                      control = glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
+# # model without proficiency
+# fm_man_prof_null <- glmer(M_anyw ~ Condition + (1 | Subject) + (1 | VideoName),
+#                           data = d_l2, family = "binomial",
+#                           control = glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
+# anova(fm_man_prof_null, fm_man_prof)  # trend towards significance
+# 
+# # if significant, go ahead and interpret model with proficiency
+# summary(fm_man_prof)
+# kappa.mer(fm_man_prof)
+# vif.mer(fm_man_prof)
 
 
 # Path in verb ------------------------------------------------------------
@@ -302,6 +372,8 @@ anova(fm_pve_prof_null, fm_pve_prof)
 summary(fm_pve_prof)
 kappa.mer(fm_pve_prof)
 vif.mer(fm_pve_prof)
+
+fm_table(fm_pve_prof)
 
 
 # Manner in verb ------------------------------------------------------------
@@ -369,6 +441,8 @@ summary(fm_mad_prof)
 kappa.mer(fm_mad_prof)
 vif.mer(fm_mad_prof)
 
+fm_table(fm_mad_prof)
+
 
 
 #  ------------------------------------------------------------------------
@@ -377,17 +451,17 @@ vif.mer(fm_mad_prof)
 
 # Anywhere ----------------------------------------------------------------
 
-# path anywhere
-trial_p_anyw <- d %>%
-  group_by(Group, Condition, VideoTrial) %>%
-  summarise(Avg = mean(P_anyw))
-f_plot_trial(trial_p_anyw, "Path anywhere")
-
-# manner anywhere
-trial_m_anyw <- d %>%
-  group_by(Group, Condition, VideoTrial) %>%
-  summarise(Avg = mean(M_anyw))
-f_plot_trial(trial_m_anyw, "Manner anywhere")
+# # path anywhere
+# trial_p_anyw <- d %>%
+#   group_by(Group, Condition, VideoTrial) %>%
+#   summarise(Avg = mean(P_anyw))
+# f_plot_trial(trial_p_anyw, "Path anywhere")
+# 
+# # manner anywhere
+# trial_m_anyw <- d %>%
+#   group_by(Group, Condition, VideoTrial) %>%
+#   summarise(Avg = mean(M_anyw))
+# f_plot_trial(trial_m_anyw, "Manner anywhere")
 
 
 # Main verb ---------------------------------------------------------------
@@ -397,21 +471,8 @@ trial_p_V <- d %>%
   group_by(Group, Condition, VideoTrial) %>%
   summarise(Avg = mean(P_V))
 f_plot_trial(trial_p_V, "Path in verb")
-
-# fm_test <- glmer(P_V ~ poly(cVideoTrial, 3) + (1 | Subject) + (1 | VideoName),
-#                  data = d_fm %>% filter(Condition == "Path", Group == "L2"),
-#                  family = "binomial")
-# summary(fm_test)
-# 
-# fm_test <- glmer(P_V ~ poly(cVideoTrial, 3) + (1 | Subject) + (1 | VideoName),
-#                  data = d_fm %>% filter(Condition == "Path", Group == "NS"),
-#                  family = "binomial")
-# summary(fm_test)
-# 
-# fm_test <- glmer(P_V ~ Group * poly(cVideoTrial, 3) + (1 | Subject) + (1 | VideoName),
-#                  data = d_fm %>% filter(Condition == "Path"),
-#                  family = "binomial")
-# summary(fm_test)
+# only for path primed
+f_plot_trial2(trial_p_V %>% filter(Condition == "Path"), "Path in verb (Path-priming)")
 
 
 # manner in verb
@@ -419,6 +480,8 @@ trial_m_V <- d %>%
   group_by(Group, Condition, VideoTrial) %>%
   summarise(Avg = mean(M_V))
 f_plot_trial(trial_m_V, "Manner in verb")
+# only for manner primed
+f_plot_trial2(trial_m_V %>% filter(Condition == "Manner"), "Manner in verb (Manner-priming)")
 
 
 # As adjuncts -------------------------------------------------------------

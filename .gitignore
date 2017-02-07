@@ -4,6 +4,8 @@
 *test.R
 
 *.pdf
+*.doc
+*.docx
 
 audiofiles/*
 *.wav
