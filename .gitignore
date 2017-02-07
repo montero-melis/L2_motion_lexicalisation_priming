@@ -6,6 +6,9 @@
 *.pdf
 *.doc
 *.docx
+*.html
 
 audiofiles/*
 *.wav
+
+GAMM_examples/*

@@ -1,0 +1,128 @@
+---
+title: "GAMM analysis"
+author: "Guillermo Montero-Melis"
+date: "7 februari 2017"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(dplyr)
+library(mgcv)  # GAMs and GAMMs (Wood 2006)
+library(itsadug)
+library(ggplot2)
+# library(lazyeval)  # lazy evaluation used in bysubj() function [summarise_]
+# library(lme4)
+# library(boot)  # for inv.logit()
+# library(knitr)  # for kable()
+```
+
+## Load data and process
+
+```{r}
+#  ------------------------------------------------------------------------
+#  Load data
+#  ------------------------------------------------------------------------
+
+# The data is created in the script "processing/compute_dependent_measures.R"
+# There is the normal and the liberally coded version, see script for difference
+
+# load
+d <- read.csv("../data/data_DVs.csv", fileEncoding = "UTF-8", stringsAsFactors = TRUE)
+# simplify somewhat
+d <- d %>%
+  select(Subject:VideoName, P_V, M_V) %>%
+  rename(Trial = VideoTrial)
+head(d)
+
+# the way to analyze crossed factors seems to be to combine their levels into 
+# a single factor, see Wood's comment here
+# http://grokbase.com/t/r/r-help/113qaadxt4/r-how-to-add-in-interaction-terms-in-gamm
+d$GroupCondit <- with(d, interaction(Group, Condition))
+
+## Data for analysis of Path-priming vs control
+dp <- d %>% filter(Condition != "Manner")
+dp$GroupCondit <- factor(dp$GroupCondit)
+contrasts(dp$GroupCondit)
+## Data for analysis of Manner-priming vs control
+dm <- d %>% filter(Condition != "Path")
+dm$GroupCondit <- factor(dm$GroupCondit)
+contrasts(dm$GroupCondit)
+```
+
+
+I largely follow [this tutorial](http://jacolienvanrij.com/Tutorials/GAMM.html) by Jacolien van Rij.
+
+
+## Do the primed conditions differ from the Control conditions?
+
+This question is addressed separately for Path-verb priming and Manner-verb priming.
+
+In the former, the log-likelihood of choosing a path verb is compared for the two crossed factors:
+
+- Condition: Path-primed vs control
+- Group: L2 speakers (L2) vs native speakers (NS)
+
+
+In the latter, the log-likelihood of choosing a manner verb is compared for the two crossed factors (note different levels in Condition):
+
+- Condition: Manner-primed vs control
+- Group: L2 speakers (L2) vs native speakers (NS)
+
+
+
+### Path priming
+
+
+```{r}
+fm_p1 <- bam(P_V ~ GroupCondit +
+               s(Trial) +
+               s(Trial, by = GroupCondit) +
+               s(Trial, Subject, bs = 'fs'),  # need to adjust m?
+             data = dp,
+             damily = "binomial")
+summary(fm_p1)
+
+
+# 
+# simdat$OFGroup <- as.factor(simdat$Group)
+# # change factor to ordered factor:
+# simdat$OFGroup <- as.ordered(simdat$OFGroup)
+# # change contrast to treatment coding (difference curves)
+# contrasts(simdat$OFGroup) <- 'contr.treatment'
+# # Inspect contrasts:
+# contrasts(simdat$OFGroup)
+# 
+# 
+# 
+# 
+# # This model takes a long time to run, therefore it is saved for later use:
+# if(F){
+#   # Note: here the same rho is used, 
+#   # but it's better to set an optimal rho for this model.
+#   # Although here it probably does not differ so much, 
+#   # because we do not change the random effect structure.
+#   m3.rho <- bam(Y ~ OFGroup 
+#                 # reference curves:
+#                 + s(Time) + s(Condition, k=5) 
+#                 # difference curves:
+#                 + s(Time, by=OFGroup) + s(Condition, by=OFGroup, k=5) 
+#                 # reference surface:
+#                 + ti(Time, Condition)
+#                 # difference surface:
+#                 + ti(Time, Condition, by=OFGroup)
+#                 + s(Time, Subject, bs='fs', m=1)
+#                 + s(Trial, Subject, bs='fs', m=1),
+#                 data=simdat,
+#                 AR.start=simdat$start.event, rho=valRho)
+#   save(m3.rho, file="GAMM_examples/van-rij_tutorial/m3rho.rda", compress='xz')
+# }
+# # load the model:
+# load('GAMM_examples/van-rij_tutorial/m3rho.rda')
+# # print summary:
+# summary(m3.rho)
+
+```
+
