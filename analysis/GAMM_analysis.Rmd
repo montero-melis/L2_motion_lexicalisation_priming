@@ -1,19 +1,18 @@
 ---
-title: 'GAMM analysis'
-author: 'Guillermo Montero-Melis'
-date: '7 februari 2017'
+title: "GAMM analysis"
+author: "Guillermo Montero-Melis"
+date: "7 februari 2017"
 output:
   html_document: default
   pdf_document: default
 ---
 
-```{r setup, include=FALSE}
+```{r setup, include = TRUE}
 knitr::opts_chunk$set(echo = TRUE)
 library(dplyr)
 library(mgcv)  # GAMs and GAMMs (Wood 2006)
 library(itsadug)
 library(ggplot2)
-# library(lazyeval)  # lazy evaluation used in bysubj() function [summarise_]
 # library(lme4)
 # library(boot)  # for inv.logit()
 # library(knitr)  # for kable()
@@ -25,7 +24,7 @@ library(ggplot2)
 # infoMessages('off')  # suppresses messages from plot_smooth() / plot_diff()
 
 # adjust figure heght/width when not going with default (espec. for 2x2 plots)
-myfighe <- 7
+myfighe <- 8
 myfigwi <- 8
 ```
 
@@ -99,8 +98,6 @@ contrasts(dm$GroupCondit)
 
 
 
-## Models fitted to all three conditions
-
 
 ## Do the primed conditions differ from the Control conditions?
 
@@ -119,22 +116,26 @@ Two crossed factors:
 # model to fit; the simpler one has only random intercepts and slopes for speakers
 # saved as string to be passed to the load_or_fit() function
 fm_p1.expr <- "bam(P_V ~ GroupCondit + s(Trial, by = GroupCondit) +
-                    s(Trial, Subject, bs = 're'),
+                    s(Subject, bs = 're') + s(Trial, Subject, bs = 're') +
+                    s(VideoName, bs = 're') + s(Trial, VideoName, bs = 're'),
                   data = dp,
                   family = 'binomial')"
 # load or fit model
 load_or_fit("fm_p1", fm_p1.expr)
-# summary(fm_p1)
+summary(fm_p1)
+```
+
+
+```{r}
+## plot
+plot_smooth(fm_p1, view = 'Trial', plot_all = 'GroupCondit')
 ```
 
 
 
-```{r, fig.height = myfighe, fig.width = myfigwi, echo = FALSE, message=FALSE}
-## plot
-plot_smooth(fm_p1, view = 'Trial', plot_all = 'GroupCondit')
-
+```{r, fig.height = myfighe, fig.width = myfigwi}
 # set same y-axis for both
-myylim1 <- c(-1, 5)
+myylim1 <- c(-1.5, 6)
 myylim2 <- c(-.5, 6)
 par(mfrow = c(2, 2))
 # Native speakers
@@ -152,56 +153,56 @@ plot_smooth(fm_p1, view = 'Trial', cond = list(GroupCondit = 'L2.Path'),
 
 # and more to the point
 plot_diff(fm_p1, view = 'Trial', comp = list(GroupCondit = c('NS.Path', 'NS.Control')),
-          ylim = myylim2)
+          ylim = myylim2, mark.diff = FALSE)
 plot_diff(fm_p1, view = 'Trial', comp = list(GroupCondit = c('L2.Path', 'L2.Control')),
           ylim = myylim2)
 ```
 
 
 ```{r}
-# more complex model fits factor smooths for speakers
-fm_p2.expr <- "bam(P_V ~ GroupCondit + s(Trial, by = GroupCondit) +
-                    s(Trial, Subject, bs = 'fs'),
-                  data = dp,
-                  family = 'binomial')"
-# load model or fit
-load_or_fit("fm_p2", fm_p2.expr)
-# summary(fm_p2)
+# # more complex model fits factor smooths for speakers
+# fm_p2.expr <- "bam(P_V ~ GroupCondit + s(Trial, by = GroupCondit) +
+#                     s(Trial, Subject, bs = 'fs'),
+#                   data = dp,
+#                   family = 'binomial')"
+# # load model or fit
+# load_or_fit("fm_p2", fm_p2.expr)
+# # summary(fm_p2)
 ```
 
 
 ```{r, fig.height = myfighe, fig.width = myfigwi, echo = FALSE, message=FALSE}
-par(mfrow = c(1, 1))
-## plot
-plot_smooth(fm_p2, view = 'Trial', plot_all = 'GroupCondit')
-# show by-speaker random smooths
-plot(fm_p2, select = 5)
-
-# set same y-axes for both
-myylim1 <- NULL
-myylim2 <- NULL
-par(mfrow = c(2, 2))
-
-# Native speakers
-plot_smooth(fm_p2, view = 'Trial', cond = list(GroupCondit = 'NS.Control'),
-            col = 'red', rug = FALSE, ylim = myylim1,
-            main = 'NS: Path-primed vs Control')
-plot_smooth(fm_p2, view = 'Trial', cond = list(GroupCondit = 'NS.Path'),
-            col = 'blue', add = T)
-# L2 speakers
-plot_smooth(fm_p2, view = 'Trial', cond = list(GroupCondit = 'L2.Control'),
-            col = 'red', rug = FALSE, ylim = myylim1,
-            main = 'L2: Path-primed vs Control')
-plot_smooth(fm_p2, view = 'Trial', cond = list(GroupCondit = 'L2.Path'),
-            col = 'blue', add = T)
-
-# and more to the point
-plot_diff(fm_p2, view = 'Trial', comp = list(GroupCondit = c('NS.Path', 'NS.Control')),
-          ylim = myylim2)
-plot_diff(fm_p2, view = 'Trial', comp = list(GroupCondit = c('L2.Path', 'L2.Control')),
-          ylim = myylim2)
-
-par(mfrow = c(1, 1))
+# par(mfrow = c(1, 1))
+# ## plot
+# plot_smooth(fm_p2, view = 'Trial', plot_all = 'GroupCondit')
+# # show by-speaker random smooths
+# plot(fm_p2, select = 5)
+# 
+# # set same y-axes for both
+# myylim1 <- NULL
+# myylim2 <- NULL
+# par(mfrow = c(2, 2))
+# 
+# # Native speakers
+# plot_smooth(fm_p2, view = 'Trial', cond = list(GroupCondit = 'NS.Control'),
+#             col = 'red', rug = FALSE, ylim = myylim1,
+#             main = 'NS: Path-primed vs Control')
+# plot_smooth(fm_p2, view = 'Trial', cond = list(GroupCondit = 'NS.Path'),
+#             col = 'blue', add = T)
+# # L2 speakers
+# plot_smooth(fm_p2, view = 'Trial', cond = list(GroupCondit = 'L2.Control'),
+#             col = 'red', rug = FALSE, ylim = myylim1,
+#             main = 'L2: Path-primed vs Control')
+# plot_smooth(fm_p2, view = 'Trial', cond = list(GroupCondit = 'L2.Path'),
+#             col = 'blue', add = T)
+# 
+# # and more to the point
+# plot_diff(fm_p2, view = 'Trial', comp = list(GroupCondit = c('NS.Path', 'NS.Control')),
+#           ylim = myylim2)
+# plot_diff(fm_p2, view = 'Trial', comp = list(GroupCondit = c('L2.Path', 'L2.Control')),
+#           ylim = myylim2)
+# 
+# par(mfrow = c(1, 1))
 ```
 
 
@@ -213,22 +214,26 @@ par(mfrow = c(1, 1))
 # model to fit; the simpler one has only random intercepts and slopes for speakers
 # saved as string to be passed to the load_or_fit() function
 fm_m1.expr <- "bam(M_V ~ GroupCondit + s(Trial, by = GroupCondit) +
-                    s(Trial, Subject, bs = 're'),
+                    s(Subject, bs = 're') + s(Trial, Subject, bs = 're') +
+                    s(VideoName, bs = 're') + s(Trial, VideoName, bs = 're'),
                   data = dm,
                   family = 'binomial')"
 # load or fit model
 load_or_fit("fm_m1", fm_m1.expr)
-# summary(fm_m1)
+summary(fm_m1)
 ```
 
 
-```{r, fig.height = myfighe, fig.width = myfigwi, echo = FALSE, message=FALSE}
+```{r}
 ## plot
 plot_smooth(fm_m1, view = 'Trial', plot_all = 'GroupCondit')
+```
 
+
+```{r, fig.height = myfighe, fig.width = myfigwi}
 # set same y-axis for both
-myylim1 <- NULL
-myylim2 <- NULL
+myylim1 <- c(-4, 9)
+myylim2 <- c(0, 8)
 par(mfrow = c(2, 2))
 # Native speakers
 plot_smooth(fm_m1, view = 'Trial', cond = list(GroupCondit = 'NS.Control'),
@@ -255,50 +260,50 @@ par(mfrow = c(1, 1))
 
 
 ```{r}
-# more complex model fits factor smooths for speakers
-fm_m2.expr <- "bam(M_V ~ GroupCondit + s(Trial, by = GroupCondit) +
-                    s(Trial, Subject, bs = 'fs'),
-                  data = dp,
-                  family = 'binomial')"
-# load model or fit
-load_or_fit("fm_m2", fm_m2.expr)
-# summary(fm_m2)
+# # more complex model fits factor smooths for speakers
+# fm_m2.expr <- "bam(M_V ~ GroupCondit + s(Trial, by = GroupCondit) +
+#                     s(Trial, Subject, bs = 'fs'),
+#                   data = dp,
+#                   family = 'binomial')"
+# # load model or fit
+# load_or_fit("fm_m2", fm_m2.expr)
+# # summary(fm_m2)
 ```
 
 
 
 ```{r, fig.height = myfighe, fig.width = myfigwi, echo = FALSE, message=FALSE}
-par(mfrow = c(1, 1))
-## plot
-plot_smooth(fm_m2, view = 'Trial', plot_all = 'GroupCondit')
-# show by-speaker random smooths
-plot(fm_m2, select = 5)
-
-# set same y-axes for both
-myylim1 <- NULL
-myylim2 <- NULL
-par(mfrow = c(2, 2))
-
-# Native speakers
-plot_smooth(fm_m2, view = 'Trial', cond = list(GroupCondit = 'NS.Control'),
-            col = 'red', rug = FALSE, ylim = myylim1,
-            main = 'NS: Manner-primed vs Control')
-plot_smooth(fm_m2, view = 'Trial', cond = list(GroupCondit = 'NS.Manner'),
-            col = 'blue', add = T)
-# L2 speakers
-plot_smooth(fm_m2, view = 'Trial', cond = list(GroupCondit = 'L2.Control'),
-            col = 'red', rug = FALSE, ylim = myylim1,
-            main = 'L2: Manner-primed vs Control')
-plot_smooth(fm_m2, view = 'Trial', cond = list(GroupCondit = 'L2.Manner'),
-            col = 'blue', add = T)
-
-# and more to the point
-plot_diff(fm_m2, view = 'Trial', comp = list(GroupCondit = c('NS.Manner', 'NS.Control')),
-          ylim = myylim2)
-plot_diff(fm_m2, view = 'Trial', comp = list(GroupCondit = c('L2.Manner', 'L2.Control')),
-          ylim = myylim2)
-
-par(mfrow = c(1, 1))
+# par(mfrow = c(1, 1))
+# ## plot
+# plot_smooth(fm_m2, view = 'Trial', plot_all = 'GroupCondit')
+# # show by-speaker random smooths
+# plot(fm_m2, select = 5)
+# 
+# # set same y-axes for both
+# myylim1 <- NULL
+# myylim2 <- NULL
+# par(mfrow = c(2, 2))
+# 
+# # Native speakers
+# plot_smooth(fm_m2, view = 'Trial', cond = list(GroupCondit = 'NS.Control'),
+#             col = 'red', rug = FALSE, ylim = myylim1,
+#             main = 'NS: Manner-primed vs Control')
+# plot_smooth(fm_m2, view = 'Trial', cond = list(GroupCondit = 'NS.Manner'),
+#             col = 'blue', add = T)
+# # L2 speakers
+# plot_smooth(fm_m2, view = 'Trial', cond = list(GroupCondit = 'L2.Control'),
+#             col = 'red', rug = FALSE, ylim = myylim1,
+#             main = 'L2: Manner-primed vs Control')
+# plot_smooth(fm_m2, view = 'Trial', cond = list(GroupCondit = 'L2.Manner'),
+#             col = 'blue', add = T)
+# 
+# # and more to the point
+# plot_diff(fm_m2, view = 'Trial', comp = list(GroupCondit = c('NS.Manner', 'NS.Control')),
+#           ylim = myylim2)
+# plot_diff(fm_m2, view = 'Trial', comp = list(GroupCondit = c('L2.Manner', 'L2.Control')),
+#           ylim = myylim2)
+# 
+# par(mfrow = c(1, 1))
 ```
 
 
