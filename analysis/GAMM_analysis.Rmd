@@ -1,7 +1,7 @@
 ---
-title: "GAMM analysis"
-author: "Guillermo Montero-Melis"
-date: "7 februari 2017"
+title: 'GAMM analysis'
+author: 'Guillermo Montero-Melis'
+date: '7 februari 2017'
 output:
   html_document: default
   pdf_document: default
@@ -19,14 +19,44 @@ library(ggplot2)
 # library(knitr)  # for kable()
 ```
 
+```{r}
+## Specify some global parameters
+
+# infoMessages('off')  # suppresses messages from plot_smooth() / plot_diff()
+
+# adjust figure heght/width when not going with default (espec. for 2x2 plots)
+myfighe <- 7
+myfigwi <- 8
+```
+
 
 ```{r}
-# Convenience function
+## Convenience functions
 
 # print deviance explained as percentage
 dev_expl <- function(fm) {
   devi <- summary(fm)$dev.expl
-  paste(round(100 * devi, 1), "% dev. explained", sep = "")
+  paste0(round(100 * devi, 1), '% dev. explained')
+}
+
+# Function used to load models if they have already been saved,
+# rather than fitting them anew each time the script is called
+load_or_fit <- function(fm_name, fm_code) {
+  rel_path <- './gamms/'
+  # the string may contain '\n'
+  fm_code <- gsub('\n', '', fm_code)
+  
+  # check first if there is a saved rda object with that name; if so, load it
+  if(paste0(fm_name, '.rda') %in% list.files(path = rel_path)) {
+    load(paste0(rel_path, fm_name, '.rda'), .GlobalEnv)
+    
+  } else {  # fit it and save it to right folder
+    assign(fm_name, eval(parse(text = fm_code)), envir = .GlobalEnv)
+    save(list = fm_name, file = paste0(rel_path, fm_name, '.rda'))
+    # print a brief model summary when it has been fitted
+    fm <- get(fm_name)
+    print(fm)
+  }
 }
 ```
 
@@ -38,11 +68,13 @@ dev_expl <- function(fm) {
 #  Load data
 #  ------------------------------------------------------------------------
 
-# The data is created in the script "processing/compute_dependent_measures.R"
+# The data is created in the script 'processing/compute_dependent_measures.R'
 # There is the normal and the liberally coded version, see script for difference
 
+getwd()
+
 # load
-d <- read.csv("../data/data_DVs.csv", fileEncoding = "UTF-8", stringsAsFactors = TRUE)
+d <- read.csv('../data/data_DVs.csv', fileEncoding = 'UTF-8', stringsAsFactors = TRUE)
 # simplify somewhat
 d <- d %>%
   select(Subject:VideoName, P_V, M_V) %>%
@@ -55,126 +87,220 @@ head(d)
 d$GroupCondit <- with(d, interaction(Group, Condition))
 
 ## Data for analysis of Path-priming vs control
-dp <- d %>% filter(Condition != "Manner")
+dp <- d %>% filter(Condition != 'Manner')
 dp$GroupCondit <- factor(dp$GroupCondit)
 contrasts(dp$GroupCondit)
 ## Data for analysis of Manner-priming vs control
-dm <- d %>% filter(Condition != "Path")
+dm <- d %>% filter(Condition != 'Path')
 dm$GroupCondit <- factor(dm$GroupCondit)
 # note that L2 control becomes the reference group
 contrasts(dm$GroupCondit)
 ```
 
 
-I largely follow [this tutorial](http://jacolienvanrij.com/Tutorials/GAMM.html) by Jacolien van Rij.
 
-
-## Some general models
-
-Let us progressively fit more complex models and see how/whether they become better at explaining the data.
-
-```{r}
-fm_gen1 <- bam(P_V ~ s(Trial),
-              data = d,
-              damily = "binomial")
-summary(fm_gen1)
-```
-
-Of course this model does a rather poor job in explaining the data (`r dev_expl(fm_gen1)`).
-
-```{r}
-plot(fm_gen1)
-plot_smooth(fm_gen1, view = "Trial")
-```
-
-
-What happens when we add Condition as a predictor, both a linear predictor and allowing the smoother of time to vary as a function of Condition?
-
-```{r}
-fm_gen2 <- bam(P_V ~ Condition + s(Trial, by = Condition),
-              data = d,
-              damily = "binomial")
-summary(fm_gen2)
-```
-
-The overall fit improves substantially (`r dev_expl(fm_gen2)`).
-
-```{r}
-plot_smooth(fm_gen2, view = "Trial", plot_all = "Condition")
-```
-
-
-The next step is to add the interaction of Condition and Group (specified as a single factor that is passed to `by()`):
-
-```{r}
-fm_gen3 <- bam(P_V ~ GroupCondit + s(Trial, by = GroupCondit),
-              data = d,
-              damily = "binomial")
-summary(fm_gen3)
-plot_smooth(fm_gen3, view = "Trial", plot_all = "GroupCondit")
-```
-
-### Add random effects
-
-Allowing subjects to follow different trends over trial does not work, yielding the warning:
-
-```
-the matrix is either rank-deficient or indefinite
-```
-
-```{r}
-# fm_gen4 <- bam(P_V ~ GroupCondit + s(Trial, by = GroupCondit) +
-#                  s(Trial, Subject, bs = "fs"),
-#               data = d,
-#               damily = "binomial")
-
-```
-
-But one can specify Subjects as random effects
-(following Winter & Wieling 2016)
-
-```{r}
-fm_gen5 <- bam(P_V ~ GroupCondit + s(Trial, by = GroupCondit) +
-                 s(Trial, Subject, bs = "re"),
-              data = d,
-              damily = "binomial")
-summary(fm_gen5)
-plot_smooth(fm_gen5, view = "Trial", plot_all = "GroupCondit")
-plot_smooth(fm_gen5, view = "Trial", plot_all = "GroupCondit", rm.ranef = FALSE)
-```
-
+## Models fitted to all three conditions
 
 
 ## Do the primed conditions differ from the Control conditions?
 
 This question is addressed separately for Path-verb priming and Manner-verb priming.
 
-In the former, the log-likelihood of choosing a path verb is compared for the two crossed factors:
+### Path-priming
+
+Are speakers in the Path-primed condition more likely to use Path-verbs relative to the control condition?
+
+Two crossed factors:
 
 - Condition: Path-primed vs control
 - Group: L2 speakers (L2) vs native speakers (NS)
 
+```{r}
+# model to fit; the simpler one has only random intercepts and slopes for speakers
+# saved as string to be passed to the load_or_fit() function
+fm_p1.expr <- "bam(P_V ~ GroupCondit + s(Trial, by = GroupCondit) +
+                    s(Trial, Subject, bs = 're'),
+                  data = dp,
+                  family = 'binomial')"
+# load or fit model
+load_or_fit("fm_p1", fm_p1.expr)
+# summary(fm_p1)
+```
 
-In the latter, the log-likelihood of choosing a manner verb is compared for the two crossed factors (note different levels in Condition):
-
-- Condition: Manner-primed vs control
-- Group: L2 speakers (L2) vs native speakers (NS)
 
 
+```{r, fig.height = myfighe, fig.width = myfigwi, echo = FALSE, message=FALSE}
+## plot
+plot_smooth(fm_p1, view = 'Trial', plot_all = 'GroupCondit')
 
-### Path priming
+# set same y-axis for both
+myylim1 <- c(-1, 5)
+myylim2 <- c(-.5, 6)
+par(mfrow = c(2, 2))
+# Native speakers
+plot_smooth(fm_p1, view = 'Trial', cond = list(GroupCondit = 'NS.Control'),
+            col = 'red', rug = FALSE, ylim = myylim1,
+            main = 'NS: Path-primed vs Control')
+plot_smooth(fm_p1, view = 'Trial', cond = list(GroupCondit = 'NS.Path'),
+            col = 'blue', add = T)
+# L2 speakers
+plot_smooth(fm_p1, view = 'Trial', cond = list(GroupCondit = 'L2.Control'),
+            col = 'red', rug = FALSE, ylim = myylim1,
+            main = 'L2: Path-primed vs Control')
+plot_smooth(fm_p1, view = 'Trial', cond = list(GroupCondit = 'L2.Path'),
+            col = 'blue', add = T)
+
+# and more to the point
+plot_diff(fm_p1, view = 'Trial', comp = list(GroupCondit = c('NS.Path', 'NS.Control')),
+          ylim = myylim2)
+plot_diff(fm_p1, view = 'Trial', comp = list(GroupCondit = c('L2.Path', 'L2.Control')),
+          ylim = myylim2)
+```
 
 
 ```{r}
-fm_p1 <- bam(P_V ~ GroupCondit + s(Trial, by = GroupCondit),
-              data = dp,
-              damily = "binomial")
-summary(fm_p1)
-plot_smooth(fm_p1, view = "Trial", plot_all = "GroupCondit")
+# more complex model fits factor smooths for speakers
+fm_p2.expr <- "bam(P_V ~ GroupCondit + s(Trial, by = GroupCondit) +
+                    s(Trial, Subject, bs = 'fs'),
+                  data = dp,
+                  family = 'binomial')"
+# load model or fit
+load_or_fit("fm_p2", fm_p2.expr)
+# summary(fm_p2)
+```
+
+
+```{r, fig.height = myfighe, fig.width = myfigwi, echo = FALSE, message=FALSE}
+par(mfrow = c(1, 1))
+## plot
+plot_smooth(fm_p2, view = 'Trial', plot_all = 'GroupCondit')
+# show by-speaker random smooths
+plot(fm_p2, select = 5)
+
+# set same y-axes for both
+myylim1 <- NULL
+myylim2 <- NULL
+par(mfrow = c(2, 2))
+
+# Native speakers
+plot_smooth(fm_p2, view = 'Trial', cond = list(GroupCondit = 'NS.Control'),
+            col = 'red', rug = FALSE, ylim = myylim1,
+            main = 'NS: Path-primed vs Control')
+plot_smooth(fm_p2, view = 'Trial', cond = list(GroupCondit = 'NS.Path'),
+            col = 'blue', add = T)
+# L2 speakers
+plot_smooth(fm_p2, view = 'Trial', cond = list(GroupCondit = 'L2.Control'),
+            col = 'red', rug = FALSE, ylim = myylim1,
+            main = 'L2: Path-primed vs Control')
+plot_smooth(fm_p2, view = 'Trial', cond = list(GroupCondit = 'L2.Path'),
+            col = 'blue', add = T)
 
 # and more to the point
-plot_diff(fm_p1, view = "Trial", comp = list(GroupCondit = c("NS.Path", "NS.Control")))
-plot_diff(fm_p1, view = "Trial", comp = list(GroupCondit = c("L2.Path", "L2.Control")))
+plot_diff(fm_p2, view = 'Trial', comp = list(GroupCondit = c('NS.Path', 'NS.Control')),
+          ylim = myylim2)
+plot_diff(fm_p2, view = 'Trial', comp = list(GroupCondit = c('L2.Path', 'L2.Control')),
+          ylim = myylim2)
 
+par(mfrow = c(1, 1))
 ```
+
+
+
+### Manner priming
+
+
+```{r}
+# model to fit; the simpler one has only random intercepts and slopes for speakers
+# saved as string to be passed to the load_or_fit() function
+fm_m1.expr <- "bam(M_V ~ GroupCondit + s(Trial, by = GroupCondit) +
+                    s(Trial, Subject, bs = 're'),
+                  data = dm,
+                  family = 'binomial')"
+# load or fit model
+load_or_fit("fm_m1", fm_m1.expr)
+# summary(fm_m1)
+```
+
+
+```{r, fig.height = myfighe, fig.width = myfigwi, echo = FALSE, message=FALSE}
+## plot
+plot_smooth(fm_m1, view = 'Trial', plot_all = 'GroupCondit')
+
+# set same y-axis for both
+myylim1 <- NULL
+myylim2 <- NULL
+par(mfrow = c(2, 2))
+# Native speakers
+plot_smooth(fm_m1, view = 'Trial', cond = list(GroupCondit = 'NS.Control'),
+            col = 'red', rug = FALSE, ylim = myylim1,
+            main = 'NS: Manner-primed vs Control')
+plot_smooth(fm_m1, view = 'Trial', cond = list(GroupCondit = 'NS.Manner'),
+            col = 'blue', add = T)
+# L2 speakers
+plot_smooth(fm_m1, view = 'Trial', cond = list(GroupCondit = 'L2.Control'),
+            col = 'red', rug = FALSE, ylim = myylim1,
+            main = 'L2: Manner-primed vs Control')
+plot_smooth(fm_m1, view = 'Trial', cond = list(GroupCondit = 'L2.Manner'),
+            col = 'blue', add = T)
+
+# and more to the point
+plot_diff(fm_m1, view = 'Trial', comp = list(GroupCondit = c('NS.Manner', 'NS.Control')),
+          ylim = myylim2)
+plot_diff(fm_m1, view = 'Trial', comp = list(GroupCondit = c('L2.Manner', 'L2.Control')),
+          ylim = myylim2)
+
+par(mfrow = c(1, 1))
+```
+
+
+
+```{r}
+# more complex model fits factor smooths for speakers
+fm_m2.expr <- "bam(M_V ~ GroupCondit + s(Trial, by = GroupCondit) +
+                    s(Trial, Subject, bs = 'fs'),
+                  data = dp,
+                  family = 'binomial')"
+# load model or fit
+load_or_fit("fm_m2", fm_m2.expr)
+# summary(fm_m2)
+```
+
+
+
+```{r, fig.height = myfighe, fig.width = myfigwi, echo = FALSE, message=FALSE}
+par(mfrow = c(1, 1))
+## plot
+plot_smooth(fm_m2, view = 'Trial', plot_all = 'GroupCondit')
+# show by-speaker random smooths
+plot(fm_m2, select = 5)
+
+# set same y-axes for both
+myylim1 <- NULL
+myylim2 <- NULL
+par(mfrow = c(2, 2))
+
+# Native speakers
+plot_smooth(fm_m2, view = 'Trial', cond = list(GroupCondit = 'NS.Control'),
+            col = 'red', rug = FALSE, ylim = myylim1,
+            main = 'NS: Manner-primed vs Control')
+plot_smooth(fm_m2, view = 'Trial', cond = list(GroupCondit = 'NS.Manner'),
+            col = 'blue', add = T)
+# L2 speakers
+plot_smooth(fm_m2, view = 'Trial', cond = list(GroupCondit = 'L2.Control'),
+            col = 'red', rug = FALSE, ylim = myylim1,
+            main = 'L2: Manner-primed vs Control')
+plot_smooth(fm_m2, view = 'Trial', cond = list(GroupCondit = 'L2.Manner'),
+            col = 'blue', add = T)
+
+# and more to the point
+plot_diff(fm_m2, view = 'Trial', comp = list(GroupCondit = c('NS.Manner', 'NS.Control')),
+          ylim = myylim2)
+plot_diff(fm_m2, view = 'Trial', comp = list(GroupCondit = c('L2.Manner', 'L2.Control')),
+          ylim = myylim2)
+
+par(mfrow = c(1, 1))
+```
+
+
+
 

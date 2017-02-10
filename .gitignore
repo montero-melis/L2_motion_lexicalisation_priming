@@ -8,6 +8,8 @@
 *.docx
 *.html
 
+analysis/gamms/*
+
 audiofiles/*
 *.wav
 
