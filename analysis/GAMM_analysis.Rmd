@@ -3,16 +3,16 @@ title: "GAMM analysis"
 author: "Guillermo Montero-Melis"
 date: "7 februari 2017"
 output:
-  html_document: default
   pdf_document: default
+  html_document: default
 ---
 
 ```{r setup, include = TRUE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = FALSE)
 library(dplyr)
 library(mgcv)  # GAMs and GAMMs (Wood 2006)
 library(itsadug)
-library(ggplot2)
+# library(ggplot2)
 # library(lme4)
 # library(boot)  # for inv.logit()
 # library(knitr)  # for kable()
@@ -40,21 +40,30 @@ dev_expl <- function(fm) {
 
 # Function used to load models if they have already been saved,
 # rather than fitting them anew each time the script is called
-load_or_fit <- function(fm_name, fm_code) {
+load_or_fit <- function(fm_name, fm_code, forcefit = FALSE) {
   rel_path <- './gamms/'
   # the string may contain '\n'
   fm_code <- gsub('\n', '', fm_code)
   
   # check first if there is a saved rda object with that name; if so, load it
-  if(paste0(fm_name, '.rda') %in% list.files(path = rel_path)) {
+  model_exists <- paste0(fm_name, '.rda') %in% list.files(path = rel_path)
+  # if forcefit = T it will always fit the model
+  if((!forcefit) & model_exists) {
     load(paste0(rel_path, fm_name, '.rda'), .GlobalEnv)
     
   } else {  # fit it and save it to right folder
+    # record the time it takes to fit
+    fm_time <- paste0(fm_name, ".t")
+    ptm <- proc.time()
     assign(fm_name, eval(parse(text = fm_code)), envir = .GlobalEnv)
-    save(list = fm_name, file = paste0(rel_path, fm_name, '.rda'))
-    # print a brief model summary when it has been fitted
+    assign(fm_time, proc.time() - ptm, envir = .GlobalEnv)
+    # both the model and the time it took can be saved as same file
+    save(list = c(fm_name, fm_time), file = paste0(rel_path, fm_name, '.rda'))
+    # print a brief model summary when it has been fitted and time to fit
     fm <- get(fm_name)
+    fm_t <- get(fm_time)
     print(fm)
+    print(fm_t)
   }
 }
 ```
@@ -79,6 +88,18 @@ d <- d %>%
   select(Subject:VideoName, P_V, M_V) %>%
   rename(Trial = VideoTrial)
 head(d)
+str(d)
+
+# participant data
+ppts <- read.csv("../data/participants.csv", fileEncoding = "UTF-8", stringsAsFactors = TRUE)
+head(ppts)
+# add speakers' clozescore to d:
+d <- left_join(d, ppts %>% select(Subject, ClozeScore))
+head(d)
+str(d)
+
+# Subject needs to be a factor
+d$Subject <- factor(d$Subject)
 
 # the way to analyze crossed factors seems to be to combine their levels into 
 # a single factor, see Wood's comment here
@@ -87,12 +108,15 @@ d$GroupCondit <- with(d, interaction(Group, Condition))
 
 ## Data for analysis of Path-priming vs control
 dp <- d %>% filter(Condition != 'Manner')
-dp$GroupCondit <- factor(dp$GroupCondit)
+dp$GroupCondit <- factor(dp$GroupCondit, levels = c("NS.Control", "NS.Path",
+                                                    "L2.Control", "L2.Path"))
+# note that NS control is the reference group
 contrasts(dp$GroupCondit)
 ## Data for analysis of Manner-priming vs control
 dm <- d %>% filter(Condition != 'Path')
-dm$GroupCondit <- factor(dm$GroupCondit)
-# note that L2 control becomes the reference group
+dm$GroupCondit <- factor(dm$GroupCondit, levels = c("NS.Control", "NS.Manner",
+                                                    "L2.Control", "L2.Manner"))
+# note that NS control is the reference group
 contrasts(dm$GroupCondit)
 ```
 
@@ -112,52 +136,56 @@ Two crossed factors:
 - Condition: Path-primed vs control
 - Group: L2 speakers (L2) vs native speakers (NS)
 
-```{r}
-# model to fit; the simpler one has only random intercepts and slopes for speakers
-# saved as string to be passed to the load_or_fit() function
-fm_p1.expr <- "bam(P_V ~ GroupCondit + s(Trial, by = GroupCondit) +
-                    s(Subject, bs = 're') + s(Trial, Subject, bs = 're') +
-                    s(VideoName, bs = 're') + s(Trial, VideoName, bs = 're'),
-                  data = dp,
-                  family = 'binomial')"
-# load or fit model
-load_or_fit("fm_p1", fm_p1.expr)
-summary(fm_p1)
-```
-
+#### Speakers and items as random effects (intercept + slope)
 
 ```{r}
-## plot
-plot_smooth(fm_p1, view = 'Trial', plot_all = 'GroupCondit')
+# # model to fit; the simpler one has only random intercepts and slopes for speakers
+# # saved as string to be passed to the load_or_fit() function
+# fm_p1.expr <- "bam(P_V ~ GroupCondit + s(Trial, by = GroupCondit) +
+#                     s(Subject, bs = 're') + s(Trial, Subject, bs = 're') +
+#                     s(VideoName, bs = 're') + s(Trial, VideoName, bs = 're'),
+#                   data = dp,
+#                   family = 'binomial')"
+# # load or fit model
+# load_or_fit("fm_p1", fm_p1.expr)
+# summary(fm_p1)
+```
+
+
+```{r}
+# ## plot
+# plot_smooth(fm_p1, view = 'Trial', plot_all = 'GroupCondit', rm.ranef=TRUE)
 ```
 
 
 
-```{r, fig.height = myfighe, fig.width = myfigwi}
-# set same y-axis for both
-myylim1 <- c(-1.5, 6)
-myylim2 <- c(-.5, 6)
-par(mfrow = c(2, 2))
-# Native speakers
-plot_smooth(fm_p1, view = 'Trial', cond = list(GroupCondit = 'NS.Control'),
-            col = 'red', rug = FALSE, ylim = myylim1,
-            main = 'NS: Path-primed vs Control')
-plot_smooth(fm_p1, view = 'Trial', cond = list(GroupCondit = 'NS.Path'),
-            col = 'blue', add = T)
-# L2 speakers
-plot_smooth(fm_p1, view = 'Trial', cond = list(GroupCondit = 'L2.Control'),
-            col = 'red', rug = FALSE, ylim = myylim1,
-            main = 'L2: Path-primed vs Control')
-plot_smooth(fm_p1, view = 'Trial', cond = list(GroupCondit = 'L2.Path'),
-            col = 'blue', add = T)
-
-# and more to the point
-plot_diff(fm_p1, view = 'Trial', comp = list(GroupCondit = c('NS.Path', 'NS.Control')),
-          ylim = myylim2, mark.diff = FALSE)
-plot_diff(fm_p1, view = 'Trial', comp = list(GroupCondit = c('L2.Path', 'L2.Control')),
-          ylim = myylim2)
+```{r, fig.height = myfighe, fig.width = myfigwi, results = 'hide'}
+# # set same y-axis for both
+# myylim1 <- c(-1.5, 6)
+# myylim2 <- c(-.5, 6)
+# par(mfrow = c(2, 2))
+# # Native speakers
+# plot_smooth(fm_p1, view = 'Trial', cond = list(GroupCondit = 'NS.Control'),
+#             col = 'red', rug = FALSE, ylim = myylim1, rm.ranef=TRUE,
+#             main = 'NS: Path-primed vs Control')
+# plot_smooth(fm_p1, view = 'Trial', cond = list(GroupCondit = 'NS.Path'),
+#             col = 'blue', add = T, rm.ranef=TRUE)
+# # L2 speakers
+# plot_smooth(fm_p1, view = 'Trial', cond = list(GroupCondit = 'L2.Control'),
+#             col = 'red', rug = FALSE, ylim = myylim1, rm.ranef=TRUE,
+#             main = 'L2: Path-primed vs Control')
+# plot_smooth(fm_p1, view = 'Trial', cond = list(GroupCondit = 'L2.Path'),
+#             col = 'blue', add = T, rm.ranef=TRUE)
+# 
+# # and more to the point
+# plot_diff(fm_p1, view = 'Trial', comp = list(GroupCondit = c('NS.Path', 'NS.Control')),
+#           ylim = myylim2, rm.ranef=TRUE)
+# plot_diff(fm_p1, view = 'Trial', comp = list(GroupCondit = c('L2.Path', 'L2.Control')),
+#           ylim = myylim2, rm.ranef=TRUE)
 ```
 
+
+#### Speakers and items as random smooths
 
 ```{r}
 # # more complex model fits factor smooths for speakers
@@ -167,94 +195,144 @@ plot_diff(fm_p1, view = 'Trial', comp = list(GroupCondit = c('L2.Path', 'L2.Cont
 #                   family = 'binomial')"
 # # load model or fit
 # load_or_fit("fm_p2", fm_p2.expr)
-# # summary(fm_p2)
+# summary(fm_p2)
+```
+
+```{r}
+# par(mfrow = c(1, 1))
+# ## plot
+# plot_smooth(fm_p2, view = 'Trial', plot_all = 'GroupCondit', rm.ranef=TRUE)
+# # show by-speaker random smooths
+# plot(fm_p2, all.terms = TRUE)
 ```
 
 
 ```{r, fig.height = myfighe, fig.width = myfigwi, echo = FALSE, message=FALSE}
-# par(mfrow = c(1, 1))
-# ## plot
-# plot_smooth(fm_p2, view = 'Trial', plot_all = 'GroupCondit')
-# # show by-speaker random smooths
-# plot(fm_p2, select = 5)
-# 
 # # set same y-axes for both
-# myylim1 <- NULL
-# myylim2 <- NULL
+# myylim1 <- c(-1.5, 5)
+# myylim2 <- c(-1, 4.5)
 # par(mfrow = c(2, 2))
 # 
 # # Native speakers
 # plot_smooth(fm_p2, view = 'Trial', cond = list(GroupCondit = 'NS.Control'),
-#             col = 'red', rug = FALSE, ylim = myylim1,
+#             col = 'red', rug = FALSE, ylim = myylim1, rm.ranef=TRUE,
 #             main = 'NS: Path-primed vs Control')
 # plot_smooth(fm_p2, view = 'Trial', cond = list(GroupCondit = 'NS.Path'),
-#             col = 'blue', add = T)
+#             col = 'blue', rm.ranef=TRUE, add = TRUE)
 # # L2 speakers
 # plot_smooth(fm_p2, view = 'Trial', cond = list(GroupCondit = 'L2.Control'),
-#             col = 'red', rug = FALSE, ylim = myylim1,
+#             col = 'red', rug = FALSE, ylim = myylim1, rm.ranef=TRUE,
 #             main = 'L2: Path-primed vs Control')
 # plot_smooth(fm_p2, view = 'Trial', cond = list(GroupCondit = 'L2.Path'),
-#             col = 'blue', add = T)
+#             col = 'blue', rm.ranef=TRUE, add = TRUE)
 # 
 # # and more to the point
 # plot_diff(fm_p2, view = 'Trial', comp = list(GroupCondit = c('NS.Path', 'NS.Control')),
-#           ylim = myylim2)
+#           ylim = myylim2, rm.ranef=TRUE)
 # plot_diff(fm_p2, view = 'Trial', comp = list(GroupCondit = c('L2.Path', 'L2.Control')),
-#           ylim = myylim2)
-# 
+#           ylim = myylim2, rm.ranef=TRUE)
 # par(mfrow = c(1, 1))
 ```
 
 
+We saw above that random intercepts by items made sense, but not random slopes.
+We add the former but not the latter -- and not factor smooths by items either
 
-### Manner priming
+```{r}
+# add random intercepts by items to fm_p2
+fm_p3.expr <- "bam(P_V ~ GroupCondit + s(Trial, by = GroupCondit) +
+                    s(Trial, Subject, bs = 'fs') + s(VideoName, bs = 're'),
+                  data = dp,
+                  family = 'binomial')"
+# load model or fit
+load_or_fit("fm_p3", fm_p3.expr)
+summary(fm_p3)
+```
+
 
 
 ```{r}
-# model to fit; the simpler one has only random intercepts and slopes for speakers
-# saved as string to be passed to the load_or_fit() function
-fm_m1.expr <- "bam(M_V ~ GroupCondit + s(Trial, by = GroupCondit) +
-                    s(Subject, bs = 're') + s(Trial, Subject, bs = 're') +
-                    s(VideoName, bs = 're') + s(Trial, VideoName, bs = 're'),
-                  data = dm,
-                  family = 'binomial')"
-# load or fit model
-load_or_fit("fm_m1", fm_m1.expr)
-summary(fm_m1)
+par(mfrow = c(1, 1))
+## plot
+plot_smooth(fm_p3, view = 'Trial', plot_all = 'GroupCondit', rm.ranef=TRUE)
+# show by-speaker random smooths
+# plot(fm_p3, all.terms = T, rug = FALSE)
+```
+
+
+```{r, fig.height = myfighe, fig.width = myfigwi, echo = FALSE, results = 'hide'}
+# set same y-axes for both
+myylim1 <- c(-1.5, 5)
+myylim2 <- c(-1, 4.5)
+par(mfrow = c(2, 2))
+
+# Native speakers
+plot_smooth(fm_p3, view = 'Trial', cond = list(GroupCondit = 'NS.Control'),
+            col = 'red', rug = FALSE, ylim = myylim1, rm.ranef=TRUE,
+            main = 'NS: Path-primed vs Control')
+plot_smooth(fm_p3, view = 'Trial', cond = list(GroupCondit = 'NS.Path'),
+            col = 'blue', rm.ranef=TRUE, add = TRUE)
+# L2 speakers
+plot_smooth(fm_p3, view = 'Trial', cond = list(GroupCondit = 'L2.Control'),
+            col = 'red', rug = FALSE, ylim = myylim1, rm.ranef=TRUE,
+            main = 'L2: Path-primed vs Control')
+plot_smooth(fm_p3, view = 'Trial', cond = list(GroupCondit = 'L2.Path'),
+            col = 'blue', rm.ranef=TRUE, add = TRUE)
+
+# and more to the point
+plot_diff(fm_p3, view = 'Trial', comp = list(GroupCondit = c('NS.Path', 'NS.Control')),
+          ylim = myylim2, rm.ranef=TRUE)
+plot_diff(fm_p3, view = 'Trial', comp = list(GroupCondit = c('L2.Path', 'L2.Control')),
+          ylim = myylim2, rm.ranef=TRUE)
+par(mfrow = c(1, 1))
+```
+
+
+### Manner priming
+
+```{r}
+# # model to fit; the simpler one has only random intercepts and slopes for speakers
+# # saved as string to be passed to the load_or_fit() function
+# fm_m1.expr <- "bam(M_V ~ GroupCondit + s(Trial, by = GroupCondit) +
+#                     s(Subject, bs = 're') + s(Trial, Subject, bs = 're') +
+#                     s(VideoName, bs = 're') + s(Trial, VideoName, bs = 're'),
+#                   data = dm,
+#                   family = 'binomial')"
+# # load or fit model
+# load_or_fit("fm_m1", fm_m1.expr)
+# summary(fm_m1)
 ```
 
 
 ```{r}
-## plot
-plot_smooth(fm_m1, view = 'Trial', plot_all = 'GroupCondit')
+# ## plot
+# plot_smooth(fm_m1, view = 'Trial', plot_all = 'GroupCondit', rm.ranef=TRUE)
 ```
 
 
 ```{r, fig.height = myfighe, fig.width = myfigwi}
-# set same y-axis for both
-myylim1 <- c(-4, 9)
-myylim2 <- c(0, 8)
-par(mfrow = c(2, 2))
-# Native speakers
-plot_smooth(fm_m1, view = 'Trial', cond = list(GroupCondit = 'NS.Control'),
-            col = 'red', rug = FALSE, ylim = myylim1,
-            main = 'NS: Manner-primed vs Control')
-plot_smooth(fm_m1, view = 'Trial', cond = list(GroupCondit = 'NS.Manner'),
-            col = 'blue', add = T)
-# L2 speakers
-plot_smooth(fm_m1, view = 'Trial', cond = list(GroupCondit = 'L2.Control'),
-            col = 'red', rug = FALSE, ylim = myylim1,
-            main = 'L2: Manner-primed vs Control')
-plot_smooth(fm_m1, view = 'Trial', cond = list(GroupCondit = 'L2.Manner'),
-            col = 'blue', add = T)
-
-# and more to the point
-plot_diff(fm_m1, view = 'Trial', comp = list(GroupCondit = c('NS.Manner', 'NS.Control')),
-          ylim = myylim2)
-plot_diff(fm_m1, view = 'Trial', comp = list(GroupCondit = c('L2.Manner', 'L2.Control')),
-          ylim = myylim2)
-
-par(mfrow = c(1, 1))
+# # set same y-axis for both
+# myylim1 <- c(-6, 3.5)
+# myylim2 <- c(-0.5, 8)
+# par(mfrow = c(2, 2))
+# # Native speakers
+# plot_smooth(fm_m1, view = 'Trial', cond = list(GroupCondit = 'NS.Control'),
+#             col = 'red', rug = FALSE, ylim = myylim1, rm.ranef=TRUE,
+#             main = 'NS: Manner-primed vs Control')
+# plot_smooth(fm_m1, view = 'Trial', cond = list(GroupCondit = 'NS.Manner'),
+#             col = 'blue', rm.ranef=TRUE, add = T)
+# # L2 speakers
+# plot_smooth(fm_m1, view = 'Trial', cond = list(GroupCondit = 'L2.Control'),
+#             col = 'red', rug = FALSE, ylim = myylim1, rm.ranef=TRUE,
+#             main = 'L2: Manner-primed vs Control')
+# plot_smooth(fm_m1, view = 'Trial', cond = list(GroupCondit = 'L2.Manner'),
+#             col = 'blue', rm.ranef=TRUE, add = T)
+# 
+# # and more to the point
+# plot_diff(fm_m1, view = 'Trial', comp = list(GroupCondit = c('NS.Manner', 'NS.Control')),
+#           ylim = myylim2, rm.ranef=TRUE)
+# plot_diff(fm_m1, view = 'Trial', comp = list(GroupCondit = c('L2.Manner', 'L2.Control')),
+#           ylim = myylim2, rm.ranef=TRUE)
 ```
 
 
@@ -263,49 +341,316 @@ par(mfrow = c(1, 1))
 # # more complex model fits factor smooths for speakers
 # fm_m2.expr <- "bam(M_V ~ GroupCondit + s(Trial, by = GroupCondit) +
 #                     s(Trial, Subject, bs = 'fs'),
-#                   data = dp,
+#                   data = dm,
 #                   family = 'binomial')"
 # # load model or fit
 # load_or_fit("fm_m2", fm_m2.expr)
-# # summary(fm_m2)
+# summary(fm_m2)
 ```
 
 
-
-```{r, fig.height = myfighe, fig.width = myfigwi, echo = FALSE, message=FALSE}
+```{r}
 # par(mfrow = c(1, 1))
 # ## plot
-# plot_smooth(fm_m2, view = 'Trial', plot_all = 'GroupCondit')
+# plot_smooth(fm_m2, view = 'Trial', plot_all = 'GroupCondit', rm.ranef=TRUE)
 # # show by-speaker random smooths
-# plot(fm_m2, select = 5)
-# 
+# plot(fm_m2, all.terms = TRUE)
+```
+
+
+```{r, fig.height = myfighe, fig.width = myfigwi, echo = FALSE, message=FALSE}
 # # set same y-axes for both
-# myylim1 <- NULL
-# myylim2 <- NULL
+# myylim1 <- c(-4.5, 2.5)
+# myylim2 <- c(-.5, 6)
 # par(mfrow = c(2, 2))
 # 
 # # Native speakers
 # plot_smooth(fm_m2, view = 'Trial', cond = list(GroupCondit = 'NS.Control'),
-#             col = 'red', rug = FALSE, ylim = myylim1,
+#             col = 'red', rug = FALSE, ylim = myylim1, rm.ranef=TRUE,
 #             main = 'NS: Manner-primed vs Control')
 # plot_smooth(fm_m2, view = 'Trial', cond = list(GroupCondit = 'NS.Manner'),
-#             col = 'blue', add = T)
+#             col = 'blue', rm.ranef=TRUE, add = T)
 # # L2 speakers
 # plot_smooth(fm_m2, view = 'Trial', cond = list(GroupCondit = 'L2.Control'),
-#             col = 'red', rug = FALSE, ylim = myylim1,
+#             col = 'red', rug = FALSE, ylim = myylim1, rm.ranef=TRUE,
 #             main = 'L2: Manner-primed vs Control')
 # plot_smooth(fm_m2, view = 'Trial', cond = list(GroupCondit = 'L2.Manner'),
-#             col = 'blue', add = T)
+#             col = 'blue', rm.ranef=TRUE, add = T)
 # 
 # # and more to the point
 # plot_diff(fm_m2, view = 'Trial', comp = list(GroupCondit = c('NS.Manner', 'NS.Control')),
-#           ylim = myylim2)
+#           ylim = myylim2, rm.ranef=TRUE)
 # plot_diff(fm_m2, view = 'Trial', comp = list(GroupCondit = c('L2.Manner', 'L2.Control')),
-#           ylim = myylim2)
-# 
-# par(mfrow = c(1, 1))
+#           ylim = myylim2, rm.ranef=TRUE)
+```
+
+
+We saw above that random intercepts by items made sense, but not random slopes.
+We add the former but not the latter -- and not factor smooths by items either
+
+```{r}
+# add random intercepts by items to fm_p2
+fm_m3.expr <- "bam(M_V ~ GroupCondit + s(Trial, by = GroupCondit) +
+                    s(Trial, Subject, bs = 'fs') + s(VideoName, bs = 're'),
+                  data = dm,
+                  family = 'binomial')"
+# load model or fit
+load_or_fit("fm_m3", fm_m3.expr)
+summary(fm_m3)
+```
+
+
+```{r}
+par(mfrow = c(1, 1))
+## plot
+plot_smooth(fm_m3, view = 'Trial', plot_all = 'GroupCondit', rm.ranef=TRUE)
+# show by-speaker random smooths
+plot(fm_m3, all.terms = TRUE)
+```
+
+
+```{r, fig.height = myfighe, fig.width = myfigwi, echo = FALSE, results = 'hide'}
+# set same y-axes for both
+myylim1 <- c(-4.5, 2.5)
+myylim2 <- c(-.5, 6)
+par(mfrow = c(2, 2))
+
+# Native speakers
+plot_smooth(fm_m3, view = 'Trial', cond = list(GroupCondit = 'NS.Control'),
+            col = 'red', rug = FALSE, ylim = myylim1, rm.ranef=TRUE,
+            main = 'NS: Manner-primed vs Control')
+plot_smooth(fm_m3, view = 'Trial', cond = list(GroupCondit = 'NS.Manner'),
+            col = 'blue', rm.ranef=TRUE, add = T)
+# L2 speakers
+plot_smooth(fm_m3, view = 'Trial', cond = list(GroupCondit = 'L2.Control'),
+            col = 'red', rug = FALSE, ylim = myylim1, rm.ranef=TRUE,
+            main = 'L2: Manner-primed vs Control')
+plot_smooth(fm_m3, view = 'Trial', cond = list(GroupCondit = 'L2.Manner'),
+            col = 'blue', rm.ranef=TRUE, add = T)
+
+# and more to the point
+plot_diff(fm_m3, view = 'Trial', comp = list(GroupCondit = c('NS.Manner', 'NS.Control')),
+          ylim = myylim2, rm.ranef=TRUE)
+plot_diff(fm_m3, view = 'Trial', comp = list(GroupCondit = c('L2.Manner', 'L2.Control')),
+          ylim = myylim2, rm.ranef=TRUE)
+```
+
+
+
+## Effect of proficiency on adaptation?
+
+Now we consider only L2 data and ask whether the time course of adaptation differs with respect to proficiency.
+Following Wieling et al (2014) we model the effect of trial and proficiency using tensor products.
+
+```{r}
+# subset L2 data only
+dp_l2 <- dp %>% filter(Group == "L2")
+dp_l2$Condition <- factor(dp_l2$Condition)
+# contain only L2 speakers in the Path/Control conditions
+str(dp_l2)
+dm_l2 <- dm %>% filter(Group == "L2")
+dm_l2$Condition <- factor(dm_l2$Condition)
+# contain only L2 speakers in the Manner/Control conditions
+str(dm_l2)
+```
+
+
+
+### Path
+
+```{r}
+# fm_p_prof1.expr <- "bam(P_V ~
+#                     te(Trial, ClozeScore),
+#                   data = dp_l2,
+#                   family = 'binomial')"
+# # load model or fit
+# load_or_fit("fm_p_prof1", fm_p_prof1.expr)
+# summary(fm_p_prof1)
+# # plot(fm_p_prof1)
+```
+
+
+```{r}
+# fm_p_prof2.expr <- "bam(P_V ~
+#                     te(Trial, ClozeScore, by = Condition),
+#                   data = dp_l2,
+#                   family = 'binomial')"
+# # load model or fit
+# load_or_fit("fm_p_prof2", fm_p_prof2.expr)
+# summary(fm_p_prof2)
+# # plot(fm_p_prof2, all.terms = TRUE)
+```
+
+
+```{r}
+# fm_p_prof3.expr <- "bam(P_V ~ Condition +
+#                     te(Trial, ClozeScore, by = Condition),
+#                   data = dp_l2,
+#                   family = 'binomial')"
+# # load model or fit
+# load_or_fit("fm_p_prof3", fm_p_prof3.expr)
+# summary(fm_p_prof3)
+# # plot(fm_p_prof3, all.terms = TRUE)
+```
+
+
+```{r}
+# fm_p_prof4.expr <- "bam(P_V ~ Condition +
+#                     te(Trial, ClozeScore, by = Condition) +
+#                     s(Subject, bs = 're'),
+#                   data = dp_l2,
+#                   family = 'binomial')"
+# # load model or fit
+# load_or_fit("fm_p_prof4", fm_p_prof4.expr)
+# summary(fm_p_prof4)
+# # plot(fm_p_prof4, all.terms = TRUE)
+```
+
+
+```{r}
+# fm_p_prof5.expr <- "bam(P_V ~ Condition +
+#                     te(Trial, ClozeScore, by = Condition) +
+#                     s(Trial, Subject, bs = 're'),
+#                   data = dp_l2,
+#                   family = 'binomial')"
+# # load model or fit
+# load_or_fit("fm_p_prof5", fm_p_prof5.expr)
+# summary(fm_p_prof5)
+# # plot(fm_p_prof5, all.terms = TRUE)
+```
+
+
+```{r}
+# fm_p_prof6.expr <- "bam(P_V ~ Condition +
+#                     te(Trial, ClozeScore, by = Condition) +
+#                     s(Subject, bs = 're') +
+#                     s(Trial, Subject, bs = 're'),
+#                   data = dp_l2,
+#                   family = 'binomial')"
+# # load model or fit
+# load_or_fit("fm_p_prof6", fm_p_prof6.expr)
+# summary(fm_p_prof6)
+# # plot(fm_p_prof6, all.terms = TRUE)
+```
+
+
+```{r}
+# fm_p_prof7.expr <- "bam(P_V ~ Condition +
+#                     te(Trial, ClozeScore, by = Condition) +
+#                     s(Subject, bs = 're') +
+#                     s(Trial, Subject, bs = 're') +
+#                     s(VideoName, bs = 're'),
+#                   data = dp_l2,
+#                   family = 'binomial')"
+# # load model or fit
+# load_or_fit("fm_p_prof7", fm_p_prof7.expr)
+# summary(fm_p_prof7)
+# # plot(fm_p_prof7, all.terms = TRUE)
+```
+
+
+```{r}
+# fm_p_prof8.expr <- "bam(P_V ~ Condition +
+#                     te(Trial, ClozeScore, by = Condition) +
+#                     s(Subject, bs = 're') +
+#                     s(Trial, Subject, bs = 're') +
+#                     s(VideoName, bs = 're') +
+#                     s(Trial, VideoName, bs = 're'),
+#                   data = dp_l2,
+#                   family = 'binomial')"
+# # load model or fit
+# load_or_fit("fm_p_prof8", fm_p_prof8.expr)
+# summary(fm_p_prof8)
+# # plot(fm_p_prof8)
+```
+
+
+
+```{r}
+fm_p_prof9.expr <- "bam(P_V ~ Condition +
+                    te(Trial, ClozeScore, by = Condition) +
+                    s(Trial, Subject, bs = 'fs') +
+                    s(VideoName, bs = 're'),
+                  data = dp_l2,
+                  family = 'binomial')"
+# load model or fit
+load_or_fit("fm_p_prof9", fm_p_prof9.expr)
+summary(fm_p_prof9)
+# plot(fm_p_prof9, all.terms = TRUE, rug = FALSE)
+```
+
+
+```{r, fig.height= 6, fig.width=9, results='hide'}
+par(mfrow = c(2, 3))
+
+myylim1 <- c(-5, 8)
+for(cloze in seq(6, 36, length.out = 6)) {
+  plot_smooth(fm_p_prof9, view = 'Trial',
+              cond = list(Condition = 'Control', ClozeScore = cloze),
+              col = 'red', rug = FALSE, ylim = myylim1, rm.ranef=TRUE,
+              main = paste('Path-primed and Control; cloze =', cloze))
+  plot_smooth(fm_p_prof9, view = 'Trial',
+              cond = list(Condition = 'Path', ClozeScore = cloze),
+              col = 'blue', rug = FALSE, rm.ranef=TRUE, add = TRUE)
+}
+# difference plot in 3D
+par(mfrow = c(1, 1))
+plot_diff2(fm_p_prof9, view = c('Trial', 'ClozeScore'), 
+           comp = list(Condition = c('Path', 'Control')),
+           rm.ranef = TRUE)
 ```
 
 
 
 
+### Manner
+
+
+```{r}
+fm_m_prof9.expr <- "bam(M_V ~ Condition +
+                    te(Trial, ClozeScore, by = Condition) +
+                    s(Trial, Subject, bs = 'fs') +
+                    s(VideoName, bs = 're'),
+                  data = dm_l2,
+                  family = 'binomial')"
+# load model or fit
+load_or_fit("fm_m_prof9", fm_m_prof9.expr)
+summary(fm_m_prof9)
+plot(fm_m_prof9, all.terms = TRUE, rug = FALSE)
+```
+
+
+```{r, fig.height= 6, fig.width=9, results='hide'}
+par(mfrow = c(2, 3))
+
+myylim1 <- c(-6, 4.5)
+for(cloze in seq(6, 36, length.out = 6)) {
+  plot_smooth(fm_m_prof9, view = 'Trial',
+              cond = list(Condition = 'Control', ClozeScore = cloze),
+              col = 'red', rug = FALSE, ylim = myylim1, rm.ranef=TRUE,
+              main = paste('Manner-primed and Control; cloze =', cloze))
+  plot_smooth(fm_m_prof9, view = 'Trial',
+              cond = list(Condition = 'Manner', ClozeScore = cloze),
+              col = 'blue', rug = FALSE, rm.ranef=TRUE, add = TRUE)
+}
+# difference plot in 3D
+par(mfrow = c(1, 1))
+plot_diff2(fm_m_prof9, view = c('Trial', 'ClozeScore'), 
+           comp = list(Condition = c('Manner', 'Control')),
+           rm.ranef = TRUE)
+```
+
+
+```{r}
+# fm_m_prof10.expr <- "bam(M_V ~ Condition +
+#                     te(Trial, ClozeScore, by = Condition) +
+#                     s(Trial, Subject, bs = 'fs') +
+#                     s(VideoName, bs = 're') +
+#                     s(Trial, VideoName, bs = 're'),
+#                   data = dm_l2,
+#                   family = 'binomial')"
+# # load model or fit
+# load_or_fit("fm_m_prof10", fm_m_prof10.expr)
+# summary(fm_m_prof10)
+# plot(fm_m_prof10, all.terms = TRUE, rug = FALSE)
+```

@@ -9,6 +9,7 @@
 *.html
 
 analysis/gamms/*
+gamms/*
 
 audiofiles/*
 *.wav
