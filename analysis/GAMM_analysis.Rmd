@@ -3,8 +3,8 @@ title: "GAMM analysis"
 author: "Guillermo Montero-Melis"
 date: "7 februari 2017"
 output:
-  pdf_document: default
   html_document: default
+  pdf_document: default
 ---
 
 ```{r setup, include = TRUE}
@@ -65,6 +65,74 @@ load_or_fit <- function(fm_name, fm_code, forcefit = FALSE) {
     print(fm)
     print(fm_t)
   }
+}
+
+# function to plot the differences between native and L2 speakers
+plot_NS_L2 <- function(fm, primed_cond = NULL, ylim1 = NULL, ylim2 = NULL) {
+  par(mfrow = c(2, 2))
+  mycex <- 0.9
+  NS_primed <- paste0('NS.', primed_cond)
+  L2_primed <- paste0('L2.', primed_cond)
+  # plot NS control
+  plot_smooth(fm, view = 'Trial', cond = list(GroupCondit = 'NS.Control'),
+              col = 'blue', lty = 2, rug = FALSE, ylim = ylim1, rm.ranef=TRUE,
+              main = 'Native speakers', ylab = paste(primed_cond, "verb"),
+              hide.label = TRUE)
+  # plot NS primed
+  plot_smooth(fm, view = 'Trial', cond = list(GroupCondit = NS_primed),
+              col = 'red', rug = FALSE, rm.ranef = TRUE, add = TRUE,
+              hide.label = TRUE)
+  # add legend
+  legend(x = 1, y = ylim1[2], legend = c(paste0(primed_cond, '-primed'), 'Control'),
+         col = c('red', 'blue'), lty = 1:2, cex = mycex, box.lty = 0)
+  
+  # L2 speakers Control
+  plot_smooth(fm, view = 'Trial', cond = list(GroupCondit = 'L2.Control'),
+              col = 'blue', lty = 2, rug = FALSE, ylim = ylim1, rm.ranef = TRUE,
+              main = 'L2 speakers', ylab = paste(primed_cond, "verb"),
+              hide.label = TRUE)
+  # L2 speakers primed
+  plot_smooth(fm, view = 'Trial', cond = list(GroupCondit = L2_primed),
+              col = 'red', rug = FALSE, rm.ranef = TRUE, add = TRUE,
+              hide.label = TRUE)
+  # add legend
+  legend(x = 1, y = ylim1[2], legend = c(paste0(primed_cond, '-primed'), 'Control'),
+         col = c('red', 'blue'), lty = 1:2, cex = mycex, box.lty = 0)
+  
+  # Now plot the estimated differences with itsadug::plot_diff()
+  plot_diff(fm, view = 'Trial', comp = list(GroupCondit = c(NS_primed, 'NS.Control')),
+            ylim = ylim2, rm.ranef=TRUE, 
+            main = paste0('NS: ', primed_cond, '-primed',  ' - Control'),
+            ylab = paste('Difference in', primed_cond, "verb"), hide.label = TRUE)
+  plot_diff(fm, view = 'Trial', comp = list(GroupCondit = c(L2_primed, 'L2.Control')),
+            ylim = ylim2, rm.ranef=TRUE, 
+            main = paste0('L2: ', primed_cond, '-primed',  ' - Control'),
+            ylab = paste('Difference in', primed_cond, "verb"), hide.label = TRUE)
+}
+
+
+# function to plot the effects by L2 speakers' proficiency
+plot_L2_profic <- function(fm, primed_cond = NULL, ylim1 = NULL,
+                           cloze_range = c(6, 36)) {
+  cloze_scores <- seq(cloze_range[1], cloze_range[2], length.out = 6)
+  # we want to have one common legend for all plots
+  layout(rbind(1, matrix(2:7, ncol=3, byrow=TRUE)), heights = c(1, 6, 6))
+  # add common legend
+  par(mai=c(0,0,0,0))
+  plot.new()
+  legend(x = "center", ncol = 2, legend = c(paste0(primed_cond, '-primed'), 'Control'),
+         col = c('red', 'blue'), lty = 1:2, box.lty = 0, cex = 1.5)
+  # Now make plot for the model estimates at the different cloze scores in cloze_scores
+  # par(mai=rep(0.2, 4))
+  par(mai = c(.7, .6, .5, 0))
+  for(cloze in cloze_scores) {
+    plot_smooth(fm, view = 'Trial', cond = list(Condition = 'Control', ClozeScore = cloze),
+                col = 'blue', lty = 2, rug = FALSE, ylim = ylim1, rm.ranef = TRUE,
+                hide.label = TRUE, ylab = paste(primed_cond, "verb"),
+                main = paste('Cloze score =', cloze))
+    plot_smooth(fm, view = 'Trial', cond = list(Condition = primed_cond, ClozeScore = cloze),
+                col = 'red', rug = FALSE, rm.ranef = TRUE, hide.label = TRUE, add = TRUE)
+    }
 }
 ```
 
@@ -234,9 +302,21 @@ Two crossed factors:
 # par(mfrow = c(1, 1))
 ```
 
+Previous models showed that random **intercepts** by items made sense, but not random slopes.
+We add the former but not the latter.
 
-We saw above that random intercepts by items made sense, but not random slopes.
-We add the former but not the latter -- and not factor smooths by items either
+Thus, the model is specified as:
+
+`M_V ~ GroupCondit + s(Trial, by = GroupCondit) + s(Trial, Subject, bs = 'fs') + s(VideoName, bs = 're')`
+
+Predictors are:
+
+- `Group-Condition` interaction as a main effect
+- A smooth function of `Trial` using thin plate regression splines (default)
+- We allow this function to vary for each of the levels of `Group-Condition`
+- Factor smooths for `Subject` to capture non-linear random effects of speakers
+- Random intercepts by items (i.e., `VideoName`)
+
 
 ```{r}
 # add random intercepts by items to fm_p2
@@ -251,40 +331,19 @@ summary(fm_p3)
 
 
 
-```{r}
+```{r, results = 'hide'}
 par(mfrow = c(1, 1))
 ## plot
 plot_smooth(fm_p3, view = 'Trial', plot_all = 'GroupCondit', rm.ranef=TRUE)
-# show by-speaker random smooths
-# plot(fm_p3, all.terms = T, rug = FALSE)
+# show by-speaker random smooths and by-item random intercepts
+par(mfrow = c(1, 2))
+plot(fm_p3, select = 5)
+plot(fm_p3, select = 6)
 ```
 
 
 ```{r, fig.height = myfighe, fig.width = myfigwi, echo = FALSE, results = 'hide'}
-# set same y-axes for both
-myylim1 <- c(-1.5, 5)
-myylim2 <- c(-1, 4.5)
-par(mfrow = c(2, 2))
-
-# Native speakers
-plot_smooth(fm_p3, view = 'Trial', cond = list(GroupCondit = 'NS.Control'),
-            col = 'red', rug = FALSE, ylim = myylim1, rm.ranef=TRUE,
-            main = 'NS: Path-primed vs Control')
-plot_smooth(fm_p3, view = 'Trial', cond = list(GroupCondit = 'NS.Path'),
-            col = 'blue', rm.ranef=TRUE, add = TRUE)
-# L2 speakers
-plot_smooth(fm_p3, view = 'Trial', cond = list(GroupCondit = 'L2.Control'),
-            col = 'red', rug = FALSE, ylim = myylim1, rm.ranef=TRUE,
-            main = 'L2: Path-primed vs Control')
-plot_smooth(fm_p3, view = 'Trial', cond = list(GroupCondit = 'L2.Path'),
-            col = 'blue', rm.ranef=TRUE, add = TRUE)
-
-# and more to the point
-plot_diff(fm_p3, view = 'Trial', comp = list(GroupCondit = c('NS.Path', 'NS.Control')),
-          ylim = myylim2, rm.ranef=TRUE)
-plot_diff(fm_p3, view = 'Trial', comp = list(GroupCondit = c('L2.Path', 'L2.Control')),
-          ylim = myylim2, rm.ranef=TRUE)
-par(mfrow = c(1, 1))
+plot_NS_L2(fm_p3, primed_cond = 'Path', ylim1 =  c(-1.5, 5.5), ylim2 = c(-1, 4.5))
 ```
 
 
@@ -385,8 +444,21 @@ par(mfrow = c(1, 1))
 ```
 
 
-We saw above that random intercepts by items made sense, but not random slopes.
-We add the former but not the latter -- and not factor smooths by items either
+Previous models showed that random **intercepts** by items made sense, but not random slopes.
+We add the former but not the latter.
+
+Thus, the model is specified as:
+
+`M_V ~ GroupCondit + s(Trial, by = GroupCondit) + s(Trial, Subject, bs = 'fs') + s(VideoName, bs = 're')`
+
+Predictors are:
+
+- `Group-Condition` interaction as a main effect
+- A smooth function of `Trial` using thin plate regression splines (default)
+- We allow this function to vary for each of the levels of `Group-Condition`
+- Factor smooths for `Subject` to capture non-linear random effects of speakers
+- Random intercepts by items (i.e., `VideoName`)
+
 
 ```{r}
 # add random intercepts by items to fm_p2
@@ -400,39 +472,20 @@ summary(fm_m3)
 ```
 
 
-```{r}
+```{r, results = 'hide'}
 par(mfrow = c(1, 1))
 ## plot
-plot_smooth(fm_m3, view = 'Trial', plot_all = 'GroupCondit', rm.ranef=TRUE)
-# show by-speaker random smooths
-plot(fm_m3, all.terms = TRUE)
+plot_smooth(fm_m3, view = 'Trial', plot_all = 'GroupCondit', rm.ranef = TRUE)
+# show by-speaker random smooths and by-item random intercepts
+par(mfrow = c(1, 2))
+plot(fm_m3, select = 5)
+plot(fm_m3, select = 6)
 ```
 
 
+
 ```{r, fig.height = myfighe, fig.width = myfigwi, echo = FALSE, results = 'hide'}
-# set same y-axes for both
-myylim1 <- c(-4.5, 2.5)
-myylim2 <- c(-.5, 6)
-par(mfrow = c(2, 2))
-
-# Native speakers
-plot_smooth(fm_m3, view = 'Trial', cond = list(GroupCondit = 'NS.Control'),
-            col = 'red', rug = FALSE, ylim = myylim1, rm.ranef=TRUE,
-            main = 'NS: Manner-primed vs Control')
-plot_smooth(fm_m3, view = 'Trial', cond = list(GroupCondit = 'NS.Manner'),
-            col = 'blue', rm.ranef=TRUE, add = T)
-# L2 speakers
-plot_smooth(fm_m3, view = 'Trial', cond = list(GroupCondit = 'L2.Control'),
-            col = 'red', rug = FALSE, ylim = myylim1, rm.ranef=TRUE,
-            main = 'L2: Manner-primed vs Control')
-plot_smooth(fm_m3, view = 'Trial', cond = list(GroupCondit = 'L2.Manner'),
-            col = 'blue', rm.ranef=TRUE, add = T)
-
-# and more to the point
-plot_diff(fm_m3, view = 'Trial', comp = list(GroupCondit = c('NS.Manner', 'NS.Control')),
-          ylim = myylim2, rm.ranef=TRUE)
-plot_diff(fm_m3, view = 'Trial', comp = list(GroupCondit = c('L2.Manner', 'L2.Control')),
-          ylim = myylim2, rm.ranef=TRUE)
+plot_NS_L2(fm_m3, primed_cond = 'Manner', ylim1 = c(-4, 3.5), ylim2 = c(-.5, 6))
 ```
 
 
@@ -576,30 +629,29 @@ fm_p_prof9.expr <- "bam(P_V ~ Condition +
 # load model or fit
 load_or_fit("fm_p_prof9", fm_p_prof9.expr)
 summary(fm_p_prof9)
-# plot(fm_p_prof9, all.terms = TRUE, rug = FALSE)
+```
+
+
+```{r}
+# show by-speaker random smooths and by-item random intercepts
+par(mfrow = c(1, 2))
+plot(fm_p_prof9, select = 3)
+plot(fm_p_prof9, select = 4)
 ```
 
 
 ```{r, fig.height= 6, fig.width=9, results='hide'}
-par(mfrow = c(2, 3))
+plot_L2_profic(fm_p_prof9, primed_cond = 'Path', ylim1 = c(-5, 8))
+```
 
-myylim1 <- c(-5, 8)
-for(cloze in seq(6, 36, length.out = 6)) {
-  plot_smooth(fm_p_prof9, view = 'Trial',
-              cond = list(Condition = 'Control', ClozeScore = cloze),
-              col = 'red', rug = FALSE, ylim = myylim1, rm.ranef=TRUE,
-              main = paste('Path-primed and Control; cloze =', cloze))
-  plot_smooth(fm_p_prof9, view = 'Trial',
-              cond = list(Condition = 'Path', ClozeScore = cloze),
-              col = 'blue', rug = FALSE, rm.ranef=TRUE, add = TRUE)
-}
+
+```{r}
 # difference plot in 3D
 par(mfrow = c(1, 1))
 plot_diff2(fm_p_prof9, view = c('Trial', 'ClozeScore'), 
            comp = list(Condition = c('Path', 'Control')),
            rm.ranef = TRUE)
 ```
-
 
 
 
@@ -616,25 +668,21 @@ fm_m_prof9.expr <- "bam(M_V ~ Condition +
 # load model or fit
 load_or_fit("fm_m_prof9", fm_m_prof9.expr)
 summary(fm_m_prof9)
-plot(fm_m_prof9, all.terms = TRUE, rug = FALSE)
+```
+
+```{r}
+# show by-speaker random smooths and by-item random intercepts
+par(mfrow = c(1, 2))
+plot(fm_m_prof9, select = 3)
+plot(fm_m_prof9, select = 4)
 ```
 
 
 ```{r, fig.height= 6, fig.width=9, results='hide'}
-par(mfrow = c(2, 3))
+plot_L2_profic(fm_m_prof9, primed_cond = 'Manner', ylim1 = c(-6, 4.5))
+```
 
-myylim1 <- c(-6, 4.5)
-for(cloze in seq(6, 36, length.out = 6)) {
-  plot_smooth(fm_m_prof9, view = 'Trial',
-              cond = list(Condition = 'Control', ClozeScore = cloze),
-              col = 'red', rug = FALSE, ylim = myylim1, rm.ranef=TRUE,
-              main = paste('Manner-primed and Control; cloze =', cloze))
-  plot_smooth(fm_m_prof9, view = 'Trial',
-              cond = list(Condition = 'Manner', ClozeScore = cloze),
-              col = 'blue', rug = FALSE, rm.ranef=TRUE, add = TRUE)
-}
-# difference plot in 3D
-par(mfrow = c(1, 1))
+```{r}
 plot_diff2(fm_m_prof9, view = c('Trial', 'ClozeScore'), 
            comp = list(Condition = c('Manner', 'Control')),
            rm.ranef = TRUE)
