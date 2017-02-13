@@ -3,17 +3,18 @@ title: "Analysis L2 lexicalisation"
 author: '[Guillermo Montero-Melis](http://www.biling.su.se/montero_melis_guillermo)'
 date: '`r as.character(format(Sys.Date(), format="%d/%m/%Y"))`'
 output:
+  pdf_document:
+    toc: yes
+    number_sections: yes
   html_document:
+    depth: 2
     number_sections: yes
     theme: default
-    toc: yes
-    depth: 2
-  pdf_document:
     toc: yes
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = FALSE)
+knitr::opts_chunk$set(echo = FALSE, fig.height = 4, fig.width = 5)
 ```
 
 
@@ -58,12 +59,14 @@ library(itsadug)
 packageVersion('itsadug')
 library(lme4)
 packageVersion('lme4')
-# library(ggplot2)
-# packageVersion('ggplot2')
-# library(boot)  # for inv.logit()
-# packageVersion('boot')  # for inv.logit()
-# library(knitr)  # for kable()
-# packageVersion('knitr')  # for kable()
+library(ggplot2)
+packageVersion('ggplot2')
+library(boot)  # for inv.logit()
+packageVersion('boot')  # for inv.logit()
+library(knitr)  # for kable()
+packageVersion('knitr')  # for kable()
+library(lazyeval)  # lazy evaluation used in bysubj() function [summarise_]
+packageVersion('lazyeval')
 ```
 
 
@@ -178,9 +181,14 @@ Subset data, define factors, set coding scheme, etc:
 ## Data sets for mixed model fitting
 dp_lme4 <- dp
 dm_lme4 <- dm
-# verify the coding for the two factors:
+# We use a coding that allows us to discover any effects of exposure across groups
+contrasts(dp_lme4$Group) <- - contr.sum(2) / 2
+colnames(contrasts(dp_lme4$Group)) <- "L2_vs_NS"
 contrasts(dp_lme4$Group)
+contrasts(dm_lme4$Group) <- - contr.sum(2) / 2
+colnames(contrasts(dm_lme4$Group)) <- "L2_vs_NS"
 contrasts(dm_lme4$Group)
+# for condition use dummy coding with Control as reference
 contrasts(dp_lme4$Condition)
 contrasts(dm_lme4$Condition)
 ```
@@ -204,10 +212,22 @@ myfigwi <- 7
 ```{r}
 ## Convenience functions
 
+# source functions to compute collinearity diagnostics
+source("functions/kappa_mer_fnc.R")
+source("functions/vif_mer_fnc.R")
+
 # print deviance explained as percentage
 dev_expl <- function(fm) {
   devi <- summary(fm)$dev.expl
   paste0(round(100 * devi, 1), '% dev. explained')
+}
+
+# create a table of the summary of fixed effects of a mixed model
+glmm_tb <- function(fm) {
+  m <- round(summary(fm)$coefficients, 3)
+  tb <- as.data.frame(m)
+  names(tb) <- c("Estimate", "SE", "z-value", "p-value")
+  kable(tb)
 }
 
 # Function used to load models if they have already been saved,
@@ -310,10 +330,204 @@ plot_L2_profic <- function(fm, primed_cond = NULL, ylim1 = c(-6, 8),
 ```
 
 
+```{r}
+## TO DO: replace this function with one that plots model-estimates in logit space!
+# Convenience function to compute by-speaker averages for a given variable
+bysubj <- function(df, myvar = NULL, varname = NULL) {
+  out <- df %>% 
+    group_by(Subject, Group, Condition, ClozeScore) %>%
+    # to pass variable name as a string, use standard evaluation, see
+    # https://cran.r-project.org/web/packages/dplyr/vignettes/nse.html
+    # (NB: I don't get how this is working, but seems to work)
+    summarise_(M = interp(~ mean(var), var = as.name(myvar)))
+  # if varname argument is supplied it names the computed column
+  if (! is.null(varname)) names(out)[length(out)] <- varname
+  out
+}
+
+# plotting functions
+# here the emphasis is put between groups (NS vs L2)
+f_plot <- function(df, varname = NULL, avg_type = "mean") {
+  p <- ggplot(df, aes(x = Condition, y = M, colour = Group, group = Group,
+                      shape = Group)) +
+    geom_point(position = position_jitterdodge(), size = 2, alpha = .5) +
+    stat_summary(fun.data = mean_cl_boot, geom = "errorbar", size = 1.5,
+                 position = "dodge", width = .5) +
+    stat_summary(fun.y = avg_type, geom = "line",  size = 1,
+                 position = position_dodge(width = .5)) +
+    ylim(0,1) +
+    ylab(paste("Proportion of descriptions\nexpressing", varname)) + 
+    ggtitle(varname)
+  p
+}
+
+```
+
+
 
 # Analyses and results
 
 ## Aggregated effects of adaptation (trial not considered)
 
+
+### Path verbs in path-exposed vs control
+
+```{r}
+f_plot(bysubj(dp, "P_V"), "Path in V")
+```
+
+
+The log-likelihood of using a path verb (`P_V`) is modelled as a function of:
+
+- Group (L2 vs NS)
+- Condition (Path-exposed vs Control)
+- Including random intercepts by speaker and item (random slopes by item were not justified by the data)
+
+
+Model fit and summary of fixed effects:
+
+```{r, echo = TRUE}
+glmm_pve <- glmer(P_V ~ Group * Condition + (1 | Subject) + (1 | VideoName),
+                data = dp_lme4, family = "binomial", 
+                control = glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
+glmm_tb(glmm_pve)
+```
+
+**Model interpretation against predictions**
+
+- L2 speakers used path verbs to the same extent as NS in the control condition: both groups used path verbs slightly more often than half of the time.
+- Furthermore, there was a main effect of path-exposure, leading to more path verbs when exposed to path sentences than in the control condition.
+- However, there was no interaction of group and path-exposure, suggesting that both groups adapted to similar extents their production preferences.
+
+
+More detail about the model:
+
+```{r}
+summary(glmm_pve)
+kappa.mer(glmm_pve)
+vif.mer(glmm_pve)
+```
+
+
+
+### Manner verbs in Manner-exposed vs control
+
+```{r}
+f_plot(bysubj(dp, "M_V"), "Manner in V")
+```
+
+
+The log-likelihood of using a Manner verb (`M_V`) is modelled as a function of:
+
+- Group (L2 vs NS)
+- Condition (Manner-exposed vs Control)
+- Including random intercepts by speaker and item (random slopes by item were not justified by the data)
+
+
+Model fit and summary of fixed effects:
+
+```{r, echo = TRUE}
+glmm_mve <- glmer(M_V ~ Group * Condition + (1 | Subject) + (1 | VideoName),
+                data = dm_lme4, family = "binomial", 
+                control = glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
+glmm_tb(glmm_mve)
+```
+
+**Model interpretation against predictions**
+
+- In the control condition, L2 speakers used manner verbs less often than NS. 
+NS had an average probability of
+`r round(inv.logit(summary(glmm_mve)$coefficients[1,1]), 2)`
+of producing a manner verb,
+while L2 speakers had an average probability of
+`r round(inv.logit(sum(summary(glmm_mve)$coefficients[1:2,1])))`.
+- There was a main effect of manner-exposure, leading to more naber verbs when exposed to manner sentences compared to the control condition.
+- Again, there was no interaction of group and manner-exposure, suggesting that both groups adapted to similar extents their production preferences.
+
+
+
+
+More detail about the model:
+
+```{r}
+summary(glmm_mve)
+kappa.mer(glmm_mve)
+vif.mer(glmm_mve)
+```
+
+
+
+### Summary of results
+
+
+
+
+
+## Differences in adaptation over time (trial-by-trial analysis using GAMs)
+
+### Path verbs in path-exposed vs control -- trial-by-trial
+
+Previous models (not shown here) showed that random *intercepts* by items made sense, but not random slopes.
+We add the former but not the latter.
+
+Thus, the model is specified as:
+
+`PathVerb ~ GroupCondit + s(Trial, by = GroupCondit) + s(Trial, Subject, bs = 'fs') + s(VideoName, bs = 're')`
+
+Predictors are:
+
+- `GroupCondit`: Group-Condition interaction as a fixed effect
+- `s(Trial, by = GroupCondit)`: A smooth function of `Trial` allowing the function to differ for each level of Group-Condition (thin plate regression splines, the default)
+- `s(Trial, Subject, bs = 'fs')`: Factor smooths for `Subject` to capture non-linear random effects of speakers
+- `s(VideoName, bs = 're')`: Random intercepts by items (i.e., `VideoName`)
+
+
+```{r}
+# the expression that is passed to load_or_fit()
+fm_p3.expr <- "bam(P_V ~ GroupCondit + s(Trial, by = GroupCondit) +
+                    s(Trial, Subject, bs = 'fs') + s(VideoName, bs = 're'),
+                  data = dp,
+                  family = 'binomial')"
+# load model or fit
+load_or_fit("fm_p3", fm_p3.expr)
+```
+
+Summary of the model:
+
+```{r}
+summary(fm_p3)
+```
+
+
+Significance of the different terms in the model:
+
+```{r}
+anova(fm_p3)
+```
+
+
+Plot model estimates by condition, random smooth adjustments by speakers and QQ-plot of random by-item intercepts:
+
+```{r, results = 'hide'}
+par(mfrow = c(1, 1))
+## plot
+plot_smooth(fm_p3, view = 'Trial', plot_all = 'GroupCondit', rm.ranef=TRUE)
+# show by-speaker random smooths and by-item random intercepts
+par(mfrow = c(1, 2))
+plot(fm_p3, select = 5)
+plot(fm_p3, select = 6)
+```
+
+
+Plot differences between conditions (model estimates):
+
+```{r, fig.height = myfighe_NS_L2, fig.width = myfigwi, echo = FALSE, results = 'hide'}
+plot_NS_L2(fm_p3, primed_cond = 'Path')
+```
+
+
+
+
+## Changes in adaptation with proficiency
 
 
