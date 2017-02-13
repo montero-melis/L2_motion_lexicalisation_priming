@@ -1,0 +1,319 @@
+---
+title: "Analysis L2 lexicalisation"
+author: '[Guillermo Montero-Melis](http://www.biling.su.se/montero_melis_guillermo)'
+date: '`r as.character(format(Sys.Date(), format="%d/%m/%Y"))`'
+output:
+  html_document:
+    number_sections: yes
+    theme: default
+    toc: yes
+    depth: 2
+  pdf_document:
+    toc: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+
+# Introduction
+
+During production, speakers adapt to the patterns experienced in recent linguistic exposure.
+Here we probe the difference between native speakers (NS) of Spanish and Swedish second language speakers (L2S) of Spanish regarding whether and how they adaptat their lexicalisation preferences (use of path- vs. manner-verbs) in the course of a production elicitation task.
+All participants had to describe caused motion events (e.g., 'He pushed a box up a sand dune').
+Participants in the Path-exposed condition read out loud sentences containing a path verb that could be used to describe the target event
+(e.g., *El señor sube unos escalones con una televisión* 'The man ascends some steps with a television'), 
+whereas participants in the Manner-exposed condition read sentences with manner verbs
+(e.g., *El señor empuja una televisión por unos escalones* 'The man pushes a television along some steps').
+Their respective lexicalisation preferences were compared to those of control groups (one for NS and one for L2S) who did not receive any exposure while describing the events.
+
+
+## Research questions
+
+1. Is adaptation overall stronger in L2S than NS?
+2. Is adaptation in L2S mediated by their first language (L1) biases?
+3. Does the time course of adaptation differ between the two groups?
+4. Do L2S' patterns of adaptation come to resemble more those of NS as their proficiency increases?
+
+
+## Predictions
+
+1. Because L2S have overall less experience in their L2 than NS, their production patterns should be more malleable and thus they should adapt more as they are exposed to sentences in the target language.
+2. Because manner verbs constitutes the preferred lexicalisation pattern in Swedish (i.e., L2 speakers' L1), L2 speakers should adapt less in the manner-exposure condition relative to NS, while they should adapt more in the path-exposure condition relative to NS.
+3. We expected adaptation to be relatively fast in the high-surprise (=unexpected) conditions, i.e. in the path-exposure condition for L2 speakers and in the manner-exposure condition for NS; whereas we expected slower adaptation in the low-surprise (=expected) conditions, i.e. manner-exposure for L2 speakers and path-exposure for NS.
+4. As they become more proficient in the target language, L2 speakers should be less influenced by their L1-based lexicalisation preferences and have developed a more stable preference for the Spanish pattern. Thus, we expected that with increasing proficiency L2 speakers would adapt less to path-exposure and adapt more to manner-exposure.
+
+
+# Set up working space
+
+## Libraries
+
+```{r, include = TRUE, echo = TRUE, warning = FALSE, message = FALSE}
+library(dplyr)
+packageVersion('dplyr')
+library(mgcv)  # GAMs and GAMMs (Wood 2006)
+packageVersion('mgcv')  # GAMs and GAMMs (Wood 2006)
+library(itsadug)
+packageVersion('itsadug')
+library(lme4)
+packageVersion('lme4')
+# library(ggplot2)
+# packageVersion('ggplot2')
+# library(boot)  # for inv.logit()
+# packageVersion('boot')  # for inv.logit()
+# library(knitr)  # for kable()
+# packageVersion('knitr')  # for kable()
+```
+
+
+## Data loading and processing
+
+### Load data
+
+```{r}
+##  Load data
+# The data is created in the script 'processing/compute_dependent_measures.R'
+# There is the normal and the liberally coded version, see script for difference
+
+# load
+d <- read.csv('../data/data_DVs.csv', fileEncoding = 'UTF-8', stringsAsFactors = TRUE)
+# simplify somewhat
+d <- d %>%
+  select(Subject:VideoName, P_V, M_V) %>%
+  rename(Trial = VideoTrial)
+# head(d)
+# str(d)
+
+# participant data
+ppts <- read.csv("../data/participants.csv", fileEncoding = "UTF-8", stringsAsFactors = TRUE)
+# head(ppts)
+
+# add speakers' clozescore to d:
+d <- left_join(d, ppts %>% select(Subject, ClozeScore))
+
+# Subject needs to be a factor
+d$Subject <- factor(d$Subject)
+# in Group, let the native speakers (NS) be the reference group
+d$Group <- factor(d$Group, levels = c('NS', 'L2'))
+
+head(d)
+str(d)
+```
+
+
+### Remove outliers?
+
+Remove any L2 speakers based on cloze score because too low?
+
+```{r}
+# Outliers? ---------------------------------------------------------------
+
+# L2 speakers Cloze scores
+cloze <- ppts %>%
+  filter(Group == "L2") %>%
+  select(Subject, Condition, ClozeScore)
+# z-scores
+cloze$zClozeScore <- scale(cloze$ClozeScore)
+# Subjects ordered by clozescore
+head(cloze[order(cloze$zClozeScore), ])
+tail(cloze[order(cloze$zClozeScore), ])
+
+# Consider ClozeScore < 5 as outlier
+threshold5 <- cloze[cloze$ClozeScore < 5, "Subject"]
+# # Consider ClozeScore < 10 as outlier
+threshold10 <- cloze[cloze$ClozeScore < 10, "Subject"]
+
+## Exclude participants? (Uncomment to exclude)
+# d <- d[!d$Subject %in% threshold5, ]
+# d <- d[!d$Subject %in% threshold10, ]
+```
+
+### Data for GAMs comparing NS and L2 speakers
+
+Subset data, define factors, set coding scheme, etc:
+
+```{r}
+## Single factor to model Group * Condition, using dummy coding:
+# (The way to analyze crossed factors seems to be to combine their levels into 
+# a single factor, see Wood's comment here
+# http://grokbase.com/t/r/r-help/113qaadxt4/r-how-to-add-in-interaction-terms-in-gamm)
+d$GroupCondit <- with(d, interaction(Group, Condition))
+
+## Subset data:
+# Data for analysis of Path-priming vs control
+dp <- d %>% filter(Condition != 'Manner')
+dp$Condition <- factor(dp$Condition) # drop unused levels
+# Data for analysis of Manner-priming vs control
+dm <- d %>% filter(Condition != 'Path')
+dm$Condition <- factor(dm$Condition) # drop unused levels
+
+# Order levels correctly in each data frame
+dp$GroupCondit <- factor(dp$GroupCondit, levels = c("NS.Control", "NS.Path",
+                                                    "L2.Control", "L2.Path"))
+dm$GroupCondit <- factor(dm$GroupCondit, levels = c("NS.Control", "NS.Manner",
+                                                    "L2.Control", "L2.Manner"))
+# note that NS control becomes the reference group in both data frames
+contrasts(dp$GroupCondit)
+contrasts(dm$GroupCondit)
+```
+
+
+### Data for GAMs testing effect of proficiency in L2 speakers
+
+Subset data, define factors, set coding scheme, etc:
+
+```{r}
+# subset L2 data only from Path/Control and Manner/Control conditions respectively
+dp_l2 <- dp %>% filter(Group == "L2")
+dm_l2 <- dm %>% filter(Group == "L2")
+```
+
+
+### Data for logit mixed models
+
+Subset data, define factors, set coding scheme, etc:
+
+```{r, echo = T}
+## Data sets for mixed model fitting
+dp_lme4 <- dp
+dm_lme4 <- dm
+# verify the coding for the two factors:
+contrasts(dp_lme4$Group)
+contrasts(dm_lme4$Group)
+contrasts(dp_lme4$Condition)
+contrasts(dm_lme4$Condition)
+```
+
+
+
+## Convenience functions etc.
+
+[NB: might be hidden if `echo = FALSE`.]
+
+```{r}
+## Specify some global parameters
+
+# adjust figure heght/width when not going with default (espec. for 2x2 plots)
+myfighe_NS_L2 <- 6
+myfighe_L2_prof <- 6
+myfigwi <- 7
+```
+
+
+```{r}
+## Convenience functions
+
+# print deviance explained as percentage
+dev_expl <- function(fm) {
+  devi <- summary(fm)$dev.expl
+  paste0(round(100 * devi, 1), '% dev. explained')
+}
+
+# Function used to load models if they have already been saved,
+# rather than fitting them anew each time the script is called
+load_or_fit <- function(fm_name, fm_code, forcefit = FALSE) {
+  rel_path <- './gamms/'
+  # the string may contain '\n'
+  fm_code <- gsub('\n', '', fm_code)
+  
+  # check first if there is a saved rda object with that name; if so, load it
+  model_exists <- paste0(fm_name, '.rda') %in% list.files(path = rel_path)
+  # if forcefit = T it will always fit the model
+  if((!forcefit) & model_exists) {
+    load(paste0(rel_path, fm_name, '.rda'), .GlobalEnv)
+    
+  } else {  # fit it and save it to right folder
+    # record the time it takes to fit
+    fm_time <- paste0(fm_name, ".t")
+    ptm <- proc.time()
+    assign(fm_name, eval(parse(text = fm_code)), envir = .GlobalEnv)
+    assign(fm_time, proc.time() - ptm, envir = .GlobalEnv)
+    # both the model and the time it took can be saved as same file
+    save(list = c(fm_name, fm_time), file = paste0(rel_path, fm_name, '.rda'))
+    # print a brief model summary when it has been fitted and time to fit
+    fm <- get(fm_name)
+    fm_t <- get(fm_time)
+    print(fm)
+    print(fm_t)
+  }
+}
+
+# function to plot the differences between native and L2 speakers
+plot_NS_L2 <- function(fm, primed_cond = NULL, ylim1 = c(-4, 6), ylim2 = c(-.5, 6)) {
+  layout(matrix(1:4, ncol = 2, byrow=TRUE), heights = c(1.5, 1))
+  par(mai = c(.7, .8, .5, 0.2))
+  mycex <- 0.9
+  NS_primed <- paste0('NS.', primed_cond)
+  L2_primed <- paste0('L2.', primed_cond)
+  # plot NS control
+  plot_smooth(fm, view = 'Trial', cond = list(GroupCondit = 'NS.Control'),
+              col = 'blue', lty = 2, rug = FALSE, ylim = ylim1, rm.ranef=TRUE,
+              main = 'Native speakers', ylab = paste0('Log-likelihood\nof ', primed_cond, " verb"),
+              hide.label = TRUE)
+  # plot NS primed
+  plot_smooth(fm, view = 'Trial', cond = list(GroupCondit = NS_primed),
+              col = 'red', rug = FALSE, rm.ranef = TRUE, add = TRUE,
+              hide.label = TRUE)
+  # add legend
+  legend(x = 1, y = ylim1[2], legend = c(paste0(primed_cond, '-primed'), 'Control'),
+         col = c('red', 'blue'), lty = 1:2, cex = mycex, box.lty = 0)
+  
+  # L2 speakers Control
+  plot_smooth(fm, view = 'Trial', cond = list(GroupCondit = 'L2.Control'),
+              col = 'blue', lty = 2, rug = FALSE, ylim = ylim1, rm.ranef = TRUE,
+              main = 'L2 speakers', ylab = paste0('Log-likelihood\nof ', primed_cond, " verb"),
+              hide.label = TRUE)
+  # L2 speakers primed
+  plot_smooth(fm, view = 'Trial', cond = list(GroupCondit = L2_primed),
+              col = 'red', rug = FALSE, rm.ranef = TRUE, add = TRUE,
+              hide.label = TRUE)
+  # add legend
+  legend(x = 1, y = ylim1[2], legend = c(paste0(primed_cond, '-primed'), 'Control'),
+         col = c('red', 'blue'), lty = 1:2, cex = mycex, box.lty = 0)
+  
+  # Now plot the estimated differences with itsadug::plot_diff()
+  plot_diff(fm, view = 'Trial', comp = list(GroupCondit = c(NS_primed, 'NS.Control')),
+            ylim = ylim2, rm.ranef=TRUE, 
+            main = paste0('NS: ', primed_cond, '-primed',  ' - Control'),
+            ylab = paste('Diff. in log-likelihood\nof ', primed_cond, 'verb'), hide.label = TRUE)
+  plot_diff(fm, view = 'Trial', comp = list(GroupCondit = c(L2_primed, 'L2.Control')),
+            ylim = ylim2, rm.ranef=TRUE, 
+            main = paste0('L2: ', primed_cond, '-primed',  ' - Control'),
+            ylab = paste('Diff. in log-likelihood\nof ', primed_cond, 'verb'), hide.label = TRUE)
+}
+
+
+# function to plot the effects by L2 speakers' proficiency
+plot_L2_profic <- function(fm, primed_cond = NULL, ylim1 = c(-6, 8),
+                           cloze_range = c(6, 36)) {
+  cloze_scores <- seq(cloze_range[1], cloze_range[2], length.out = 6)
+  # we want to have one common legend for all plots
+  layout(rbind(1, matrix(2:7, ncol=3, byrow=TRUE)), heights = c(1, 6, 6))
+  # add common legend
+  par(mai=c(0,0,0,0))
+  plot.new()
+  legend(x = "center", ncol = 2, legend = c(paste0(primed_cond, '-primed'), 'Control'),
+         col = c('red', 'blue'), lty = 1:2, box.lty = 0, cex = 1.5)
+  # Now make plot for the model estimates at the different cloze scores in cloze_scores
+  # par(mai=rep(0.2, 4))
+  par(mai = c(.7, .8, .5, 0))
+  for(cloze in cloze_scores) {
+    plot_smooth(fm, view = 'Trial', cond = list(Condition = 'Control', ClozeScore = cloze),
+                col = 'blue', lty = 2, rug = FALSE, ylim = ylim1, rm.ranef = TRUE,
+                hide.label = TRUE, ylab = paste0('Log-likelihood\nof ', primed_cond, " verb"),
+                main = paste('Cloze score =', cloze))
+    plot_smooth(fm, view = 'Trial', cond = list(Condition = primed_cond, ClozeScore = cloze),
+                col = 'red', rug = FALSE, rm.ranef = TRUE, hide.label = TRUE, add = TRUE)
+    }
+}
+```
+
+
+
+# Analyses and results
+
+## Aggregated effects of adaptation (trial not considered)
+
+
+
