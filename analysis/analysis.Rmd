@@ -4,12 +4,14 @@ author: '[Guillermo Montero-Melis](http://www.biling.su.se/montero_melis_guiller
 date: '`r as.character(format(Sys.Date(), format="%d/%m/%Y"))`'
 output:
   pdf_document:
-    toc: yes
     number_sections: yes
+    toc: yes
   html_document:
     depth: 2
     number_sections: yes
     theme: default
+    toc: yes
+  word_document:
     toc: yes
 ---
 
@@ -276,7 +278,7 @@ plot_NS_L2 <- function(fm, primed_cond = NULL, ylim1 = c(-4, 6), ylim2 = c(-.5, 
               col = 'red', rug = FALSE, rm.ranef = TRUE, add = TRUE,
               hide.label = TRUE)
   # add legend
-  legend(x = 1, y = ylim1[2], legend = c(paste0(primed_cond, '-primed'), 'Control'),
+  legend(x = 1, y = ylim1[2] + 0.75, legend = c(paste0(primed_cond, '-primed'), 'Control'),
          col = c('red', 'blue'), lty = 1:2, cex = mycex, box.lty = 0)
   
   # L2 speakers Control
@@ -289,7 +291,7 @@ plot_NS_L2 <- function(fm, primed_cond = NULL, ylim1 = c(-4, 6), ylim2 = c(-.5, 
               col = 'red', rug = FALSE, rm.ranef = TRUE, add = TRUE,
               hide.label = TRUE)
   # add legend
-  legend(x = 1, y = ylim1[2], legend = c(paste0(primed_cond, '-primed'), 'Control'),
+  legend(x = 1, y = ylim1[2] + 0.75, legend = c(paste0(primed_cond, '-primed'), 'Control'),
          col = c('red', 'blue'), lty = 1:2, cex = mycex, box.lty = 0)
   
   # Now plot the estimated differences with itsadug::plot_diff()
@@ -332,36 +334,8 @@ plot_L2_profic <- function(fm, primed_cond = NULL, ylim1 = c(-6, 8),
 
 
 ```{r}
-## TO DO: replace this function with one that plots model-estimates in logit space!
-# Convenience function to compute by-speaker averages for a given variable
-bysubj <- function(df, myvar = NULL, varname = NULL) {
-  out <- df %>% 
-    group_by(Subject, Group, Condition, ClozeScore) %>%
-    # to pass variable name as a string, use standard evaluation, see
-    # https://cran.r-project.org/web/packages/dplyr/vignettes/nse.html
-    # (NB: I don't get how this is working, but seems to work)
-    summarise_(M = interp(~ mean(var), var = as.name(myvar)))
-  # if varname argument is supplied it names the computed column
-  if (! is.null(varname)) names(out)[length(out)] <- varname
-  out
-}
-
-# plotting functions
-# here the emphasis is put between groups (NS vs L2)
-f_plot <- function(df, varname = NULL, avg_type = "mean") {
-  p <- ggplot(df, aes(x = Condition, y = M, colour = Group, group = Group,
-                      shape = Group)) +
-    geom_point(position = position_jitterdodge(), size = 2, alpha = .5) +
-    stat_summary(fun.data = mean_cl_boot, geom = "errorbar", size = 1.5,
-                 position = "dodge", width = .5) +
-    stat_summary(fun.y = avg_type, geom = "line",  size = 1,
-                 position = position_dodge(width = .5)) +
-    ylim(0,1) +
-    ylab(paste("Proportion of descriptions\nexpressing", varname)) + 
-    ggtitle(varname)
-  p
-}
-
+## Source a function that plots model-estimates in logit space with speaker estimates!
+source("functions/plot_glmm_fnc.R")
 ```
 
 
@@ -372,10 +346,6 @@ f_plot <- function(df, varname = NULL, avg_type = "mean") {
 
 
 ### Path verbs in path-exposed vs control
-
-```{r}
-f_plot(bysubj(dp, "P_V"), "Path in V")
-```
 
 
 The log-likelihood of using a path verb (`P_V`) is modelled as a function of:
@@ -393,6 +363,12 @@ glmm_pve <- glmer(P_V ~ Group * Condition + (1 | Subject) + (1 | VideoName),
                 control = glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
 glmm_tb(glmm_pve)
 ```
+
+
+```{r}
+plot_glmm(glmm_pve, d = dp_lme4, exposed = "Path", ylims = c(-5.5, 5))
+```
+
 
 **Model interpretation against predictions**
 
@@ -413,10 +389,6 @@ vif.mer(glmm_pve)
 
 ### Manner verbs in Manner-exposed vs control
 
-```{r}
-f_plot(bysubj(dp, "M_V"), "Manner in V")
-```
-
 
 The log-likelihood of using a Manner verb (`M_V`) is modelled as a function of:
 
@@ -433,6 +405,12 @@ glmm_mve <- glmer(M_V ~ Group * Condition + (1 | Subject) + (1 | VideoName),
                 control = glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
 glmm_tb(glmm_mve)
 ```
+
+```{r}
+# plot model predictions
+plot_glmm(glmm_mve, d = dm_lme4, exposed = "Manner", ylims = c(-5.5, 5))
+```
+
 
 **Model interpretation against predictions**
 
@@ -498,6 +476,11 @@ Summary of the model:
 ```{r}
 summary(fm_p3)
 ```
+
+```{r}
+# kable(gamtabs(fm_p3))
+```
+
 
 
 Significance of the different terms in the model:
