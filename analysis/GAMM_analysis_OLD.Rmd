@@ -689,8 +689,8 @@ plot_diff2(fm_p_prof9, view = c('Trial', 'ClozeScore'),
 
 ### Manner
 
-
 ```{r}
+# equivalent model to fm_p_prof9, using a tensor smooth for the Trial:Cloze interaction by Condition
 fm_m_prof9.expr <- "bam(M_V ~ Condition +
                     te(Trial, ClozeScore, by = Condition) +
                     s(Trial, Subject, bs = 'fs') +
@@ -701,6 +701,64 @@ fm_m_prof9.expr <- "bam(M_V ~ Condition +
 load_or_fit("fm_m_prof9", fm_m_prof9.expr)
 summary(fm_m_prof9)
 ```
+
+```{r}
+# this does not model the trial:clozescore:condition interaction
+fm_m_prof9a.expr <- "bam(M_V ~ Condition +
+                    s(Trial, by = Condition) +
+                    s(ClozeScore, by = Condition) +
+                    s(Trial, Subject, bs = 'fs') +
+                    s(VideoName, bs = 're'),
+                  data = dm_l2,
+                  family = 'binomial')"
+# load model or fit
+load_or_fit("fm_m_prof9a", fm_m_prof9a.expr)
+summary(fm_m_prof9a)
+```
+
+```{r}
+fm_m_prof9b.expr <- "bam(M_V ~ Condition +
+                    s(Trial, by = Condition) +
+                    s(ClozeScore) +
+                    s(Trial, Subject, bs = 'fs') +
+                    s(VideoName, bs = 're'),
+                  data = dm_l2,
+                  family = 'binomial')"
+# load model or fit
+load_or_fit("fm_m_prof9b", fm_m_prof9b.expr)
+summary(fm_m_prof9b)
+```
+
+
+```{r}
+fm_m_prof9c.expr <- "bam(M_V ~ Condition +
+                    s(Trial, by = Condition) +
+                    s(Trial, Subject, bs = 'fs') +
+                    s(VideoName, bs = 're'),
+                  data = dm_l2,
+                  family = 'binomial')"
+# load model or fit
+load_or_fit("fm_m_prof9c", fm_m_prof9c.expr)
+summary(fm_m_prof9c)
+```
+
+Compare the models:
+
+```{r}
+anova(fm_m_prof9)
+anova(fm_m_prof9a)
+anova(fm_m_prof9b)
+anova(fm_m_prof9c)
+# compare the models
+anova(fm_m_prof9c, fm_m_prof9b, fm_m_prof9a, fm_m_prof9, test = "Chisq")
+```
+
+
+
+
+
+
+
 
 ```{r}
 # show by-speaker random smooths and by-item random intercepts
