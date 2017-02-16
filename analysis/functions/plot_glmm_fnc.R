@@ -57,7 +57,8 @@ plot_glmm <- function(fm, d, exposed = NULL, ylims = NULL, nb_sims = 1000) {
     ylab(myylab) +
     ylim(ylims)
   p <- p + geom_point(data = model_pred, aes(x = Condition, y = Pred, colour = Group),
-                      position = position_jitterdodge(), size = 2, alpha = .5)
+                      position = position_jitterdodge(jitter.height = 0, dodge.width = 0.5),
+                      size = 2, alpha = .5)
   p + mytheme
 }
 
