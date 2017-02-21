@@ -93,6 +93,8 @@ d <- d %>%
 # participant data
 ppts <- read.csv("../data/participants.csv", fileEncoding = "UTF-8", stringsAsFactors = TRUE)
 # head(ppts)
+# No audio data recorded for Subject 14 (L2) due to experimental error; exclude
+ppts <- ppts[ppts$Subject != 14, ]
 
 # add speakers' clozescore to d:
 d <- left_join(d, ppts %>% select(Subject, ClozeScore))
