@@ -20,7 +20,7 @@ plot_NS_L2 <- function(fm, primed_cond = NULL, ylim1 = c(-4, 6), ylim2 = c(-.5, 
               col = 'red', rug = FALSE, rm.ranef = TRUE, add = TRUE,
               hide.label = TRUE)
   # add legend
-  legend(x = 1, y = ylim1[2] + 0.75, legend = c(paste0(primed_cond, '-primed'), 'Baseline'),
+  legend(x = 1, y = ylim1[2] + 0.75, legend = c(paste0(primed_cond, '-exposed'), 'Baseline'),
          col = c('red', 'blue'), lty = 1:2, cex = mycex, box.lty = 0)
   
   # L2 speakers Baseline
@@ -33,18 +33,18 @@ plot_NS_L2 <- function(fm, primed_cond = NULL, ylim1 = c(-4, 6), ylim2 = c(-.5, 
               col = 'red', rug = FALSE, rm.ranef = TRUE, add = TRUE,
               hide.label = TRUE)
   # add legend
-  legend(x = 1, y = ylim1[2] + 0.75, legend = c(paste0(primed_cond, '-primed'), 'Baseline'),
+  legend(x = 1, y = ylim1[2] + 0.75, legend = c(paste0(primed_cond, '-exposed'), 'Baseline'),
          col = c('red', 'blue'), lty = 1:2, cex = mycex, box.lty = 0)
   
   # Now plot the estimated differences with itsadug::plot_diff()
   plot_diff(fm, view = 'Trial', comp = list(GroupCondit = c(NS_primed, 'NS.Baseline')),
             ylim = ylim2, rm.ranef=TRUE, 
-            main = paste0('NS: ', primed_cond, '-primed',  ' - Baseline'),
+            main = paste0('NS: ', primed_cond, '-exposed',  ' - Baseline'),
             ylab = paste('Diff. in log-likelihood\nof ', primed_cond, 'verb'), hide.label = TRUE,
             ...)  # a hack I need to set the mark.diff argument as F, bc of some bug?
   plot_diff(fm, view = 'Trial', comp = list(GroupCondit = c(L2_primed, 'L2.Baseline')),
             ylim = ylim2, rm.ranef=TRUE, 
-            main = paste0('L2: ', primed_cond, '-primed',  ' - Baseline'),
+            main = paste0('L2: ', primed_cond, '-exposed',  ' - Baseline'),
             ylab = paste('Diff. in log-likelihood\nof ', primed_cond, 'verb'), hide.label = TRUE)
 }
 
@@ -58,7 +58,7 @@ plot_L2_profic <- function(fm, primed_cond = NULL, ylim1 = c(-6, 8),
   # add common legend
   par(mai=c(0,0,0,0))
   plot.new()
-  legend(x = "center", ncol = 2, legend = c(paste0(primed_cond, '-primed'), 'Baseline'),
+  legend(x = "center", ncol = 2, legend = c(paste0(primed_cond, '-exposed'), 'Baseline'),
          col = c('red', 'blue'), lty = 1:2, box.lty = 0, cex = 1.5)
   # Now make plot for the model estimates at the different cloze scores in cloze_scores
   # par(mai=rep(0.2, 4))
