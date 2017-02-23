@@ -1,0 +1,376 @@
+---
+title: "Analysis replication and supplementary information"
+author: '[Guillermo Montero-Melis](http://www.biling.su.se/montero_melis_guillermo)'
+date: '`r as.character(format(Sys.Date(), format="%d/%m/%Y"))`'
+output:
+  word_document:
+    toc: yes
+  pdf_document:
+    number_sections: yes
+    toc: yes
+  html_document:
+    depth: 2
+    number_sections: yes
+    theme: default
+    toc: yes
+---
+
+
+
+# Set up working space
+
+## Libraries
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, fig.height = 4, fig.width = 5)
+```
+
+```{r, include = TRUE, echo = TRUE, warning = FALSE, message = FALSE}
+library(dplyr)
+packageVersion('dplyr')
+library(mgcv)  # GAMs and GAMMs (Wood 2006)
+packageVersion('mgcv')  # GAMs and GAMMs (Wood 2006)
+library(itsadug)
+packageVersion('itsadug')
+library(lme4)
+packageVersion('lme4')
+library(ggplot2)
+packageVersion('ggplot2')
+library(boot)  # for inv.logit()
+packageVersion('boot')  # for inv.logit()
+library(knitr)  # for kable()
+packageVersion('knitr')  # for kable()
+library(lazyeval)  # lazy evaluation used in bysubj() function [summarise_]
+packageVersion('lazyeval')
+library(effects)
+```
+
+
+## Data loading and processing
+
+### Load data
+
+```{r}
+##  Load data
+# The data is created in the script 'processing/compute_dependent_measures.R'
+# There is the normal and the liberally coded version, see script for difference
+
+# load
+d <- read.csv('../data/data_DVs.csv', fileEncoding = 'UTF-8', stringsAsFactors = TRUE)
+# simplify somewhat
+d <- d %>%
+  select(Subject:VideoName, P_V, M_V) %>%
+  rename(Trial = VideoTrial)
+# head(d)
+# str(d)
+
+# Rename "Control" condition to "Baseline"
+levels(d$Condition)[levels(d$Condition) == "Control"] <- "Baseline"
+
+# participant data
+ppts <- read.csv("../data/participants.csv", fileEncoding = "UTF-8", stringsAsFactors = TRUE)
+# head(ppts)
+# No audio data recorded for Subject 14 (L2) due to experimental error; exclude
+ppts <- ppts[ppts$Subject != 14, ]
+# transform ClozeScore to z-score (as.vector prevents it from becoming a matrix)
+ppts$zClozeScore <- as.vector(scale(ppts$ClozeScore))
+
+# add speakers' clozescore to d:
+d <- left_join(d, ppts %>% select(Subject, ClozeScore, zClozeScore))
+
+# Subject needs to be a factor
+d$Subject <- factor(d$Subject)
+
+# in Group, let the native speakers (NS) be the reference group
+d$Group <- factor(d$Group, levels = c('NS', 'L2'))
+
+head(d)
+str(d)
+```
+
+
+### Remove outliers?
+
+Remove any L2 speakers based on cloze score because too low?
+
+```{r}
+# Outliers? ---------------------------------------------------------------
+
+# L2 speakers Cloze scores
+cloze <- ppts %>%
+  filter(Group == "L2") %>%
+  select(Subject, Condition, ClozeScore, zClozeScore)
+# Subjects ordered by clozescore
+head(cloze[order(cloze$zClozeScore), ])
+tail(cloze[order(cloze$zClozeScore), ])
+
+# Consider ClozeScore < 5 as outlier
+threshold5 <- cloze[cloze$ClozeScore < 5, "Subject"]
+# # Consider ClozeScore < 10 as outlier
+threshold10 <- cloze[cloze$ClozeScore < 10, "Subject"]
+
+## Exclude participants? (Uncomment to exclude)
+# d <- d[!d$Subject %in% threshold5, ]
+# d <- d[!d$Subject %in% threshold10, ]
+```
+
+### Data for GAMs comparing NS and L2 speakers
+
+Subset data, define factors, set coding scheme, etc:
+
+```{r}
+## Single factor to model Group * Condition, using dummy coding:
+# (The way to analyze crossed factors is to combine their levels into 
+# a single factor, see Wood's comment here
+# http://grokbase.com/t/r/r-help/113qaadxt4/r-how-to-add-in-interaction-terms-in-gamm)
+d$GroupCondit <- with(d, interaction(Group, Condition))
+
+## Subset data:
+# Data for analysis of Path-priming vs Baseline
+dp <- d %>% filter(Condition != 'Manner')
+dp$Condition <- factor(dp$Condition) # drop unused levels
+# Data for analysis of Manner-priming vs Baseline
+dm <- d %>% filter(Condition != 'Path')
+dm$Condition <- factor(dm$Condition) # drop unused levels
+
+# Order levels correctly in each data frame
+dp$GroupCondit <- factor(dp$GroupCondit, levels = c("NS.Baseline", "NS.Path",
+                                                    "L2.Baseline", "L2.Path"))
+dm$GroupCondit <- factor(dm$GroupCondit, levels = c("NS.Baseline", "NS.Manner",
+                                                    "L2.Baseline", "L2.Manner"))
+# note that NS Baseline becomes the reference group in both data frames
+contrasts(dp$GroupCondit)
+contrasts(dm$GroupCondit)
+```
+
+
+### Data for GAMs testing effect of proficiency in L2 speakers
+
+Subset data, define factors, set coding scheme, etc:
+
+```{r}
+# subset L2 data only from Path/Baseline and Manner/Baseline conditions respectively
+dp_l2 <- dp %>% filter(Group == "L2")
+dm_l2 <- dm %>% filter(Group == "L2")
+```
+
+
+### Data for comparison of baseline conditions (mixed logit models)
+
+Subset data, define factors, set coding scheme, etc:
+
+```{r, echo = T}
+# Subset data from baseline condition only
+d_basel <- d %>% filter(Condition == "Baseline")
+# And from baseline for L2 speakers only
+d_basel_l2 <- d %>% filter(Condition == "Baseline" & Group == "L2")
+
+# Use contrast coding to compare groups
+contrasts(d_basel$Group) <- - contr.sum(2) / 2
+colnames(contrasts(d_basel$Group)) <- "L2_vs_NS"
+contrasts(d_basel$Group)
+```
+
+
+
+## Convenience functions etc.
+
+[NB: might be hidden if `echo = FALSE`.]
+
+```{r}
+## Specify some global parameters
+
+# adjust figure heght/width when not going with default (espec. for 2x2 plots)
+myfighe_NS_L2 <- 6
+myfighe_L2_prof <- 6
+myfigwi <- 7
+```
+
+
+```{r}
+## Source somewhat more complex functions
+
+# source functions to compute collinearity diagnostics
+source("functions/kappa_mer_fnc.R")
+source("functions/vif_mer_fnc.R")
+
+# Function that plots mixed model-estimates in logit space from baseline
+# conditions, including speaker estimates
+source("functions/plot_glmm_fnc.R")
+
+# source multiplot function
+source("functions/multiplot_fnc.R")
+
+# Function used to load models if they have already been saved,
+# rather than fitting them anew each time the script is called
+source("functions/load_or_fit_fnc.R")
+
+# Two functions to a) plot the differences between NS and L2 speakers from GAMs,
+# and b) plot the effects by L2 speakers' proficiency from GAMs
+source("functions/plot_gams_fnc.R")
+```
+
+
+```{r}
+## Simpler convenience functions:
+
+# print deviance explained as percentage
+dev_expl <- function(fm) {
+  devi <- summary(fm)$dev.expl
+  paste0(round(100 * devi, 1), '% dev. explained')
+}
+
+# create a neat table of the summary of fixed effects of a mixed model
+glmm_tb <- function(fm) {
+  m <- round(summary(fm)$coefficients, 3)
+  tb <- as.data.frame(m)
+  names(tb) <- c("Estimate", "SE", "z-value", "p-value")
+  kable(tb)
+}
+```
+
+
+
+# Analyses and results
+
+## Baseline condition: NS vs L2ers
+
+### Descriptives
+
+```{r}
+tb_baseline <- d_basel %>%
+  group_by(Group) %>%
+  summarise(N = n(),
+            P_V_n = sum(P_V),
+            P_V_perc = round(100 * sum(P_V) / n(), 1),
+            M_V_n = sum(M_V),
+            M_V_perc = round(100 * sum(M_V) / n(), 1))
+names(tb_baseline)[3:6] <- c("Path Vs (N)", "Path Vs (%)",
+                             "Manner Vs (N)", "Manner Vs (%)")
+kable(tb_baseline)
+```
+
+
+### Model for path-verb production
+
+Use `glmer` to model the log-likelihood of using a path verb (`P_V`) in the baseline condition as a function of Group (L2 vs NS).
+The model includes random intercepts by speaker and item (random slopes by item were justified by the data).
+
+Model fit and summary of fixed effects:
+
+```{r, echo = TRUE}
+glmm_pve <- glmer(P_V ~ Group + (1 | Subject) + (1 + Group | VideoName),
+                data = d_basel, family = "binomial", 
+                control = glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
+glmm_tb(glmm_pve)
+```
+
+Detailed summary of the model
+```{r}
+summary(glmm_pve)
+```
+
+Collinearity diagnostics:
+
+```{r}
+kappa.mer(glmm_pve)
+vif.mer(glmm_pve)
+```
+
+
+### Model for manner-verb production
+
+Use `glmer` to model the log-likelihood of using a manner verb (`M_V`) in the baseline condition as a function of Group (L2 vs NS).
+The model includes random intercepts by speaker and item (adding random slopes by item does not significantly improve model fit, but we leave them in to keep the model maximal and identical to the path model).
+
+Model fit and summary of fixed effects:
+
+```{r, echo = TRUE}
+glmm_mve <- glmer(M_V ~ Group + (1 | Subject) + (1 + Group | VideoName),
+                data = d_basel, family = "binomial", 
+                control = glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
+glmm_tb(glmm_mve)
+```
+
+Detailed summary of the model:
+
+```{r}
+summary(glmm_mve)
+```
+
+Collinearity diagnostics:
+
+```{r}
+kappa.mer(glmm_mve)
+vif.mer(glmm_mve)
+```
+
+
+
+### Plot model estimates
+
+
+```{r, fig.width = myfigwi, fig.height = 3}
+# save relevant plots
+plot_basel_path <- plot_glmm(glmm_pve, d = d_basel, DV = "Path")
+plot_basel_manner <- plot_glmm(glmm_mve, d = d_basel, DV = "Manner")
+# combine them
+multiplot(plot_basel_path, plot_basel_manner, cols = 2)
+```
+
+
+## Baseline condition: Effect of proficiency
+
+Fit models predicting production of path-/manner-verbs as a function of proficiency.
+Of course, we use only the L2 data.
+
+### Path-verbs
+
+```{r}
+glmm_pve_prof <- glmer(P_V ~ zClozeScore + (1 | Subject) + (1 | VideoName),
+                       data = d_basel_l2, family = "binomial", 
+                       control = glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
+```
+
+
+```{r}
+summary(glmm_pve_prof)
+```
+
+
+### Manner-verbs
+
+```{r}
+glmm_mve_prof <- glmer(M_V ~ zClozeScore + (1 | Subject) + (1 | VideoName),
+                       data = d_basel_l2, family = "binomial", 
+                       control = glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
+```
+
+
+```{r}
+summary(glmm_mve_prof)
+```
+
+```{r, fig.width = myfigwi, fig.height = 3.5}
+# I use this approach to plot model estimates for zClozeScore
+# http://stats.stackexchange.com/questions/135255/obtaining-adjusted-predicted-proportions-with-lme4-using-the-glmer-function
+# and using the following advice to combine them into a multiplot:
+# http://stackoverflow.com/questions/15227184/combine-two-plots-created-with-effects-package-in-r
+eff_p <- effect("zClozeScore", glmm_pve_prof)
+eff_m <- effect("zClozeScore", glmm_mve_prof)
+
+plot(eff_p, type = "link", ylim = myylims, 
+     xlab = "Proficiency\n(normalised cloze score)",
+     ylab = "Log-likelihood\nof path verb",
+     main = "Path verbs vs. proficiency",
+     rug = F, key.args=list(space="right"),
+     row = 1,col = 1, nrow = 1,ncol = 2, 
+     more = TRUE)
+plot(eff_m, type = "link", ylim = myylims,
+     xlab = "Proficiency\n(normalised cloze score)",
+     ylab = "Log-likelihood\nof manner verb",
+     main = "Manner verbs vs. proficiency",
+     rug=F, key.args=list(space="right"),
+     row = 1,col = 2, nrow = 1, ncol = 2)
+```
+

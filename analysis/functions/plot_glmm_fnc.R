@@ -1,68 +1,68 @@
-## NB: This function is hacky has hell!
+## Function to plot mixed model-estimates in logit space from baseline
+## conditions, including speaker estimates
+# NB: This function is a bit hacky.
 
 require(ggplot2)
 require(arm)
 require(dplyr)
 
+# in both plots, keep the limits of the y-axes constant
+myylims <- c(-5, 5)
+
+## plot NS vs L2 speakers
+
 # theme for ggplot
 mytheme <- theme_bw() + 
-  theme(text = element_text(size = 9),
+  theme(#text = element_text(size = 10),
         panel.border = element_blank(),
         panel.grid.major = element_blank(),
-        panel.grid.minor.x = element_blank(),
-        panel.grid.minor.y = element_line(size = .01, color="#CCCCCC"),
+        panel.grid.minor = element_blank(),
         panel.background = element_blank(),
         axis.line.x = element_line(color="black"),
         axis.line.y = element_line(color="black"))
 
-plot_glmm <- function(fm, d, exposed = NULL, ylims = NULL, nb_sims = 1000) {
+plot_glmm <- function(fm, d, DV = NULL, ylims = myylims, nb_sims = 1000) {
   # fm: the fitted glmer model
   # d: the dataframe used to fit the model
-  # exposed: either "Path" or "Manner" denoting exposed condition
+  # DV: dependent variable (Path-verb or Manner-verb)
   # ylims: y-limits for ggplot
+  # nb_sims: number of simulations when using arm::sim()
   
-  # provide Path or Manner to exposed argument
-  cond_name <- exposed
-  myylab <- paste0("Log-likelihood of ", exposed, "-verb")
+  # Define y-lab based on DV argument
+  myylab <- paste0("Log-likelihood of ", DV, "-verb")
+  myggtitle <- paste0(DV, "-verbs")
   
   # get confidence intervals from models
   # simulate the coefficients using arm::sim and extract fixed effects
   s <- arm::sim(fm, n.sims = nb_sims)@fixef
   # Add simulation values for different conditions
   estim <- data.frame(
-    co_NS = s[, 1] - .5 * s[, 2],
-    co_L2 = s[, 1] + .5 * s[, 2],
-    ex_NS = s[, 1] - .5 * s[, 2] + s[, 3] - .5 * s[, 4],
-    ex_L2 = s[, 1] + .5 * s[, 2] + s[, 3] + .5 * s[, 4])
+    NS = s[, 1] - .5 * s[, 2],
+    L2 = s[, 1] + .5 * s[, 2])
   # compute 95% confidence intervals and put into df
   confint <- data.frame(t(sapply(estim, quantile, probs = c(.025, .5, .975))))
   names(confint) <- c("lower", "median", "upper")
-  confint$Condition <- rep(c("Control", cond_name), each = 2)
   confint$Group <- factor(c("NS", "L2"), levels = c("NS", "L2"))
-  
-  # Get subject estimates from model
-  # (this is a hack, but couldn't figure out a better way)
-  model_pred <- dplyr::select(d, Subject:Condition)  # the data rows
+
+  # Now extract subject estimates from model
+  # (this is hacky, but couldn't figure out a better way)
+  model_pred <- dplyr::select(d, Subject:Group)  # the data rows
   model_pred <- cbind(model_pred, predict(fm))  # combine with model estimates
   names(model_pred)[length(model_pred)] <- "predicted"
-  # now average over subjects
-  model_pred <- model_pred  %>% group_by(Subject, Group, Condition) %>%
+  # average over subjects
+  model_pred <- model_pred  %>% group_by(Subject, Group) %>%
     summarise(Pred = mean(predicted))
 
   # plot using ggplot
-  p <- ggplot(confint, aes(x = Condition, y = median, colour = Group)) +
-    geom_errorbar(aes(ymin = lower, ymax = upper), position = "dodge", width = .5,
-                  size = 1.5) +
-    geom_line(aes(group = Group), position = position_dodge(width = .5), size = 1) +
+  p <- ggplot(confint, aes(x = Group, y = median)) +
+    geom_errorbar(aes(ymin = lower, ymax = upper), width = .25, size = 1.5) +
     ylab(myylab) +
     ylim(ylims)
-  p <- p + geom_point(data = model_pred, aes(x = Condition, y = Pred, colour = Group),
-                      position = position_jitterdodge(jitter.height = 0, dodge.width = 0.5),
-                      size = 2, alpha = .5)
-  p + mytheme
+  set.seed(123987)  # make horizontal jitter reproducible
+  p <- p + geom_jitter(data = model_pred, aes(x = Group, y = Pred),
+                       height = 0, width = .5, size = 2, alpha = .4)
+  p + mytheme + geom_hline(yintercept = 0) + ggtitle(myggtitle)
 }
 
-# E.g. call
-# plot_glmm(glmm_pve, d = dp_lme4, exposed = "Path", ylims = c(-5.5, 5))
-# plot_glmm(glmm_mve, d = dm_lme4, exposed = "Manner", ylims = c(-5.5, 5))
-
+# E.g. call like this:
+# plot_glmm(glmm_pve, d = d_basel, DV = "Path")
