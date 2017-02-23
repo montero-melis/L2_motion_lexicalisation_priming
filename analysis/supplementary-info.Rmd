@@ -374,3 +374,83 @@ plot(eff_m, type = "link", ylim = myylims,
      row = 1,col = 2, nrow = 1, ncol = 2)
 ```
 
+
+
+
+
+## Differences in adaptation over time (trial-by-trial analysis using GAMs)
+
+
+### Path verbs in path-exposed vs control -- trial-by-trial
+
+Previous models (not shown here) showed that random *intercepts* by items made sense, but not random slopes.
+We add the former but not the latter.
+
+Thus, the model is specified as:
+
+`PathVerb ~ GroupCondit + s(Trial, by = GroupCondit) + s(Trial, Subject, bs = 'fs') + s(VideoName, bs = 're')`
+
+Predictors are:
+
+- `GroupCondit`: Group-Condition interaction as a fixed effect
+- `s(Trial, by = GroupCondit)`: A smooth function of `Trial` allowing the function to differ for each level of Group-Condition (thin plate regression splines, the default)
+- `s(Trial, Subject, bs = 'fs')`: Factor smooths for `Subject` to capture non-linear random effects of speakers
+- `s(VideoName, bs = 're')`: Random intercepts by items (i.e., `VideoName`)
+
+
+```{r}
+# the expression that is passed to load_or_fit()
+fm_p3.expr <- "bam(P_V ~ GroupCondit + s(Trial, by = GroupCondit) +
+                    s(Trial, Subject, bs = 'fs') + s(VideoName, bs = 're'),
+                  data = dp,
+                  family = 'binomial')"
+# load model or fit
+load_or_fit("fm_p3", fm_p3.expr)
+```
+
+Summary of the model:
+
+```{r}
+summary(fm_p3)
+```
+
+```{r}
+# kable(gamtabs(fm_p3))
+```
+
+
+
+Significance of the different terms in the model:
+
+```{r}
+anova(fm_p3)
+```
+
+
+Plot model estimates by condition, random smooth adjustments by speakers and QQ-plot of random by-item intercepts:
+
+```{r, results = 'hide'}
+par(mfrow = c(1, 1))
+## plot
+plot_smooth(fm_p3, view = 'Trial', plot_all = 'GroupCondit', rm.ranef=TRUE)
+```
+
+
+```{r}
+# show by-speaker random smooths and by-item random intercepts
+par(mfrow = c(1, 2))
+plot(fm_p3, select = 5)
+plot(fm_p3, select = 6)
+```
+
+
+
+Plot differences between conditions (model estimates):
+
+```{r, fig.height = myfighe_NS_L2, fig.width = myfigwi, echo = FALSE, results = 'hide'}
+plot_NS_L2(fm_p3, primed_cond = 'Path', mark.diff = FALSE)  # mark.diff is a hack to
+# avoid an error that will stop the whole thing when I compile it on my work pc
+# (it works fine on my own pc with linux)
+```
+
+
