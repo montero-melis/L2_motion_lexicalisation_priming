@@ -19,7 +19,8 @@ transl <- read.csv("data/written_translation_task.csv", fileEncoding = "UTF-8",
 head(transl)
 # get rid of comments
 transl$Comment <- NULL
-
+# More explicit factor levels
+transl$Type <- factor(transl$Type, labels = c("Manner verb", "Path verb"))
 # Subjects as character for later joining
 transl$Subject <- as.character(transl$Subject)
 
@@ -82,23 +83,58 @@ score_transl("tirar de", c("dra", "dra från", "dra i"))
 
 
 #  ------------------------------------------------------------------------
-#  Descriptives
+#  Descriptives (summary tables)
 #  ------------------------------------------------------------------------
 
 # By condition and verb
-transl %>% group_by(Condition, Target_verb) %>%
-  summarise(Perc = sum(Score) / n())
+transl %>% group_by(Condition, Type, Target_verb) %>%
+  summarise(Perc = round(sum(Score) / n(), 2))
 
 # By condition and verb-type 
 transl %>% group_by(Condition, Type) %>%
-  summarise(Perc = sum(Score) / n())
+  summarise(Perc = round(sum(Score) / n(), 2))
+
+
+#  ------------------------------------------------------------------------
+#  Descriptives (by-subject plots)
+#  ------------------------------------------------------------------------
+
+mywidth <- 7
+myheight <- 3
+
+# ggplot theme
+mytheme <- theme_bw() + 
+  theme(#text = element_text(size = 10),
+    # panel.border = element_blank(),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    panel.background = element_blank(),
+    axis.line.x = element_line(color="black"),
+    axis.line.y = element_line(color="black"))
 
 by_subj <- transl %>% group_by(Subject, Condition, Type, ClozeScore) %>%
-  summarise(Perc = sum(Score) / n())
+  summarise(Perc = round(sum(Score) / n(), 2))
 
 ggplot(by_subj, aes(x = ClozeScore, y = Perc, colour = Type)) +
   geom_jitter(height = 0, alpha = .5) +
   facet_grid(. ~ Condition) +
-  geom_smooth()
+  geom_smooth(se = FALSE) +
+  ylab("Proportion of correct translations") +
+  mytheme
 
+ggsave("analysis/figures/translation-task_loess.pdf", width = mywidth,
+       height = myheight)
+ggsave("analysis/figures/translation-task_loess.png", width = mywidth,
+       height = myheight)
 
+ggplot(by_subj, aes(x = ClozeScore, y = Perc, colour = Type)) +
+  geom_jitter(height = 0, alpha = .5) +
+  facet_grid(. ~ Condition) +
+  geom_smooth(method = "lm", se = FALSE) +
+  ylab("Proportion of correct translations") +
+  mytheme
+
+ggsave("analysis/figures/translation-task_lm.pdf", width = mywidth,
+       height = myheight)
+ggsave("analysis/figures/translation-task_lm.png", width = mywidth,
+       height = myheight)

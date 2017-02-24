@@ -8,6 +8,7 @@
 *.docx
 *.html
 
+analysis/figures/*
 analysis/gamms/*
 gamms/*
 
