@@ -21,7 +21,7 @@ mytheme <- theme_bw() +
         axis.line.x = element_line(color="black"),
         axis.line.y = element_line(color="black"))
 
-plot_glmm <- function(fm, d, DV = NULL, ylims = myylims, nb_sims = 1000) {
+plot_glmm <- function(fm, d, DV = NULL, ylims = myylims, nb_sims = 50) {
   # fm: the fitted glmer model
   # d: the dataframe used to fit the model
   # DV: dependent variable (Path-verb or Manner-verb)
