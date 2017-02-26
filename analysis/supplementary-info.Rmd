@@ -3,15 +3,15 @@ title: "Analysis replication and supplementary information"
 author: '[Guillermo Montero-Melis](http://www.biling.su.se/montero_melis_guillermo)'
 date: '`r as.character(format(Sys.Date(), format="%d/%m/%Y"))`'
 output:
-  html_document:
-    depth: 2
-    number_sections: yes
-    theme: default
+  word_document:
     toc: yes
   pdf_document:
     number_sections: yes
     toc: yes
-  word_document:
+  html_document:
+    depth: 2
+    number_sections: yes
+    theme: default
     toc: yes
 ---
 
@@ -28,6 +28,8 @@ knitr::opts_chunk$set(echo = FALSE, fig.height = 4, fig.width = 5)
 ```{r, include = TRUE, echo = TRUE, warning = FALSE, message = FALSE}
 library(dplyr)
 packageVersion('dplyr')
+library(tidyr)
+packageVersion('tidyr')  # useful for gather() to convert from wide to long
 library(mgcv)  # GAMs and GAMMs (Wood 2006)
 packageVersion('mgcv')  # GAMs and GAMMs (Wood 2006)
 library(itsadug)
@@ -75,9 +77,11 @@ ppts <- read.csv("../data/participants.csv", fileEncoding = "UTF-8", stringsAsFa
 ppts <- ppts[ppts$Subject != 14, ]
 # transform ClozeScore to z-score (as.vector prevents it from becoming a matrix)
 ppts$zClozeScore <- as.vector(scale(ppts$ClozeScore))
+# center ClozeScore but not scaling (as.vector prevents it from becoming a matrix)
+ppts$cClozeScore <- as.vector(scale(ppts$ClozeScore, scale = FALSE))
 
 # add speakers' clozescore to d:
-d <- left_join(d, ppts %>% select(Subject, ClozeScore, zClozeScore))
+d <- left_join(d, ppts %>% select(Subject, ClozeScore, zClozeScore, cClozeScore))
 
 # Subject needs to be a factor
 d$Subject <- factor(d$Subject)
@@ -287,17 +291,34 @@ B. smooth terms & edf & Ref.df & F-value & p-value \\
 ### Descriptives
 
 ```{r}
-tb_baseline <- d_basel %>%
-  group_by(Group) %>%
-  summarise(N = n(),
-            P_V_n = sum(P_V),
-            P_V_perc = round(100 * sum(P_V) / n(), 1),
-            M_V_n = sum(M_V),
-            M_V_perc = round(100 * sum(M_V) / n(), 1))
-names(tb_baseline)[3:6] <- c("Path Vs (N)", "Path Vs (%)",
-                             "Manner Vs (N)", "Manner Vs (%)")
-kable(tb_baseline)
+# # I had the following table initially to show baseline data only
+# # But I think it's better to show descriptives for all the data.
+# tb_baseline <- d_basel %>%
+#   group_by(Group) %>%
+#   summarise(N = n(),
+#             P_V_n = sum(P_V),
+#             P_V_perc = round(100 * sum(P_V) / n(), 1),
+#             M_V_n = sum(M_V),
+#             M_V_perc = round(100 * sum(M_V) / n(), 1))
+# names(tb_baseline)[3:6] <- c("Path Vs (N)", "Path Vs (%)",
+#                              "Manner Vs (N)", "Manner Vs (%)")
+# kable(tb_baseline)
 ```
+
+
+```{r}
+# Descriptive data for all analysed conditions
+# First need to convert data to long format:
+d_long <- gather(d, VerbType, Used, P_V:M_V)
+# table (will need to be appropriately formatted in report)
+tb_descriptive <- d_long %>%
+  group_by(VerbType, Condition, Group) %>%
+  summarise(N = sum(Used),
+            TotalN = n(),
+            Percentage = round(100 * sum(Used) / n(), 1))
+kable(tb_descriptive)
+```
+
 
 
 ### Model for path-verb production
@@ -376,7 +397,7 @@ Of course, we use only the L2 data.
 ### Path-verbs
 
 ```{r}
-glmm_pve_prof <- glmer(P_V ~ zClozeScore + (1 | Subject) + (1 | VideoName),
+glmm_pve_prof <- glmer(P_V ~ cClozeScore + (1 | Subject) + (1 | VideoName),
                        data = d_basel_l2, family = "binomial", 
                        control = glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
 ```
@@ -390,7 +411,7 @@ summary(glmm_pve_prof)
 ### Manner-verbs
 
 ```{r}
-glmm_mve_prof <- glmer(M_V ~ zClozeScore + (1 | Subject) + (1 | VideoName),
+glmm_mve_prof <- glmer(M_V ~ cClozeScore + (1 | Subject) + (1 | VideoName),
                        data = d_basel_l2, family = "binomial", 
                        control = glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
 ```
@@ -401,22 +422,23 @@ summary(glmm_mve_prof)
 ```
 
 ```{r, fig.width = myfigwi, fig.height = 3.5}
-# I use this approach to plot model estimates for zClozeScore
+# I use this approach to plot model estimates for cClozeScore
 # http://stats.stackexchange.com/questions/135255/obtaining-adjusted-predicted-proportions-with-lme4-using-the-glmer-function
 # and using the following advice to combine them into a multiplot:
 # http://stackoverflow.com/questions/15227184/combine-two-plots-created-with-effects-package-in-r
-eff_p <- effect("zClozeScore", glmm_pve_prof)
-eff_m <- effect("zClozeScore", glmm_mve_prof)
+eff_p <- effect("cClozeScore", glmm_pve_prof)
+eff_m <- effect("cClozeScore", glmm_mve_prof)
 
 plot(eff_p, type = "link", ylim = myylims, 
-     xlab = "Proficiency\n(normalised cloze score)",
+     xlab = "Proficiency\n(centred cloze score)",
      ylab = "Log-likelihood\nof path verb",
      main = "Path verbs vs. proficiency",
+     ticks.y = list(at = c(-2, 0)),
      rug = F, key.args=list(space="right"),
      row = 1,col = 1, nrow = 1,ncol = 2, 
      more = TRUE)
 plot(eff_m, type = "link", ylim = myylims,
-     xlab = "Proficiency\n(normalised cloze score)",
+     xlab = "Proficiency\n(centred cloze score)",
      ylab = "Log-likelihood\nof manner verb",
      main = "Manner verbs vs. proficiency",
      rug=F, key.args=list(space="right"),
@@ -632,11 +654,10 @@ plot_diff2(fm_p_prof9, view = c('Trial', 'ClozeScore'),
 
 ### Adaptation to manner verbs vs proficiency
 
+TO DO:
 
-If we consider a model analogous to the one we fitted for path, we see the trends we expected.
-That is, *numerically* the trends follow the predictions.
-However, none of the terms related to `ClozeScore` are actually significant in the model -- not as fixed effect, either simple or in interaction; not as smooth function, whether it is allowed to vary by condition or not, whether it interacts with trial or not.
-In brief, the data don't support an effect of proficiency (as measured by `ClozeScore`) on adaptation to manner.
+- Model comparison showing that 3-way interaction with proficiency significantly improves the model
+
 
 
 ```{r}
