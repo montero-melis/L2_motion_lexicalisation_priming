@@ -158,7 +158,7 @@ Subject,Condition,Type,Sentence,Target_verb,Translation,Score,Comment
 31,Control,P,1,subir,bestiga,,
 31,Control,P,2,cruzar,korsa,,participant provides two verbs
 31,Control,P,3,entrar,gå in i,,
-31,Control,P,4,bajar,stiga,,
+31,Control,P,4,bajar,stiga ned för,,
 31,Control,M,1,tirar de,kasta från,,
 31,Control,M,2,arrastrar,dra,,
 31,Control,M,3,rodar,hjula,,
@@ -296,11 +296,11 @@ Subject,Condition,Type,Sentence,Target_verb,Translation,Score,Comment
 5,Manner,M,3,rodar,rulla,,
 5,Manner,M,4,empujar,putta,,
 4,Control,P,1,subir,lyfta,,
-4,Control,P,2,cruzar,korsa,,
+4,Control,P,2,cruzar,[no verb],,
 4,Control,P,3,entrar,göra entré,,
 4,Control,P,4,bajar,sänka,,
 4,Control,M,1,tirar de,kasta,,
-4,Control,M,2,arrastrar,helgona?,,bad handwriting
+4,Control,M,2,arrastrar,[no verb],,bad handwriting
 4,Control,M,3,rodar,hjula,,
 4,Control,M,4,empujar,putta,,
 3,Path,P,1,subir,gå uppför,,
