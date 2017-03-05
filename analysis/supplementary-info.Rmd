@@ -3,8 +3,6 @@ title: "Analysis replication and supplementary information"
 author: '[Guillermo Montero-Melis](http://www.biling.su.se/montero_melis_guillermo)'
 date: '`r as.character(format(Sys.Date(), format="%d/%m/%Y"))`'
 output:
-  word_document:
-    toc: yes
   pdf_document:
     number_sections: yes
     toc: yes
@@ -12,6 +10,8 @@ output:
     depth: 2
     number_sections: yes
     theme: default
+    toc: yes
+  word_document:
     toc: yes
 ---
 
@@ -92,6 +92,13 @@ d$Group <- factor(d$Group, levels = c('NS', 'L2'))
 head(d)
 str(d)
 ```
+
+```{r}
+# Data for translation task
+transl <- read.csv("../data/L2_translation-task_scored.csv")
+getwd()
+```
+
 
 
 ### Remove outliers?
@@ -285,6 +292,88 @@ B. smooth terms & edf & Ref.df & F-value & p-value \\
 \end{table}
 
 # Analyses and results
+
+
+## Translation task
+
+Descriptives for all three conditions (summary tables):
+
+
+```{r}
+# By condition and verb-type 
+transl %>% group_by(Condition, Type) %>%
+  summarise(ProportionCorrect= round(sum(Score) / n(), 2)) %>%
+  kable
+
+# By condition and verb
+transl %>% group_by(Condition, Type, Target_verb) %>%
+  summarise(ProportionCorrect= round(sum(Score) / n(), 2)) %>%
+  kable
+```
+
+Simple by-subject plot for all three conditions:
+
+```{r}
+#  ------------------------------------------------------------------------
+#  Descriptives (by-subject plots)
+#  ------------------------------------------------------------------------
+
+mywidth <- 7
+myheight <- 3
+
+# ggplot theme
+mytheme <- theme_bw() + 
+  theme(#text = element_text(size = 10),
+    # panel.border = element_blank(),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    panel.background = element_blank(),
+    axis.line.x = element_line(color="black"),
+    axis.line.y = element_line(color="black"))
+
+by_subj <- transl %>% group_by(Subject, Condition, Type, ClozeScore) %>%
+  summarise(Perc = round(sum(Score) / n(), 2))
+
+ggplot(by_subj, aes(x = ClozeScore, y = Perc, colour = Type)) +
+  geom_jitter(height = 0, alpha = .5) +
+  facet_grid(. ~ Condition) +
+  geom_smooth(method = "lm", se = FALSE) +
+  ylab("Proportion of correct translations") +
+  mytheme
+```
+
+Logit model of log-likelihood of correctly translating the meaning of the verb.
+
+```{r}
+#  ------------------------------------------------------------------------
+#  Significance test (GLMM)
+#  ------------------------------------------------------------------------
+
+# It really makes most sense to focus on the control/baseline condition only
+d_fm_baseline <- transl[transl$Condition == "Control", ]
+# contrast coding for Type (Path vs Manner verb)
+contrasts(d_fm_baseline$Type) <- contr.sum(2)
+colnames(contrasts(d_fm_baseline$Type)) <- "MannerV_vs_PathV"
+contrasts(d_fm_baseline$Type)
+# center cloze scores
+d_fm_baseline$cClozeScore <- as.vector(scale(d_fm_baseline$ClozeScore, scale = FALSE))
+
+# Model treats the individual verbs as random effects
+fm_transl <- glmer(Score ~ Type * cClozeScore + 
+                     (1 | Subject) + (1 | Target_verb),
+                   data = d_fm_baseline, family = "binomial")
+summary(fm_transl)
+
+fm_transl_eff <- allEffects(fm_transl)
+plot(fm_transl_eff, type = "link", 
+     xlab = "Proficiency\n(centred cloze score)",
+     ylab = "Log-likelihood of correct\ntranslation of verb meaning",
+     main = "Translation task")
+
+```
+
+
+
 
 ## Baseline condition: NS vs L2ers
 
