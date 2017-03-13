@@ -22,7 +22,7 @@ output:
 ## Libraries
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = FALSE, fig.height = 4, fig.width = 5)
+knitr::opts_chunk$set(echo = TRUE, fig.height = 4, fig.width = 5)
 ```
 
 ```{r, include = TRUE, echo = TRUE, warning = FALSE, message = FALSE}
@@ -128,31 +128,45 @@ threshold10 <- cloze[cloze$ClozeScore < 10, "Subject"]
 
 ### Data for GAMs comparing NS and L2 speakers
 
-Subset data, define factors, set coding scheme, etc:
+- We will subset the data so that we can run one model for native speakers and another one for L2 speakers
+- In each model we compare Baseline Path vs Exposed Path and Baseline Manner vs Exposed Manner
+
+Below: Subset data, define factors, set coding scheme, etc.
 
 ```{r}
-## Single factor to model Group * Condition, using dummy coding:
+## Single factor to model VerbType * Condition, using dummy coding:
 # (The way to analyze crossed factors is to combine their levels into 
 # a single factor, see Wood's comment here
 # http://grokbase.com/t/r/r-help/113qaadxt4/r-how-to-add-in-interaction-terms-in-gamm)
-d$GroupCondit <- with(d, interaction(Group, Condition))
+
+# First need to convert data to long format:
+d_long <- gather(d, VerbType, Used, P_V:M_V)
+# single factor
+d_long$VbType_Cond <- with(d_long, interaction(VerbType, Condition))
+
+# For the subjects  to be properly fitted as random smooths in the GAMs
+# we have to "pretend" that a baseline subject is two different subjects;
+# this may not be ideal statistically, but not doing this would turn the random
+# smooths into random intercepts, which is much worse.
+d_long$Subject <- with(d_long, interaction(Subject, VerbType))
 
 ## Subset data:
-# Data for analysis of Path-priming vs Baseline
-dp <- d %>% filter(Condition != 'Manner')
-dp$Condition <- factor(dp$Condition) # drop unused levels
-# Data for analysis of Manner-priming vs Baseline
-dm <- d %>% filter(Condition != 'Path')
-dm$Condition <- factor(dm$Condition) # drop unused levels
+# Data for analysis of Native speakers
+d_ns <- d_long %>% filter(Group == "NS" & ! VbType_Cond %in% c("P_V.Manner", "M_V.Path"))
+# drop unused factors for subject (I think this is important for gam fitting)
+d_ns$Subject <- factor(d_ns$Subject)
+# Data for analysis of L2 speakers
+d_l2 <- d_long %>% filter(Group == "L2" & ! VbType_Cond %in% c("P_V.Manner", "M_V.Path"))
+d_l2$Subject <- factor(d_l2$Subject)
 
 # Order levels correctly in each data frame
-dp$GroupCondit <- factor(dp$GroupCondit, levels = c("NS.Baseline", "NS.Path",
-                                                    "L2.Baseline", "L2.Path"))
-dm$GroupCondit <- factor(dm$GroupCondit, levels = c("NS.Baseline", "NS.Manner",
-                                                    "L2.Baseline", "L2.Manner"))
+d_ns$VbType_Cond <- factor(d_ns$VbType_Cond, levels = c("P_V.Baseline", "P_V.Path",
+                                                      "M_V.Baseline", "M_V.Manner"))
+d_l2$VbType_Cond <- factor(d_l2$VbType_Cond, levels = c("P_V.Baseline", "P_V.Path",
+                                                      "M_V.Baseline", "M_V.Manner"))
 # note that NS Baseline becomes the reference group in both data frames
-contrasts(dp$GroupCondit)
-contrasts(dm$GroupCondit)
+contrasts(d_ns$VbType_Cond)
+contrasts(d_l2$VbType_Cond)
 ```
 
 
@@ -162,8 +176,8 @@ Subset data, define factors, set coding scheme, etc:
 
 ```{r}
 # subset L2 data only from Path/Baseline and Manner/Baseline conditions respectively
-dp_l2 <- dp %>% filter(Group == "L2")
-dm_l2 <- dm %>% filter(Group == "L2")
+dp_l2 <- d_l2 %>% filter(VerbType == "P_V")
+dm_l2 <- d_l2 %>% filter(VerbType == "M_V")
 ```
 
 
@@ -240,6 +254,19 @@ glmm_tb <- function(fm) {
   kable(tb)
 }
 
+# create a neat table of the summary of GAMs
+gam_tb <- function(fm = NULL, mytype = "html") {
+  if (mydoctype == "html_document") {
+    gamtabs(fm, type = "HTML")
+  } else if (mydoctype == "pdf_document") {
+    gamtabs(fm)
+  } else {
+    print("I don't know how to print a gam_table for this document type!")
+  }
+}
+```
+
+```{r}
 # save the document type being knited into variable
 # cf. http://stackoverflow.com/questions/35144130/in-knitr-how-can-i-test-for-if-the-output-will-be-pdf-or-word/35149103
 # needed for gam_tb() below
@@ -254,42 +281,11 @@ getOutputFormat <- function() {
   }
 }
 mydoctype <- getOutputFormat()
+# NB: this function call will crash if the document is not being knitted, but 
+# simply sourced from the R session
 mydoctype
-
-# create a neat table of the summary of GAMs
-gam_tb <- function(fm = NULL, mytype = "html") {
-  if (mydoctype == "html_document") {
-    gamtabs(fm, type = "HTML")
-  } else if (mydoctype == "pdf_document") {
-    gamtabs(fm)
-  } else {
-    print("I don't know how to print a gam_table for this document type!")
-  }
-}
 ```
 
-\begin{table}[ht]
-\centering
-\begin{tabular}{lrrrr}
-   \hline
-A. parametric coefficients & Estimate & Std. Error & t-value & p-value \\ 
-  (Intercept) & -1.1504 & 0.4822 & -2.3855 & 0.0171 \\ 
-  GroupConditNS.Manner & 1.6219 & 0.6491 & 2.4985 & 0.0125 \\ 
-  GroupConditL2.Baseline & -1.3624 & 0.6717 & -2.0282 & 0.0425 \\ 
-  GroupConditL2.Manner & 1.5985 & 0.6532 & 2.4473 & 0.0144 \\ 
-   \hline
-B. smooth terms & edf & Ref.df & F-value & p-value \\ 
-  s(Trial):GroupConditNS.Baseline & 1.0000 & 1.0001 & 8.0829 & 0.0045 \\ 
-  s(Trial):GroupConditNS.Manner & 2.0502 & 2.5559 & 4.1008 & 0.2138 \\ 
-  s(Trial):GroupConditL2.Baseline & 1.0000 & 1.0001 & 2.4500 & 0.1175 \\ 
-  s(Trial):GroupConditL2.Manner & 1.5571 & 1.9194 & 10.5049 & 0.0102 \\ 
-  s(Trial,Subject) & 114.5777 & 812.0000 & 849.3877 & $<$ 0.0001 \\ 
-  s(VideoName) & 25.0025 & 31.0000 & 120.0840 & $<$ 0.0001 \\ 
-   \hline
-\end{tabular}
-\caption{ } 
-\label{tab.gam}
-\end{table}
 
 # Analyses and results
 
@@ -374,31 +370,12 @@ plot(fm_transl_eff, type = "link",
 
 
 
-
 ## Baseline condition: NS vs L2ers
 
 ### Descriptives
 
 ```{r}
-# # I had the following table initially to show baseline data only
-# # But I think it's better to show descriptives for all the data.
-# tb_baseline <- d_basel %>%
-#   group_by(Group) %>%
-#   summarise(N = n(),
-#             P_V_n = sum(P_V),
-#             P_V_perc = round(100 * sum(P_V) / n(), 1),
-#             M_V_n = sum(M_V),
-#             M_V_perc = round(100 * sum(M_V) / n(), 1))
-# names(tb_baseline)[3:6] <- c("Path Vs (N)", "Path Vs (%)",
-#                              "Manner Vs (N)", "Manner Vs (%)")
-# kable(tb_baseline)
-```
-
-
-```{r}
 # Descriptive data for all analysed conditions
-# First need to convert data to long format:
-d_long <- gather(d, VerbType, Used, P_V:M_V)
 # table (will need to be appropriately formatted in report)
 tb_descriptive <- d_long %>%
   group_by(VerbType, Condition, Group) %>%
@@ -541,7 +518,7 @@ plot(eff_m, type = "link", ylim = myylims,
 ## Differences in adaptation over time (trial-by-trial analysis using GAMs)
 
 
-### Path verbs in path-exposed vs control -- trial-by-trial
+### Native speakers -- trial-by-trial
 
 Previous models (not shown here) showed that random *intercepts* by items made sense, but not random slopes.
 We add the former but not the latter.
@@ -560,18 +537,18 @@ Predictors are:
 
 ```{r}
 # the expression that is passed to load_or_fit()
-fm_p3.expr <- "bam(P_V ~ GroupCondit + s(Trial, by = GroupCondit) +
+gam_ns.expr <- "bam(Used ~ VbType_Cond + s(Trial, by = VbType_Cond) +
                     s(Trial, Subject, bs = 'fs') + s(VideoName, bs = 're'),
-                  data = dp,
+                  data = d_ns,
                   family = 'binomial')"
 # load model or fit
-load_or_fit("fm_p3", fm_p3.expr)
+load_or_fit("gam_ns", gam_ns.expr)
 ```
 
 Summary of the model:
 
 ```{r}
-summary(fm_p3)
+summary(gam_ns)
 ```
 
 
@@ -579,31 +556,30 @@ Summary using gamtabs:
 
 
 ```{r, results = "asis"}
-gam_tb(fm_p3)
+gam_tb(gam_ns)
 ```
 
 
 Significance of the different terms in the model:
 
 ```{r}
-anova(fm_p3)
+anova(gam_ns)
 ```
 
 
 Plot model estimates by condition, random smooth adjustments by speakers and QQ-plot of random by-item intercepts:
 
 ```{r, results = 'hide'}
-par(mfrow = c(1, 1))
 ## plot
-plot_smooth(fm_p3, view = 'Trial', plot_all = 'GroupCondit', rm.ranef=TRUE)
+plot_smooth(gam_ns, view = 'Trial', plot_all = 'VbType_Cond', rm.ranef=TRUE)
 ```
 
 
 ```{r}
 # show by-speaker random smooths and by-item random intercepts
 par(mfrow = c(1, 2))
-plot(fm_p3, select = 5)
-plot(fm_p3, select = 6)
+plot(gam_ns, select = 5)
+plot(gam_ns, select = 6)
 ```
 
 
@@ -611,7 +587,11 @@ plot(fm_p3, select = 6)
 Plot differences between conditions (model estimates):
 
 ```{r, fig.height = myfighe_NS_L2, fig.width = myfigwi, echo = FALSE, results = 'hide'}
-plot_NS_L2(fm_p3, primed_cond = 'Path', mark.diff = FALSE)  # mark.diff is a hack to
+par(mfrow = c(1, 1))
+plot_gam_main(gam_ns, "NS")
+
+# plot_NS_L2(fm_p3, primed_cond = 'Path', mark.diff = TRUE)  # choose this on Linux machine
+# plot_NS_L2(fm_p3, primed_cond = 'Path', mark.diff = FALSE)  # mark.diff is a hack to
 # avoid an error that will stop the whole thing when I compile it on my work pc
 # (it works fine on my own pc with linux)
 ```
@@ -624,70 +604,70 @@ Previous models (not shown here) showed that random *intercepts* by items made s
 We add the former but not the latter.
 
 Thus, the model is specified as:
-
-`MannerVerb ~ GroupCondit + s(Trial, by = GroupCondit) + s(Trial, Subject, bs = 'fs') + s(VideoName, bs = 're')`
+  
+  `MannerVerb ~ VbType_Cond + s(Trial, by = VbType_Cond) + s(Trial, Subject, bs = 'fs') + s(VideoName, bs = 're')`
 
 Predictors are:
-
-- `GroupCondit`: Group-Condition interaction as a fixed effect
-- `s(Trial, by = GroupCondit)`: A smooth function of `Trial` allowing the function to differ for each level of Group-Condition (thin plate regression splines, the default)
+  
+  - `VbType_Cond`: Group-Condition interaction as a fixed effect
+- `s(Trial, by = VbType_Cond)`: A smooth function of `Trial` allowing the function to differ for each level of Group-Condition (thin plate regression splines, the default)
 - `s(Trial, Subject, bs = 'fs')`: Factor smooths for `Subject` to capture non-linear random effects of speakers
 - `s(VideoName, bs = 're')`: Random intercepts by items (i.e., `VideoName`)
 
 
 ```{r}
 # the expression that is passed to load_or_fit()
-fm_m3.expr <- "bam(M_V ~ GroupCondit + s(Trial, by = GroupCondit) +
+gam_l2.expr <- "bam(Used ~ VbType_Cond + s(Trial, by = VbType_Cond) +
                     s(Trial, Subject, bs = 'fs') + s(VideoName, bs = 're'),
-                  data = dm,
+                  data = d_l2,
                   family = 'binomial')"
 # load model or fit
-load_or_fit("fm_m3", fm_m3.expr)
+load_or_fit("gam_l2", gam_l2.expr)
 ```
 
 Summary of the model:
-
+  
 ```{r}
-summary(fm_m3)
+summary(gam_l2)
 ```
 
 
 Summary using gamtabs:
-
+  
 ```{r, results = "asis"}
-gam_tb(fm_m3)
+gam_tb(gam_l2)
 ```
 
 
 
 Significance of the different terms in the model:
-
+  
 ```{r}
-anova(fm_m3)
+anova(gam_l2)
 ```
 
 
 Plot model estimates by condition, random smooth adjustments by speakers and QQ-plot of random by-item intercepts:
-
+  
 ```{r, results = 'hide'}
 ## plot
-plot_smooth(fm_m3, view = 'Trial', plot_all = 'GroupCondit', rm.ranef=TRUE)
+plot_smooth(gam_l2, view = 'Trial', plot_all = 'GroupCondit', rm.ranef=TRUE)
 ```
 
 
 ```{r}
 # show by-speaker random smooths and by-item random intercepts
 par(mfrow = c(1, 2))
-plot(fm_m3, select = 5)
-plot(fm_m3, select = 6)
+plot(gam_l2, select = 5)
+plot(gam_l2, select = 6)
 ```
 
 
 
 Plot differences between conditions (model estimates):
-
+  
 ```{r, fig.height = myfighe_NS_L2, fig.width = myfigwi, echo = FALSE, results = 'hide'}
-plot_NS_L2(fm_m3, primed_cond = 'Manner')
+plot_NS_L2(gam_l2, primed_cond = 'Manner')
 ```
 
 
@@ -700,19 +680,20 @@ plot_NS_L2(fm_m3, primed_cond = 'Manner')
 ### Adaptation to path verbs vs proficiency
 
 ```{r}
-fm_p_prof9.expr <- "bam(P_V ~ Condition +
-                    te(Trial, ClozeScore, by = Condition) +
-                    s(Trial, Subject, bs = 'fs') +
-                    s(VideoName, bs = 're'),
-                  data = dp_l2,
-                  family = 'binomial')"
+fm_p_prof9.expr <- "bam(P_V ~ 
+Condition +
+te(Trial, ClozeScore, by = Condition) +
+s(Trial, Subject, bs = 'fs') +
+s(VideoName, bs = 're'),
+data = dp_l2,
+family = 'binomial')"
 # load model or fit
 load_or_fit("fm_p_prof9", fm_p_prof9.expr)
 summary(fm_p_prof9)
 ```
 
 Summary using gamtabs:
-
+  
 ```{r, results = "asis"}
 gam_tb(fm_p_prof9)
 ```
@@ -744,25 +725,25 @@ plot_diff2(fm_p_prof9, view = c('Trial', 'ClozeScore'),
 ### Adaptation to manner verbs vs proficiency
 
 TO DO:
-
-- Model comparison showing that 3-way interaction with proficiency significantly improves the model
+  
+  - Model comparison showing that 3-way interaction with proficiency significantly improves the model
 
 
 
 ```{r}
 fm_m_prof9.expr <- "bam(M_V ~ Condition +
-                    te(Trial, ClozeScore, by = Condition) +
-                    s(Trial, Subject, bs = 'fs') +
-                    s(VideoName, bs = 're'),
-                  data = dm_l2,
-                  family = 'binomial')"
+te(Trial, ClozeScore, by = Condition) +
+s(Trial, Subject, bs = 'fs') +
+s(VideoName, bs = 're'),
+data = dm_l2,
+family = 'binomial')"
 # load model or fit
 load_or_fit("fm_m_prof9", fm_m_prof9.expr)
 summary(fm_m_prof9)
 ```
 
 Summary using gamtabs:
-
+  
 ```{r, results = "asis"}
 gam_tb(fm_m_prof9)
 ```
