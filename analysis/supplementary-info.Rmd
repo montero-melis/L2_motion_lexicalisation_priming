@@ -3,6 +3,8 @@ title: "Analysis replication and supplementary information"
 author: '[Guillermo Montero-Melis](http://www.biling.su.se/montero_melis_guillermo)'
 date: '`r as.character(format(Sys.Date(), format="%d/%m/%Y"))`'
 output:
+  word_document:
+    toc: yes
   pdf_document:
     number_sections: yes
     toc: yes
@@ -10,8 +12,6 @@ output:
     depth: 2
     number_sections: yes
     theme: default
-    toc: yes
-  word_document:
     toc: yes
 ---
 
@@ -73,6 +73,18 @@ levels(d$Condition)[levels(d$Condition) == "Control"] <- "Baseline"
 # participant data
 ppts <- read.csv("../data/participants.csv", fileEncoding = "UTF-8", stringsAsFactors = TRUE)
 # head(ppts)
+# participants by group
+with(ppts, table(Group))
+with(ppts, table(Group, Gender))
+with(ppts, table(Group, Condition))
+# age
+ppts %>%
+  group_by(Group) %>%
+  summarise(Mage = mean(Age, na.rm = T), SDage = sd(Age, na.rm = T))
+# Cloze scores
+mean(ppts$ClozeScore, na.rm=T)
+sd(ppts$ClozeScore, na.rm=T)
+
 # No audio data recorded for Subject 14 (L2) due to experimental error; exclude
 ppts <- ppts[ppts$Subject != 14, ]
 # transform ClozeScore to z-score (as.vector prevents it from becoming a matrix)
@@ -285,6 +297,8 @@ mydoctype <- getOutputFormat()
 # simply sourced from the R session
 mydoctype
 ```
+
+
 
 
 # Analyses and results
@@ -587,18 +601,14 @@ plot(gam_ns, select = 6)
 Plot differences between conditions (model estimates):
 
 ```{r, fig.height = myfighe_NS_L2, fig.width = myfigwi, echo = FALSE, results = 'hide'}
-par(mfrow = c(1, 1))
-plot_gam_main(gam_ns, "NS")
-
-# plot_NS_L2(fm_p3, primed_cond = 'Path', mark.diff = TRUE)  # choose this on Linux machine
-# plot_NS_L2(fm_p3, primed_cond = 'Path', mark.diff = FALSE)  # mark.diff is a hack to
+plot_gam_main(gam_ns, "NS", mark.diff = FALSE)  # use of mark.diff is a hack to
 # avoid an error that will stop the whole thing when I compile it on my work pc
-# (it works fine on my own pc with linux)
+# plot_gam_main(gam_ns, "NS")  # choose this on Linux machine
 ```
 
 
 
-### Manner verbs in Manner-exposed vs control -- trial-by-trial
+### L2-speaker adaptation -- trial-by-trial
 
 Previous models (not shown here) showed that random *intercepts* by items made sense, but not random slopes.
 We add the former but not the latter.
@@ -680,13 +690,13 @@ plot_gam_main(gam_l2, "L2")
 ### Adaptation to path verbs vs proficiency
 
 ```{r}
-fm_p_prof9.expr <- "bam(P_V ~ 
-Condition +
-te(Trial, ClozeScore, by = Condition) +
-s(Trial, Subject, bs = 'fs') +
-s(VideoName, bs = 're'),
-data = dp_l2,
-family = 'binomial')"
+fm_p_prof9.expr <- "bam(P_V ~
+    Condition +
+    te(Trial, ClozeScore, by = Condition) +
+    s(Trial, Subject, bs = 'fs') +
+    s(VideoName, bs = 're'),
+  data = dp_l2,
+  family = 'binomial')"
 # load model or fit
 load_or_fit("fm_p_prof9", fm_p_prof9.expr)
 summary(fm_p_prof9)
