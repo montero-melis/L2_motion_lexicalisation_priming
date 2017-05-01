@@ -14,39 +14,39 @@ plot_gam_main <- function(fm, mygroup = NULL,
   # plot Path-Verbs Baseline
   plot_smooth(fm, view = 'Trial', cond = list(VbType_Cond = 'P_V.Baseline'),
               col = 'blue', lty = 2, rug = FALSE, ylim = ylim1, rm.ranef=TRUE,
-              main = paste0(mygroup, ': Path verbs'), ylab = 'Log-likelihood\nof path-verb',
+              main = paste0(mygroup, ': Path-verbs'), ylab = 'Log-odds\nof path-verb',
               hide.label = TRUE)
   # plot Path-Verbs path-primed
   plot_smooth(fm, view = 'Trial', cond = list(VbType_Cond = 'P_V.Path'),
               col = 'red', rug = FALSE, rm.ranef = TRUE, add = TRUE,
               hide.label = TRUE)
   # add legend
-  legend(x = 1, y = ylim1[2] + 0.75, legend = c('Path-exposed', 'Baseline'),
+  legend(x = 1, y = ylim1[2] + 0.75, legend = c('Path-primed', 'Baseline'),
          col = c('red', 'blue'), lty = 1:2, cex = mycex, box.lty = 0)
   
   # Manner-verbs Baseline
   plot_smooth(fm, view = 'Trial', cond = list(VbType_Cond = 'M_V.Baseline'),
               col = 'blue', lty = 2, rug = FALSE, ylim = ylim1, rm.ranef = TRUE,
-              main = paste0(mygroup, ': Manner verbs'), ylab = 'Log-likelihood\nof manner-verb',
+              main = paste0(mygroup, ': Manner-verbs'), ylab = 'Log-odds\nof manner-verb',
               hide.label = TRUE)
   # Manner-verbs manner-primed
   plot_smooth(fm, view = 'Trial', cond = list(VbType_Cond = 'M_V.Manner'),
               col = 'red', rug = FALSE, rm.ranef = TRUE, add = TRUE,
               hide.label = TRUE)
   # add legend
-  legend(x = 1, y = ylim1[2] + 0.75, legend = c('Manner-exposed', 'Baseline'),
+  legend(x = 1, y = ylim1[2] + 0.75, legend = c('Manner-primed', 'Baseline'),
          col = c('red', 'blue'), lty = 1:2, cex = mycex, box.lty = 0)
   
   # Now plot the estimated differences with itsadug::plot_diff()
   plot_diff(fm, view = 'Trial', comp = list(VbType_Cond = c('P_V.Path', 'P_V.Baseline')),
             ylim = ylim2, rm.ranef=TRUE, 
-            main = 'Path-exposed - Baseline',
-            ylab = 'Diff. in log-likelihood\nof path-verb', hide.label = TRUE,
+            main = 'Path-primed - Baseline',
+            ylab = 'Diff. in log-odds\nof path-verb', hide.label = TRUE,
             ...)  # a hack I need to set the mark.diff argument as F, bc of some bug?
   plot_diff(fm, view = 'Trial', comp = list(VbType_Cond = c('M_V.Manner', 'M_V.Baseline')),
             ylim = ylim2, rm.ranef=TRUE, 
-            main = 'Manner-exposed - Baseline',
-            ylab = 'Diff. in log-likelihood\nof manner-verb', hide.label = TRUE)
+            main = 'Manner-primed - Baseline',
+            ylab = 'Diff. in log-odds\nof manner-verb', hide.label = TRUE)
 }
 
 
@@ -59,7 +59,7 @@ plot_L2_profic <- function(fm, primed_cond = NULL, ylim1 = c(-6, 8),
   # add common legend
   par(mai=c(0,0,0,0))
   plot.new()
-  legend(x = "center", ncol = 2, legend = c(paste0(primed_cond, '-exposed'), 'Baseline'),
+  legend(x = "center", ncol = 2, legend = c(paste0(primed_cond, '-primed'), 'Baseline'),
          col = c('red', 'blue'), lty = 1:2, box.lty = 0, cex = 1.5)
   # Now make plot for the model estimates at the different cloze scores in cloze_scores
   # par(mai=rep(0.2, 4))
@@ -67,8 +67,8 @@ plot_L2_profic <- function(fm, primed_cond = NULL, ylim1 = c(-6, 8),
   for(cloze in cloze_scores) {
     plot_smooth(fm, view = 'Trial', cond = list(Condition = 'Baseline', ClozeScore = cloze),
                 col = 'blue', lty = 2, rug = FALSE, ylim = ylim1, rm.ranef = TRUE,
-                hide.label = TRUE, ylab = paste0('Log-likelihood\nof ', primed_cond, " verb"),
-                main = paste('Cloze score =', cloze))
+                hide.label = TRUE, ylab = paste0('Log-odds\nof ', primed_cond, " verb"),
+                main = paste('L2 proficiency =', cloze))
     plot_smooth(fm, view = 'Trial', cond = list(Condition = primed_cond, ClozeScore = cloze),
                 col = 'red', rug = FALSE, rm.ranef = TRUE, hide.label = TRUE, add = TRUE)
   }
@@ -86,38 +86,38 @@ plot_NS_L2 <- function(fm, primed_cond = NULL, ylim1 = c(-4, 6), ylim2 = c(-.5, 
   # plot NS Baseline
   plot_smooth(fm, view = 'Trial', cond = list(GroupCondit = 'NS.Baseline'),
               col = 'blue', lty = 2, rug = FALSE, ylim = ylim1, rm.ranef=TRUE,
-              main = 'Native speakers', ylab = paste0('Log-likelihood\nof ', primed_cond, " verb"),
+              main = 'Native speakers', ylab = paste0('Log-odds\nof ', primed_cond, " verb"),
               hide.label = TRUE)
   # plot NS primed
   plot_smooth(fm, view = 'Trial', cond = list(GroupCondit = NS_primed),
               col = 'red', rug = FALSE, rm.ranef = TRUE, add = TRUE,
               hide.label = TRUE)
   # add legend
-  legend(x = 1, y = ylim1[2] + 0.75, legend = c(paste0(primed_cond, '-exposed'), 'Baseline'),
+  legend(x = 1, y = ylim1[2] + 0.75, legend = c(paste0(primed_cond, '-primed'), 'Baseline'),
          col = c('red', 'blue'), lty = 1:2, cex = mycex, box.lty = 0)
   
   # L2 speakers Baseline
   plot_smooth(fm, view = 'Trial', cond = list(GroupCondit = 'L2.Baseline'),
               col = 'blue', lty = 2, rug = FALSE, ylim = ylim1, rm.ranef = TRUE,
-              main = 'L2 speakers', ylab = paste0('Log-likelihood\nof ', primed_cond, " verb"),
+              main = 'L2 speakers', ylab = paste0('Log-odds\nof ', primed_cond, " verb"),
               hide.label = TRUE)
   # L2 speakers primed
   plot_smooth(fm, view = 'Trial', cond = list(GroupCondit = L2_primed),
               col = 'red', rug = FALSE, rm.ranef = TRUE, add = TRUE,
               hide.label = TRUE)
   # add legend
-  legend(x = 1, y = ylim1[2] + 0.75, legend = c(paste0(primed_cond, '-exposed'), 'Baseline'),
+  legend(x = 1, y = ylim1[2] + 0.75, legend = c(paste0(primed_cond, '-primed'), 'Baseline'),
          col = c('red', 'blue'), lty = 1:2, cex = mycex, box.lty = 0)
   
   # Now plot the estimated differences with itsadug::plot_diff()
   plot_diff(fm, view = 'Trial', comp = list(GroupCondit = c(NS_primed, 'NS.Baseline')),
             ylim = ylim2, rm.ranef=TRUE, 
-            main = paste0('NS: ', primed_cond, '-exposed',  ' - Baseline'),
-            ylab = paste('Diff. in log-likelihood\nof ', primed_cond, 'verb'), hide.label = TRUE,
+            main = paste0('NS: ', primed_cond, '-primed',  ' - Baseline'),
+            ylab = paste('Diff. in log-odds\nof ', primed_cond, 'verb'), hide.label = TRUE,
             ...)  # a hack I need to set the mark.diff argument as F, bc of some bug?
   plot_diff(fm, view = 'Trial', comp = list(GroupCondit = c(L2_primed, 'L2.Baseline')),
             ylim = ylim2, rm.ranef=TRUE, 
-            main = paste0('L2: ', primed_cond, '-exposed',  ' - Baseline'),
-            ylab = paste('Diff. in log-likelihood\nof ', primed_cond, 'verb'), hide.label = TRUE)
+            main = paste0('L2: ', primed_cond, '-primed',  ' - Baseline'),
+            ylab = paste('Diff. in log-odds\nof ', primed_cond, 'verb'), hide.label = TRUE)
 }
 

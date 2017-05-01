@@ -29,7 +29,7 @@ plot_glmm <- function(fm, d, DV = NULL, ylims = myylims, nb_sims = 50) {
   # nb_sims: number of simulations when using arm::sim()
   
   # Define y-lab based on DV argument
-  myylab <- paste0("Log-likelihood of ", DV, "-verb")
+  myylab <- paste0("Log-odds of ", DV, "-verb")
   myggtitle <- paste0(DV, "-verbs")
   
   # get confidence intervals from models
@@ -42,7 +42,8 @@ plot_glmm <- function(fm, d, DV = NULL, ylims = myylims, nb_sims = 50) {
   # compute 95% confidence intervals and put into df
   confint <- data.frame(t(sapply(estim, quantile, probs = c(.025, .5, .975))))
   names(confint) <- c("lower", "median", "upper")
-  confint$Group <- factor(c("NS", "L2"), levels = c("NS", "L2"))
+  confint$Group <- factor(c("Native speakers", "L2 learners"),
+                          levels = c("Native speakers", "L2 learners"))
 
   # Now extract subject estimates from model
   # (this is hacky, but couldn't figure out a better way)
@@ -52,11 +53,14 @@ plot_glmm <- function(fm, d, DV = NULL, ylims = myylims, nb_sims = 50) {
   # average over subjects
   model_pred <- model_pred  %>% group_by(Subject, Group) %>%
     summarise(Pred = mean(predicted))
+  model_pred$Group <- factor(model_pred$Group, levels = c("NS", "L2"),
+                             labels = c("Native speakers", "L2 learners"))
 
   # plot using ggplot
   p <- ggplot(confint, aes(x = Group, y = median)) +
     geom_errorbar(aes(ymin = lower, ymax = upper), width = .25, size = 1.5) +
     ylab(myylab) +
+    xlab("") +
     ylim(ylims)
   set.seed(123987)  # make horizontal jitter reproducible
   p <- p + geom_jitter(data = model_pred, aes(x = Group, y = Pred),

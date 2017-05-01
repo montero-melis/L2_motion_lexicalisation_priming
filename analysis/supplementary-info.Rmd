@@ -3,13 +3,13 @@ title: "Analysis replication and supplementary information"
 author: '[Guillermo Montero-Melis](http://www.biling.su.se/montero_melis_guillermo)'
 date: '`r as.character(format(Sys.Date(), format="%d/%m/%Y"))`'
 output:
+  pdf_document:
+    number_sections: yes
+    toc: yes
   html_document:
     depth: 2
     number_sections: yes
     theme: default
-    toc: yes
-  pdf_document:
-    number_sections: yes
     toc: yes
   word_document:
     toc: yes
