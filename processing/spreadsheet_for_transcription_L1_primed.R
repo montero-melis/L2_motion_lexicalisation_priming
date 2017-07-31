@@ -100,5 +100,6 @@ combi <- rbind(l2, d)
 # Replace NAs in Look column with empty strings
 combi$Look[is.na(combi$Look)] <- ""
 
-write.csv(combi, "data/data_verbal_transcribed.csv", row.names = FALSE,
-          fileEncoding = "UTF-8")
+# Uncomment to write file
+# write.csv(combi, "data/data_verbal_transcribed.csv", row.names = FALSE,
+#           fileEncoding = "UTF-8")
