@@ -1,12 +1,20 @@
 TO DO
 =====
 
-- Run GAMM analysis with only the data from the two manner verbs that were better known to subjects
-- Replace Figs. 5&6 in thesis' Study III with figures that show the difference (as in lower panels of Figs 3&4)
+- Figure out what script I used to generate the figures for my thesis chapter?
 
+- Run GAMM analysis with only the data from the two manner verbs that were better known to subjects [almost finished!]
+- Replace Figs. 5&6 in thesis' Study III with figures that show the difference (as in lower panels of Figs 3&4)
+- Model comparison showing that 3-way interaction with proficiency significantly improves the model for L2 speakers adaptation to manner verbs
 
 
 Reporting the analysis
 ----------------------
 
 Check out "Analysis approach" section in Fraundorf & Jaeger (2016, p.35)
+
+
+Discussion
+----------
+
+Why upward trend (path verbs) and downward trend (manner verbs) over course of experiment? See Kootstra&Doedens 2016
