@@ -101,11 +101,9 @@ plot_L2_profic_diff <- function(fm, primed_cond = NULL, ylim1 = c(-6, 8),
   }
 }
 
-plot_L2_profic_diff(fm_m_L2prof, "Manner")
-
-plot_diff(fm_m_L2prof, view = 'Trial', comp = list(Condition = c('Manner', 'Baseline')))
-
-plot_L2_profic(fm_m_L2prof_noarrastra, primed_cond = 'Manner')
+# plot_L2_profic_diff(fm_m_L2prof, "Manner")
+# plot_diff(fm_m_L2prof, view = 'Trial', comp = list(Condition = c('Manner', 'Baseline')))
+# plot_L2_profic(fm_m_L2prof_noarrastra, primed_cond = 'Manner')
 
 
 
