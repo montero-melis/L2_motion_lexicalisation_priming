@@ -311,10 +311,10 @@ mydoctype <- 0
 
 # NB: uncomment following lines before knitting the document!
 
-mydoctype <- getOutputFormat()
-# NB: this function call will crash if the document is not being knitted, but
-# simply sourced from the R session
-mydoctype
+# mydoctype <- getOutputFormat()
+# # NB: this function call will crash if the document is not being knitted, but
+# # simply sourced from the R session
+# mydoctype
 ```
 
 

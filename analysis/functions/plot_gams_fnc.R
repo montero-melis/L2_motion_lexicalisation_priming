@@ -77,19 +77,16 @@ plot_L2_profic <- function(fm, primed_cond = NULL, ylim1 = c(-6, 8),
 
 # function to plot the effects by L2 speakers' proficiency from GAMs
 # this time showing DIFFERENCES [FUN UNDER CONSTRUCTION 170801]
+
 plot_L2_profic_diff <- function(fm, primed_cond = NULL, ylim1 = c(-6, 8),
                                 cloze_range = c(10, 35)) {
   cloze_scores <- seq(cloze_range[1], cloze_range[2], length.out = 6)
-  # we want to have one common legend for all plots
-  layout(rbind(1, matrix(2:7, ncol=3, byrow=TRUE)), heights = c(1, 6, 6))
-  # add common legend
-  par(mai=c(0,0,0,0))
-  plot.new()
-  legend(x = "center", ncol = 2, legend = c(paste0(primed_cond, '-exposed'), 'Baseline'),
-         col = c('red', 'blue'), lty = 1:2, box.lty = 0, cex = 1.5)
+
+    layout(matrix(1:6, ncol=3, byrow=TRUE))
+  
   # Now make plot for the model estimates at the different cloze scores in cloze_scores
   # par(mai=rep(0.2, 4))
-  par(mai = c(.7, .8, .5, 0))
+  par(mai = c(.7, .8, .5, .2))
   for(cloze in cloze_scores) {
     plot_diff(fm, view = 'Trial', comp = list(Condition = c(primed_cond, 'Baseline')),
               cond = list(ClozeScore = cloze))#,
@@ -99,7 +96,10 @@ plot_L2_profic_diff <- function(fm, primed_cond = NULL, ylim1 = c(-6, 8),
     # plot_smooth(fm, view = 'Trial', cond = list(Condition = primed_cond, ClozeScore = cloze),
     #             col = 'red', rug = FALSE, rm.ranef = TRUE, hide.label = TRUE, add = TRUE)
   }
+  # https://www.r-bloggers.com/two-tips-adding-title-for-graph-with-multiple-plots-add-significance-asterix-onto-a-boxplot/
+  mtext("Difference plots", outer = TRUE)#, cex = 1.5)
 }
+
 
 # plot_L2_profic_diff(fm_m_L2prof, "Manner")
 # plot_diff(fm_m_L2prof, view = 'Trial', comp = list(Condition = c('Manner', 'Baseline')))
