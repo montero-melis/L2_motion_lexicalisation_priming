@@ -29,7 +29,7 @@ plot_glmm <- function(fm, d, DV = NULL, ylims = myylims, nb_sims = 1000) {
   # nb_sims: number of simulations when using arm::sim()
   
   # Define y-lab based on DV argument
-  myylab <- paste0("Log-odds of ", DV, " verb")
+  myylab <- paste0("Log-odds of ", tolower(DV), " verb")
   myggtitle <- paste0(DV, " verbs")
   
   # get confidence intervals from models

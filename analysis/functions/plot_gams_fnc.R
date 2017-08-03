@@ -11,12 +11,12 @@ plot_gam_main <- function(fm, mygroup = NULL,
   layout(matrix(1:4, ncol = 2, byrow=TRUE), heights = c(1.5, 1))
   par(mai = c(.7, .8, .5, 0.2))
   mycex <- 0.9
-  # plot Path-Verbs Baseline
+  # plot path verbs Baseline
   plot_smooth(fm, view = 'Trial', cond = list(VbType_Cond = 'P_V.Baseline'),
               col = 'blue', lty = 2, rug = FALSE, ylim = ylim1, rm.ranef=TRUE,
-              main = paste0(mygroup, ': Path-verbs'), ylab = 'Log-odds\nof path-verb',
+              main = paste0(mygroup, ': Path verbs'), ylab = 'Log-odds\nof path verb',
               hide.label = TRUE)
-  # plot Path-Verbs path-primed
+  # plot Path Verbs in path-primed condition
   plot_smooth(fm, view = 'Trial', cond = list(VbType_Cond = 'P_V.Path'),
               col = 'red', rug = FALSE, rm.ranef = TRUE, add = TRUE,
               hide.label = TRUE)
@@ -24,12 +24,12 @@ plot_gam_main <- function(fm, mygroup = NULL,
   legend(x = 1, y = ylim1[2] + 0.75, legend = c('Path-primed', 'Baseline'),
          col = c('red', 'blue'), lty = 1:2, cex = mycex, box.lty = 0)
   
-  # Manner-verbs Baseline
+  # Manner verbs Baseline
   plot_smooth(fm, view = 'Trial', cond = list(VbType_Cond = 'M_V.Baseline'),
               col = 'blue', lty = 2, rug = FALSE, ylim = ylim1, rm.ranef = TRUE,
-              main = paste0(mygroup, ': Manner-verbs'), ylab = 'Log-odds\nof manner-verb',
+              main = paste0(mygroup, ': Manner verbs'), ylab = 'Log-odds\nof manner verb',
               hide.label = TRUE)
-  # Manner-verbs manner-primed
+  # Manner verbs in manner-primed condition
   plot_smooth(fm, view = 'Trial', cond = list(VbType_Cond = 'M_V.Manner'),
               col = 'red', rug = FALSE, rm.ranef = TRUE, add = TRUE,
               hide.label = TRUE)
@@ -40,13 +40,13 @@ plot_gam_main <- function(fm, mygroup = NULL,
   # Now plot the estimated differences with itsadug::plot_diff()
   plot_diff(fm, view = 'Trial', comp = list(VbType_Cond = c('P_V.Path', 'P_V.Baseline')),
             ylim = ylim2, rm.ranef=TRUE, 
-            main = 'Path-primed - Baseline',
-            ylab = 'Diff. in log-odds\nof path-verb', hide.label = TRUE,
+            main = 'Path-primed \u2212 Baseline',
+            ylab = 'Diff. in log-odds\nof path verb', hide.label = TRUE,
             ...)  # a hack I need to set the mark.diff argument as F, bc of some bug?
   plot_diff(fm, view = 'Trial', comp = list(VbType_Cond = c('M_V.Manner', 'M_V.Baseline')),
             ylim = ylim2, rm.ranef=TRUE, 
-            main = 'Manner-primed - Baseline',
-            ylab = 'Diff. in log-odds\nof manner-verb', hide.label = TRUE)
+            main = 'Manner-primed \u2212 Baseline',
+            ylab = 'Diff. in log-odds\nof manner verb', hide.label = TRUE)
 }
 
 
@@ -67,7 +67,7 @@ plot_L2_profic <- function(fm, primed_cond = NULL, ylim1 = c(-6, 8),
   for(cloze in cloze_scores) {
     plot_smooth(fm, view = 'Trial', cond = list(Condition = 'Baseline', ClozeScore = cloze),
                 col = 'blue', lty = 2, rug = FALSE, ylim = ylim1, rm.ranef = TRUE,
-                hide.label = TRUE, ylab = paste0('Log-odds\nof ', primed_cond, " verb"),
+                hide.label = TRUE, ylab = paste0('Log-odds\nof ', tolower(primed_cond), " verb"),
                 main = paste('L2 proficiency =', cloze))
     plot_smooth(fm, view = 'Trial', cond = list(Condition = primed_cond, ClozeScore = cloze),
                 col = 'red', rug = FALSE, rm.ranef = TRUE, hide.label = TRUE, add = TRUE)
