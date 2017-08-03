@@ -1,12 +1,11 @@
 TO DO
 =====
 
+- Figure out what script I used to generate the figures for my thesis chapter?
 
-Qs
---
-
-- Should the analyses in any way be related to the results from the nonverbal task (Montero-Melis et al 2016 in LL)?
-
+- Run GAMM analysis with only the data from the two manner verbs that were better known to subjects [almost finished!]
+- Replace Figs. 5&6 in thesis' Study III with figures that show the difference (as in lower panels of Figs 3&4)
+- Model comparison showing that 3-way interaction with proficiency significantly improves the model for L2 speakers adaptation to manner verbs
 
 
 Reporting the analysis
@@ -15,21 +14,7 @@ Reporting the analysis
 Check out "Analysis approach" section in Fraundorf & Jaeger (2016, p.35)
 
 
+Discussion
+----------
 
-Main results
-------------
-
-As summarised on 22 Jan before meeting with Manne:
-
-Guiding motif:
-Swedish L2 speakers of Spanish adjust to target language (TL) lexicalisation patterns already at intermediate levels of proficiency, showing little evidence of L1 influence.
-
-a) [Control cond.] L2-speakers converge towards target-like use of Path verbs, even though S-framing is possible and relatively frequent in the TL.
-b) [Control cond.] L2 speakers include Manner information less often in their descriptions than NS, despite this information being always encoded in their L1.
-c) [Path/Manner priming] When Path- or Manner-primed, L2 speakers are affected in the same way as NS, showing no evidence that their L1 knowledge mediates priming effects.
-d) [Manner priming] Specifically, seeing evidence of Manner verbs (similar to their L1) does not induce a full switch to this pattern
-e) [Proficiency] With increasing proficiency, L2 speakers tend to encode Path more often in the main verb (but not in adjuncts)
-f) [Proficiency] With increasing proficiency, L2 speakers tend to encode Manner more often as an adjunct (but not as a main verb)
-g) [Proficiency] With increasing proficiency, L2 speakers tend to encode Manner despite being Path primed -- i.e. they resist against priming
-
-
+Why upward trend (path verbs) and downward trend (manner verbs) over course of experiment? See Kootstra&Doedens 2016

@@ -21,7 +21,7 @@ mytheme <- theme_bw() +
         axis.line.x = element_line(color="black"),
         axis.line.y = element_line(color="black"))
 
-plot_glmm <- function(fm, d, DV = NULL, ylims = myylims, nb_sims = 50) {
+plot_glmm <- function(fm, d, DV = NULL, ylims = myylims, nb_sims = 1000) {
   # fm: the fitted glmer model
   # d: the dataframe used to fit the model
   # DV: dependent variable (Path verb or Manner verb)
@@ -29,8 +29,13 @@ plot_glmm <- function(fm, d, DV = NULL, ylims = myylims, nb_sims = 50) {
   # nb_sims: number of simulations when using arm::sim()
   
   # Define y-lab based on DV argument
+<<<<<<< HEAD
   myylab <- paste0("Log-odds of ", DV, " verb")
   myggtitle <- paste0(DV, " verbs")
+=======
+  myylab <- paste0("Log-odds of ", DV, "-verb")
+  myggtitle <- paste0(DV, "-verbs")
+>>>>>>> 6f33fe118948107ed83524713334b87d9212d10b
   
   # get confidence intervals from models
   # simulate the coefficients using arm::sim and extract fixed effects
@@ -64,7 +69,11 @@ plot_glmm <- function(fm, d, DV = NULL, ylims = myylims, nb_sims = 50) {
     ylim(ylims)
   set.seed(123987)  # make horizontal jitter reproducible
   p <- p + geom_jitter(data = model_pred, aes(x = Group, y = Pred),
+<<<<<<< HEAD
                        height = 0, width = .5, size = 2, alpha = .3)
+=======
+                       height = 0, width = .3, size = 2, alpha = .4)
+>>>>>>> 6f33fe118948107ed83524713334b87d9212d10b
   p + mytheme + geom_hline(yintercept = 0) + ggtitle(myggtitle)
 }
 

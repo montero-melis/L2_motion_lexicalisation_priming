@@ -56,7 +56,8 @@ library(xtable)
 ```{r}
 ##  Load data
 # The data is created in the script 'processing/compute_dependent_measures.R'
-# There is the normal and the liberally coded version, see script for difference
+# There is the normal and the liberally coded version (see script for difference).
+# Here I use the normal coding.
 
 # load
 d <- read.csv('../data/data_DVs.csv', fileEncoding = 'UTF-8', stringsAsFactors = TRUE)
@@ -71,7 +72,8 @@ d <- d %>%
 levels(d$Condition)[levels(d$Condition) == "Control"] <- "Baseline"
 
 # participant data
-ppts <- read.csv("../data/participants.csv", fileEncoding = "UTF-8", stringsAsFactors = TRUE)
+ppts <- read.csv("../data/participants.csv", fileEncoding = "UTF-8",
+                 stringsAsFactors = TRUE)
 # head(ppts)
 # participants by group
 with(ppts, table(Group))
@@ -101,13 +103,21 @@ d$Subject <- factor(d$Subject)
 # in Group, let the native speakers (NS) be the reference group
 d$Group <- factor(d$Group, levels = c('NS', 'L2'))
 
+
+# Add info about prime verbs to the data file (by joining two dataframes)
+# Load table with priming verbs and then join
+primes <- read.csv("../data/priming-verbs.csv")
+head(primes)
+d <- left_join(d, primes)
+
+
 head(d)
 str(d)
 ```
 
 ```{r}
 # Data for translation task
-transl <- read.csv("../data/L2_translation-task_scored.csv")
+transl <- read.csv("../data/L2_translation-task_scored.csv", fileEncoding = "UTF-8")
 getwd()
 ```
 
@@ -157,13 +167,16 @@ d_long <- gather(d, VerbType, Used, P_V:M_V)
 d_long$VbType_Cond <- with(d_long, interaction(VerbType, Condition))
 
 # For the subjects  to be properly fitted as random smooths in the GAMs
-# we have to "pretend" that a baseline subject is two different subjects;
+# we have to "pretend" that a baseline subject is two different subjects,
+# one for the comparison to path-primed, the other to manner-primed participants;
 # this may not be ideal statistically, but not doing this would turn the random
 # smooths into random intercepts, which is much worse.
 d_long$Subject <- with(d_long, interaction(Subject, VerbType))
 
 ## Subset data:
-# Data for analysis of Native speakers
+# Data for analysis of Native speakers (note we are removing observations that
+# correspond to path verbs produced in the manner-primed condition or to manner
+# verbs produced in the path-primed condition)
 d_ns <- d_long %>% filter(Group == "NS" & ! VbType_Cond %in% c("P_V.Manner", "M_V.Path"))
 # drop unused factors for subject (I think this is important for gam fitting)
 d_ns$Subject <- factor(d_ns$Subject)
@@ -176,7 +189,8 @@ d_ns$VbType_Cond <- factor(d_ns$VbType_Cond, levels = c("P_V.Baseline", "P_V.Pat
                                                       "M_V.Baseline", "M_V.Manner"))
 d_l2$VbType_Cond <- factor(d_l2$VbType_Cond, levels = c("P_V.Baseline", "P_V.Path",
                                                       "M_V.Baseline", "M_V.Manner"))
-# note that NS Baseline becomes the reference group in both data frames
+# note that log-odds of path verbs in baseline condition becomes the reference
+# level in both groups (NS and L2 speakers)
 contrasts(d_ns$VbType_Cond)
 contrasts(d_l2$VbType_Cond)
 ```
@@ -243,8 +257,8 @@ source("functions/multiplot_fnc.R")
 # rather than fitting them anew each time the script is called
 source("functions/load_or_fit_fnc.R")
 
-# Two functions to a) plot the differences between NS and L2 speakers from GAMs,
-# and b) plot the effects by L2 speakers' proficiency from GAMs
+# Two functions to a) plot the differences between NS and L2 speakers from GAMMs,
+# and b) plot the effects by L2 speakers' proficiency from GAMMs
 source("functions/plot_gams_fnc.R")
 ```
 
@@ -292,10 +306,15 @@ getOutputFormat <- function() {
     return(output[1])
   }
 }
-mydoctype <- getOutputFormat()
-# NB: this function call will crash if the document is not being knitted, but 
-# simply sourced from the R session
-mydoctype
+# create a default to avoid error call when sourcing script without knitting
+mydoctype <- 0
+
+# NB: uncomment following lines before knitting the document!
+
+# mydoctype <- getOutputFormat()
+# # NB: this function call will crash if the document is not being knitted, but
+# # simply sourced from the R session
+# mydoctype
 ```
 
 
@@ -352,7 +371,7 @@ ggplot(by_subj, aes(x = ClozeScore, y = Perc, colour = Type)) +
   mytheme
 ```
 
-Logit model of log-likelihood of correctly translating the meaning of the verb.
+Logit model of log-odds of correctly translating the meaning of the verb.
 
 ```{r fit_glmm_translation_data}
 #  ------------------------------------------------------------------------
@@ -377,7 +396,7 @@ summary(fm_transl)
 fm_transl_eff <- allEffects(fm_transl)
 plot(fm_transl_eff, type = "link", 
      xlab = "Proficiency\n(centred cloze score)",
-     ylab = "Log-likelihood of correct\ntranslation of verb meaning",
+     ylab = "Log-odds of correct\ntranslation of verb meaning",
      main = "Translation task")
 
 ```
@@ -403,7 +422,7 @@ kable(tb_descriptive)
 
 ### Model for path-verb production
 
-Use `glmer` to model the log-likelihood of using a path verb (`P_V`) in the baseline condition as a function of Group (L2 vs NS).
+Use `glmer` to model the log-odds of using a path verb (`P_V`) in the baseline condition as a function of Group (L2 vs NS).
 The model includes random intercepts by speaker and item (random slopes by item were justified by the data).
 
 Model fit and summary of fixed effects:
@@ -430,7 +449,7 @@ vif.mer(glmm_pve)
 
 ### Model for manner-verb production
 
-Use `glmer` to model the log-likelihood of using a manner verb (`M_V`) in the baseline condition as a function of Group (L2 vs NS).
+Use `glmer` to model the log-odds of using a manner verb (`M_V`) in the baseline condition as a function of Group (L2 vs NS).
 The model includes random intercepts by speaker and item (adding random slopes by item does not significantly improve model fit, but we leave them in to keep the model maximal and identical to the path model).
 
 Model fit and summary of fixed effects:
@@ -496,6 +515,8 @@ glmm_pve_prof <- glmer(P_V ~ cClozeScore + (1 | Subject) + (1 | VideoName),
 summary(glmm_pve_prof)
 ```
 
+As L2 speakers in the baseline condition become more proficient, they become more likely to produce path verbs.
+
 
 ### Manner-verbs
 
@@ -510,6 +531,10 @@ glmm_mve_prof <- glmer(M_V ~ cClozeScore + (1 | Subject) + (1 | VideoName),
 summary(glmm_mve_prof)
 ```
 
+However, L2 speakers in the baseline condition do not change their likelihood of producing manner verbs as a function of proficiency.
+ 
+
+
 ```{r, fig.width = myfigwi, fig.height = 3.5}
 # I use this approach to plot model estimates for cClozeScore
 # http://stats.stackexchange.com/questions/135255/obtaining-adjusted-predicted-proportions-with-lme4-using-the-glmer-function
@@ -520,7 +545,7 @@ eff_m <- effect("cClozeScore", glmm_mve_prof)
 
 plot(eff_p, type = "link", ylim = myylims, 
      xlab = "Proficiency\n(centred cloze score)",
-     ylab = "Log-likelihood\nof path verb",
+     ylab = "Log-odds\nof path verb",
      main = "Path verbs vs. proficiency",
      ticks.y = list(at = c(-2, 0)),
      rug = F, key.args=list(space="right"),
@@ -528,7 +553,7 @@ plot(eff_p, type = "link", ylim = myylims,
      more = TRUE)
 plot(eff_m, type = "link", ylim = myylims,
      xlab = "Proficiency\n(centred cloze score)",
-     ylab = "Log-likelihood\nof manner verb",
+     ylab = "Log-odds\nof manner verb",
      main = "Manner verbs vs. proficiency",
      rug=F, key.args=list(space="right"),
      row = 1,col = 2, nrow = 1, ncol = 2)
@@ -610,9 +635,10 @@ plot(gam_ns, select = 6)
 Plot differences between conditions (model estimates):
 
 ```{r, fig.height = myfighe_NS_L2, fig.width = myfigwi, echo = FALSE, results = 'hide'}
-plot_gam_main(gam_ns, "NS", mark.diff = FALSE)  # use of mark.diff is a hack to
+plot_gam_main(gam_ns, "NS")  # choose this on Linux machine
+# on my old windows computer:
+# plot_gam_main(gam_ns, "NS", mark.diff = FALSE)  # use of mark.diff is a hack to
 # avoid an error that will stop the whole thing when I compile it on my work pc
-# plot_gam_main(gam_ns, "NS")  # choose this on Linux machine
 ```
 
 
@@ -749,6 +775,10 @@ head(d_l2_beg)
 We can now fit the logit mixed model
 
 ```{r fit_glmm_beginning}
+# The following snippet fitted different models to analyze the first trials;
+# in the end we choose the more conservative one that still converges 
+# -- here glmm_adapt_beg3b; this is the one that is fitted below and reported.
+
 # # minimal random effects
 # glmm_adapt_beg_min <- glmer(Used ~ Condition * VerbType * cTrial +
 #                           (1 | Subject) + (1 | VideoName),
@@ -807,11 +837,11 @@ We can now fit the logit mixed model
 #                         control = glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
 # summary(glmm_adapt_beg3a)
 
-glmm_adapt_beg3b <- glmer(Used ~ Condition * VerbType * cTrial +
-                          (1 | Subject) + (1 + Condition * VerbType | VideoName),
-                        data = d_l2_beg, family = "binomial",
-                        control = glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
-summary(glmm_adapt_beg3b)
+# glmm_adapt_beg3b <- glmer(Used ~ Condition * VerbType * cTrial +
+#                           (1 | Subject) + (1 + Condition * VerbType | VideoName),
+#                         data = d_l2_beg, family = "binomial",
+#                         control = glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
+# summary(glmm_adapt_beg3b)
 
 
 # maximal random effects
@@ -831,15 +861,30 @@ summary(glmm_adapt_beg3b)
 # anova(glmm_adapt_beg_min, glmm_adapt_beg2c, glmm_adapt_beg3b)
 
 # summary(glmm_adapt_beg2c)
-summary(glmm_adapt_beg3b)
+# summary(glmm_adapt_beg3b)
 
 # In the end we choose the more conservative model: glmm_adapt_beg3b
 ```
 
+
+```{r}
+# The final model to analyze adaptation to path vs manner verbs during the
+# beginning (=linear in log-odds space) phase of the experiment
+# the expression that is passed to load_or_fit()
+glmm_adapt_beg.expr <- "glmer(Used ~ Condition * VerbType * cTrial +
+                          (1 | Subject) + (1 + Condition * VerbType | VideoName),
+                        data = d_l2_beg, family = 'binomial',
+                        control = glmerControl(optimizer='bobyqa', optCtrl=list(maxfun=2e5)))"
+# load model or fit
+load_or_fit("glmm_adapt_beg", glmm_adapt_beg.expr)
+```
+
+
+
 Plot 
 
 ```{r fig.height = myfighe_NS_L2, fig.width = myfigwi}
-plot(allEffects(glmm_adapt_beg3b))
+plot(allEffects(glmm_adapt_beg))
 ```
 
 
@@ -851,7 +896,7 @@ plot(allEffects(glmm_adapt_beg3b))
 ### Adaptation to path verbs vs proficiency
 
 ```{r}
-fm_p_prof9.expr <- "bam(P_V ~
+fm_p_L2prof.expr <- "bam(Used ~
     Condition +
     te(Trial, ClozeScore, by = Condition) +
     s(Trial, Subject, bs = 'fs') +
@@ -859,28 +904,28 @@ fm_p_prof9.expr <- "bam(P_V ~
   data = dp_l2,
   family = 'binomial')"
 # load model or fit
-load_or_fit("fm_p_prof9", fm_p_prof9.expr)
-summary(fm_p_prof9)
+load_or_fit("fm_p_L2prof", fm_p_L2prof.expr)
+summary(fm_p_L2prof)
 ```
 
 Summary using gamtabs:
   
 ```{r, results = "asis"}
-gam_tb(fm_p_prof9)
+gam_tb(fm_p_L2prof)
 ```
 
 
 ```{r}
 # show by-speaker random smooths and by-item random intercepts
 par(mfrow = c(1, 2))
-plot(fm_p_prof9, select = 3)
-plot(fm_p_prof9, select = 4)
+plot(fm_p_L2prof, select = 3)
+plot(fm_p_L2prof, select = 4)
 ```
 
 
 
 ```{r, fig.height = myfighe_L2_prof, fig.width = myfigwi, results='hide'}
-plot_L2_profic(fm_p_prof9, primed_cond = 'Path')
+plot_L2_profic(fm_p_L2prof, primed_cond = 'Path')
 ```
 
 
@@ -895,7 +940,7 @@ dev.off()
 
 ```{r, results='hide'}
 # difference plot in 3D
-plot_diff2(fm_p_prof9, view = c('Trial', 'ClozeScore'),
+plot_diff2(fm_p_L2prof, view = c('Trial', 'ClozeScore'),
            comp = list(Condition = c('Path', 'Baseline')),
            rm.ranef = TRUE)
 ```
@@ -904,18 +949,29 @@ plot_diff2(fm_p_prof9, view = c('Trial', 'ClozeScore'),
 
 ### Adaptation to manner verbs vs proficiency
 
+<<<<<<< HEAD
 
 
 ```{r}
 fm_m_prof9.expr <- "bam(Used ~ Condition +
+=======
+TO DO:
+  
+- Model comparison showing that 3-way interaction with proficiency significantly improves the model
+
+
+
+```{r}
+fm_m_L2prof.expr <- "bam(Used ~ Condition +
+>>>>>>> 6f33fe118948107ed83524713334b87d9212d10b
 te(Trial, ClozeScore, by = Condition) +
 s(Trial, Subject, bs = 'fs') +
 s(VideoName, bs = 're'),
 data = dm_l2,
 family = 'binomial')"
 # load model or fit
-load_or_fit("fm_m_prof9", fm_m_prof9.expr)
-summary(fm_m_prof9)
+load_or_fit("fm_m_L2prof", fm_m_L2prof.expr)
+summary(fm_m_L2prof)
 ```
 
 
@@ -946,22 +1002,277 @@ itsadug::compareML(fm_m_prof9, fm_m_prof9_no3way)
 Summary using gamtabs:
   
 ```{r, results = "asis"}
-gam_tb(fm_m_prof9)
+gam_tb(fm_m_L2prof)
 ```
 
 
 ```{r}
 # show by-speaker random smooths and by-item random intercepts
 par(mfrow = c(1, 2))
-plot(fm_m_prof9, select = 3)
-plot(fm_m_prof9, select = 4)
+plot(fm_m_L2prof, select = 3)
+plot(fm_m_L2prof, select = 4)
 ```
 
 
 ```{r, fig.height = myfighe_L2_prof, fig.width = myfigwi, results='hide'}
-plot_L2_profic(fm_m_prof9, primed_cond = 'Manner')
+plot_L2_profic(fm_m_L2prof, primed_cond = 'Manner')
 ```
 
+```{r, results='hide'}
+# difference plot in 3D
+plot_diff2(fm_m_L2prof, view = c('Trial', 'ClozeScore'),
+           comp = list(Condition = c('Manner', 'Baseline')), rm.ranef = TRUE)
+```
+
+
+
+## Control analyses for L2 speakers
+
+For the L2 speakers, there is a possibility that adaptation is not guided by their expectations (as we argue in the paper), but by their lexical knowledge of the L2 verbs.
+For example, it might  be that they are primed only by the specific verbs they know, but not by those they do not know.
+To explore this possibility, we run the same analyses removing the two manner verbs that were less well known to L2 speakers in the baseline condition: *arrastrar* (=drag, 65% translation accuracy) and *tirar de* (=pull, 55% transl. acc.).
+
+
+
+### L2 speaker adaptation trial by trial (without proficiency in the model)
+
+#### Without *tirar*
+
+First a model excluding the least well known manner verb: *tirar de*.
+
+```{r}
+# Run the model as in main analysis, but with L2 data excluding items primed
+# with "tira de" (applies to subjects in Manner condition only); see 'data'
+# argument in call below
+# the expression that is passed to load_or_fit()
+gam_l2_notira.expr <- "bam(Used ~ VbType_Cond + s(Trial, by = VbType_Cond) +
+                    s(Trial, Subject, bs = 'fs') + s(VideoName, bs = 're'),
+                  data = d_l2 %>% filter(!(Condition == 'Manner' & MannerPrimeV == 'tira de')),
+                  family = 'binomial')"
+# load model or fit
+load_or_fit("gam_l2_notira", gam_l2_notira.expr)
+```
+
+Summary of the model:
+  
+```{r}
+summary(gam_l2_notira)
+```
+
+
+```{r}
+# show by-speaker random smooths and by-item random intercepts
+par(mfrow = c(1, 2))
+plot(gam_l2_notira, select = 5)
+plot(gam_l2_notira, select = 6)
+```
+
+
+Plot differences between conditions (model estimates):
+  
+```{r, fig.height = myfighe_NS_L2, fig.width = myfigwi, echo = FALSE, results = 'hide'}
+plot_gam_main(gam_l2_notira, "L2")
+```
+
+
+
+
+#### Without *arrastrar*
+
+Then a model excluding the 2nd least well known manner verb: *arrastrar*.
+
+
+```{r}
+# the expression that is passed to load_or_fit()
+# note data argument in expression below to subset right data
+gam_l2_noarrastra.expr <- "bam(Used ~ VbType_Cond + s(Trial, by = VbType_Cond) +
+                    s(Trial, Subject, bs = 'fs') + s(VideoName, bs = 're'),
+                  data = d_l2 %>% filter(!(Condition == 'Manner' & MannerPrimeV == 'arrastra')),
+                  family = 'binomial')"
+# load model or fit
+load_or_fit("gam_l2_noarrastra", gam_l2_noarrastra.expr)
+```
+
+
+Summary of the model:
+  
+```{r}
+summary(gam_l2_noarrastra)
+```
+
+
+```{r}
+# show by-speaker random smooths and by-item random intercepts
+par(mfrow = c(1, 2))
+plot(gam_l2_noarrastra, select = 5)
+plot(gam_l2_noarrastra, select = 6)
+```
+
+
+Plot differences between conditions (model estimates):
+  
+```{r, fig.height = myfighe_NS_L2, fig.width = myfigwi, echo = FALSE, results = 'hide'}
+plot_gam_main(gam_l2_noarrastra, "L2")
+```
+
+
+
+#### Without either *tirar* or *arrastrar*
+
+Finally a model that excludes both manner verbs not well known.
+
+
+```{r}
+# the expression that is passed to load_or_fit()
+# Note subset of data passed to 'data' argument
+gam_l2_no_tira_arrastra.expr <- "bam(Used ~ VbType_Cond + s(Trial, by = VbType_Cond) +
+                    s(Trial, Subject, bs = 'fs') + s(VideoName, bs = 're'),
+                  data = d_l2 %>% filter(!(Condition == 'Manner' & MannerPrimeV %in% c('tira de', 'arrastra'))),
+                  family = 'binomial')"
+# load model or fit
+load_or_fit("gam_l2_no_tira_arrastra", gam_l2_no_tira_arrastra.expr)
+```
+
+
+
+Summary of the model:
+  
+```{r}
+summary(gam_l2_no_tira_arrastra)
+```
+
+
+
+```{r}
+# show by-speaker random smooths and by-item random intercepts
+par(mfrow = c(1, 2))
+plot(gam_l2_no_tira_arrastra, select = 5)
+plot(gam_l2_no_tira_arrastra, select = 6)
+```
+
+
+Plot differences between conditions (model estimates):
+  
+```{r, fig.height = myfighe_NS_L2, fig.width = myfigwi, echo = FALSE, results = 'hide'}
+plot_gam_main(gam_l2_no_tira_arrastra, "L2")
+```
+
+
+
+### Manner adaptation with L2 proficiency in model
+
+
+#### Without *tira de*
+
+
+```{r}
+fm_m_L2prof_notira.expr <- "bam(Used ~ Condition +
+te(Trial, ClozeScore, by = Condition) +
+s(Trial, Subject, bs = 'fs') +
+s(VideoName, bs = 're'),
+data = dm_l2 %>% filter(!(Condition == 'Manner' & MannerPrimeV == 'tira de')),
+family = 'binomial')"
+# load model or fit
+load_or_fit("fm_m_L2prof_notira", fm_m_L2prof_notira.expr)
+```
+
+```{r}
+summary(fm_m_L2prof_notira)
+```
+
+
+```{r}
+# show by-speaker random smooths and by-item random intercepts
+par(mfrow = c(1, 2))
+plot(fm_m_L2prof_notira, select = 3)
+plot(fm_m_L2prof_notira, select = 4)
+```
+
+
+```{r, fig.height = myfighe_L2_prof, fig.width = myfigwi, results='hide'}
+plot_L2_profic(fm_m_L2prof_notira, primed_cond = 'Manner')
+```
+
+
+```{r, results='hide'}
+# difference plot in 3D
+plot_diff2(fm_m_L2prof_notira, view = c('Trial', 'ClozeScore'),
+           comp = list(Condition = c('Manner', 'Baseline')), rm.ranef = TRUE)
+```
+
+
+
+
+#### Without *arrastra*
+
+
+```{r}
+fm_m_L2prof_noarrastra.expr <- "bam(Used ~ Condition +
+te(Trial, ClozeScore, by = Condition) +
+s(Trial, Subject, bs = 'fs') +
+s(VideoName, bs = 're'),
+data = dm_l2 %>% filter(!(Condition == 'Manner' & MannerPrimeV == 'arrastra')),
+family = 'binomial')"
+# load model or fit
+load_or_fit("fm_m_L2prof_noarrastra", fm_m_L2prof_noarrastra.expr)
+```
+
+```{r}
+summary(fm_m_L2prof_noarrastra)
+```
+
+```{r}
+# show by-speaker random smooths and by-item random intercepts
+par(mfrow = c(1, 2))
+plot(fm_m_L2prof_noarrastra, select = 3)
+plot(fm_m_L2prof_noarrastra, select = 4)
+```
+
+```{r, fig.height = myfighe_L2_prof, fig.width = myfigwi, results='hide'}
+plot_L2_profic(fm_m_L2prof_noarrastra, primed_cond = 'Manner')
+```
+
+
+```{r, results='hide'}
+# difference plot in 3D
+plot_diff2(fm_m_L2prof_noarrastra, view = c('Trial', 'ClozeScore'),
+           comp = list(Condition = c('Manner', 'Baseline')), rm.ranef = TRUE)
+```
+
+
+
+#### Without either *tira de* or *arrastra*
+
+
+```{r}
+fm_m_L2prof_no_tira_arrastra.expr <- "bam(Used ~ Condition +
+te(Trial, ClozeScore, by = Condition) +
+s(Trial, Subject, bs = 'fs') +
+s(VideoName, bs = 're'),
+data = dm_l2 %>% filter(!(Condition == 'Manner' & MannerPrimeV %in% c('tira de', 'arrastra'))),
+family = 'binomial')"
+# load model or fit
+load_or_fit("fm_m_L2prof_no_tira_arrastra", fm_m_L2prof_no_tira_arrastra.expr)
+```
+
+```{r}
+summary(fm_m_L2prof_no_tira_arrastra)
+```
+
+
+```{r}
+# show by-speaker random smooths and by-item random intercepts
+par(mfrow = c(1, 2))
+plot(fm_m_L2prof_no_tira_arrastra, select = 3)
+plot(fm_m_L2prof_no_tira_arrastra, select = 4)
+```
+
+
+```{r, fig.height = myfighe_L2_prof, fig.width = myfigwi, results='hide'}
+plot_L2_profic(fm_m_L2prof_no_tira_arrastra, primed_cond = 'Manner')
+```
+
+<<<<<<< HEAD
 ```{r}
 # save to disk for thesis chapter
 tiff(file = "figures/gam_L2_prof-manner.tiff", width = 5.5, height = 4, units = "in", pointsize = 9.5, res = 800)
@@ -970,9 +1281,14 @@ dev.off()
 ```
 
 
+=======
+>>>>>>> 6f33fe118948107ed83524713334b87d9212d10b
 
 ```{r, results='hide'}
 # difference plot in 3D
-plot_diff2(fm_m_prof9, view = c('Trial', 'ClozeScore'),
+plot_diff2(fm_m_L2prof_no_tira_arrastra, view = c('Trial', 'ClozeScore'),
            comp = list(Condition = c('Manner', 'Baseline')), rm.ranef = TRUE)
 ```
+
+
+
