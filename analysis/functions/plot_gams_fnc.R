@@ -63,7 +63,7 @@ plot_L2_profic <- function(fm, primed_cond = NULL, ylim1 = c(-6, 8),
          col = c('red', 'blue'), lty = 1:2, box.lty = 0, cex = 1.5)
   # Now make plot for the model estimates at the different cloze scores in cloze_scores
   # par(mai=rep(0.2, 4))
-  par(mai = c(.7, .8, .5, 0))
+  par(mai = c(.4, .6, .3, 0))
   for(cloze in cloze_scores) {
     plot_smooth(fm, view = 'Trial', cond = list(Condition = 'Baseline', ClozeScore = cloze),
                 col = 'blue', lty = 2, rug = FALSE, ylim = ylim1, rm.ranef = TRUE,

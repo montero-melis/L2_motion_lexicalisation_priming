@@ -13,7 +13,7 @@ myylims <- c(-5, 5)
 
 # theme for ggplot
 mytheme <- theme_bw() + 
-  theme(#text = element_text(size = 10),
+  theme(text = element_text(size = 9),
         panel.border = element_blank(),
         panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
@@ -24,13 +24,13 @@ mytheme <- theme_bw() +
 plot_glmm <- function(fm, d, DV = NULL, ylims = myylims, nb_sims = 50) {
   # fm: the fitted glmer model
   # d: the dataframe used to fit the model
-  # DV: dependent variable (Path-verb or Manner-verb)
+  # DV: dependent variable (Path verb or Manner verb)
   # ylims: y-limits for ggplot
   # nb_sims: number of simulations when using arm::sim()
   
   # Define y-lab based on DV argument
-  myylab <- paste0("Log-odds of ", DV, "-verb")
-  myggtitle <- paste0(DV, "-verbs")
+  myylab <- paste0("Log-odds of ", DV, " verb")
+  myggtitle <- paste0(DV, " verbs")
   
   # get confidence intervals from models
   # simulate the coefficients using arm::sim and extract fixed effects
@@ -42,8 +42,8 @@ plot_glmm <- function(fm, d, DV = NULL, ylims = myylims, nb_sims = 50) {
   # compute 95% confidence intervals and put into df
   confint <- data.frame(t(sapply(estim, quantile, probs = c(.025, .5, .975))))
   names(confint) <- c("lower", "median", "upper")
-  confint$Group <- factor(c("Native speakers", "L2 learners"),
-                          levels = c("Native speakers", "L2 learners"))
+  confint$Group <- factor(c("Native\nspeakers", "L2 learners"),
+                          levels = c("Native\nspeakers", "L2 learners"))
 
   # Now extract subject estimates from model
   # (this is hacky, but couldn't figure out a better way)
@@ -54,7 +54,7 @@ plot_glmm <- function(fm, d, DV = NULL, ylims = myylims, nb_sims = 50) {
   model_pred <- model_pred  %>% group_by(Subject, Group) %>%
     summarise(Pred = mean(predicted))
   model_pred$Group <- factor(model_pred$Group, levels = c("NS", "L2"),
-                             labels = c("Native speakers", "L2 learners"))
+                             labels = c("Native\nspeakers", "L2 learners"))
 
   # plot using ggplot
   p <- ggplot(confint, aes(x = Group, y = median)) +
@@ -64,7 +64,7 @@ plot_glmm <- function(fm, d, DV = NULL, ylims = myylims, nb_sims = 50) {
     ylim(ylims)
   set.seed(123987)  # make horizontal jitter reproducible
   p <- p + geom_jitter(data = model_pred, aes(x = Group, y = Pred),
-                       height = 0, width = .5, size = 2, alpha = .4)
+                       height = 0, width = .5, size = 2, alpha = .3)
   p + mytheme + geom_hline(yintercept = 0) + ggtitle(myggtitle)
 }
 
