@@ -67,7 +67,7 @@ plot_L2_profic <- function(fm, primed_cond = NULL, ylim1 = c(-6, 8),
   for(cloze in cloze_scores) {
     plot_smooth(fm, view = 'Trial', cond = list(Condition = 'Baseline', ClozeScore = cloze),
                 col = 'blue', lty = 2, rug = FALSE, ylim = ylim1, rm.ranef = TRUE,
-                hide.label = TRUE, ylab = paste0('Log-odds\nof ', tolower(primed_cond), " verb"),
+                hide.label = TRUE, ylab = paste0('Log-odds\nof ', tolower(primed_cond), ' verb'),
                 main = paste('L2 proficiency =', cloze))
     plot_smooth(fm, view = 'Trial', cond = list(Condition = primed_cond, ClozeScore = cloze),
                 col = 'red', rug = FALSE, rm.ranef = TRUE, hide.label = TRUE, add = TRUE)
@@ -77,26 +77,26 @@ plot_L2_profic <- function(fm, primed_cond = NULL, ylim1 = c(-6, 8),
 
 # function to plot the effects by L2 speakers' proficiency from GAMs
 # this time showing DIFFERENCES
-plot_L2_profic_diff <- function(fm, primed_cond = NULL, ylim1 = c(-6, 8),
+plot_L2_profic_diff <- function(fm, primed_cond = NULL, ylim1 = c(-2.5, 8),
                                 cloze_range = c(10, 35)) {
   cloze_scores <- seq(cloze_range[1], cloze_range[2], length.out = 6)
-
-    layout(matrix(1:6, ncol=3, byrow=TRUE))
+  mytitle <- paste0('Adaptation effect as a function of L2 proficiency:\n', primed_cond, '-primed \u2212 baseline condition ')
+  myylab <- paste0('Diff. in log-odds\nof ', tolower(primed_cond), ' verb')
   
   # Now make plot for the model estimates at the different cloze scores in cloze_scores
-  # par(mai=rep(0.2, 4))
-  par(mai = c(.7, .8, .5, .2))
+  layout(matrix(1:6, ncol=3, byrow=TRUE))
+  par(mai = c(.5, .8, .7, .2), mgp = c(2.3, .8, 0))
   for(cloze in cloze_scores) {
     plot_diff(fm, view = 'Trial', comp = list(Condition = c(primed_cond, 'Baseline')),
-              cond = list(ClozeScore = cloze))#,
-    #             col = 'blue', lty = 2, rug = FALSE, ylim = ylim1, rm.ranef = TRUE,
-    #             hide.label = TRUE, ylab = paste0('Log-odds\nof ', primed_cond, " verb"),
-    #             main = paste('Cloze score =', cloze))
-    # plot_smooth(fm, view = 'Trial', cond = list(Condition = primed_cond, ClozeScore = cloze),
-    #             col = 'red', rug = FALSE, rm.ranef = TRUE, hide.label = TRUE, add = TRUE)
+              cond = list(ClozeScore = cloze),
+              ylim = ylim1, hide.label = TRUE, ylab = myylab, main = "")
+    title(main = paste('L2 proficiency =', cloze), font.main = 1, line = 1)
+    
   }
   # https://www.r-bloggers.com/two-tips-adding-title-for-graph-with-multiple-plots-add-significance-asterix-onto-a-boxplot/
-  mtext("Difference plots", outer = TRUE)#, cex = 1.5)
+  # mtext("Difference plots", outer = TRUE, cex = 1.5)
+  # mtext("My 'Title' in a strange place", side = 3, line = -1, outer = TRUE)
+  title(mytitle, line = -2, outer = TRUE, cex = 1)
 }
 
 
