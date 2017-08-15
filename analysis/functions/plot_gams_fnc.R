@@ -75,6 +75,32 @@ plot_L2_profic <- function(fm, primed_cond = NULL, ylim1 = c(-6, 8),
 }
 
 
+# adapt function for EuroSLA slides
+plot_L2_profic_eurosla <- function(fm, primed_cond = NULL, ylim1 = c(-6, 8),
+                           cloze_range = c(10, 35), nb_plots = 4) {
+  cloze_scores <- seq(cloze_range[1], cloze_range[2], length.out = nb_plots)
+  # we want to have one common legend for all plots
+  layout(rbind(1, matrix(2:(nb_plots + 1), ncol = nb_plots, byrow=TRUE)), heights = c(1, 6))
+  # add common legend
+  par(mai=c(0,0,0,0))
+  plot.new()
+  legend(x = "center", ncol = 2, legend = c(paste0(primed_cond, '-primed'), 'Baseline'),
+         col = c('red', 'blue'), lty = 1:2, box.lty = 0, cex = 1.5)
+  # Now make plot for the model estimates at the different cloze scores in cloze_scores
+  # par(mai=rep(0.2, 4))
+  par(mai = c(.4, .6, .3, 0), mgp = c(1.6, .8, 0))
+  for(cloze in cloze_scores) {
+    plot_smooth(fm, view = 'Trial', cond = list(Condition = 'Baseline', ClozeScore = cloze),
+                col = 'blue', lty = 2, rug = FALSE, ylim = ylim1, rm.ranef = TRUE,
+                hide.label = TRUE, ylab = paste0('Log-odds\nof ', tolower(primed_cond), ' verb'),
+                main = paste('L2 proficiency =', round(cloze)))
+    plot_smooth(fm, view = 'Trial', cond = list(Condition = primed_cond, ClozeScore = cloze),
+                col = 'red', rug = FALSE, rm.ranef = TRUE, hide.label = TRUE, add = TRUE)
+  }
+}
+
+
+
 # function to plot the effects by L2 speakers' proficiency from GAMs
 # this time showing DIFFERENCES
 plot_L2_profic_diff <- function(fm, primed_cond = NULL, ylim1 = c(-2.5, 8),
@@ -99,6 +125,29 @@ plot_L2_profic_diff <- function(fm, primed_cond = NULL, ylim1 = c(-2.5, 8),
   title(mytitle, line = -2, outer = TRUE, cex = 1)
 }
 
+
+# adapt function for EuroSLA slides
+plot_L2_profic_diff_eurosla <- function(fm, primed_cond = NULL, ylim1 = c(-2.5, 8),
+                                cloze_range = c(10, 35), nb_plots = 4) {
+  cloze_scores <- seq(cloze_range[1], cloze_range[2], length.out = nb_plots)
+  mytitle <- paste0(primed_cond, '-primed \u2212 baseline condition ')
+  myylab <- paste0('Diff. in log-odds\nof ', tolower(primed_cond), ' verb')
+  
+  # Now make plot for the model estimates at the different cloze scores in cloze_scores
+  layout(matrix(1:nb_plots, ncol = nb_plots, byrow=TRUE))
+  par(mai = c(.4, .6, .7, 0), mgp = c(1.6, .8, 0))
+  for(cloze in cloze_scores) {
+    plot_diff(fm, view = 'Trial', comp = list(Condition = c(primed_cond, 'Baseline')),
+              cond = list(ClozeScore = cloze),
+              ylim = ylim1, hide.label = TRUE, ylab = myylab, main = "")
+    title(main = paste('L2 proficiency =', round(cloze)), font.main = 1, line = 1)
+    
+  }
+  # https://www.r-bloggers.com/two-tips-adding-title-for-graph-with-multiple-plots-add-significance-asterix-onto-a-boxplot/
+  # mtext("Difference plots", outer = TRUE, cex = 1.5)
+  # mtext("My 'Title' in a strange place", side = 3, line = -1, outer = TRUE)
+  title(mytitle, line = -1, outer = TRUE, cex = 1)
+}
 
 
 ## OLD:

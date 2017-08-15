@@ -19,7 +19,9 @@ mytheme <- theme_bw() +
         panel.grid.minor = element_blank(),
         panel.background = element_blank(),
         axis.line.x = element_line(color="black"),
-        axis.line.y = element_line(color="black"))
+        axis.line.y = element_line(color="black"),
+        plot.title = element_text(hjust = 0.5)  # center title plot
+        )
 
 plot_glmm <- function(fm, d, DV = NULL, ylims = myylims, nb_sims = 1000) {
   # fm: the fitted glmer model
@@ -64,7 +66,7 @@ plot_glmm <- function(fm, d, DV = NULL, ylims = myylims, nb_sims = 1000) {
     ylim(ylims)
   set.seed(123987)  # make horizontal jitter reproducible
   p <- p + geom_jitter(data = model_pred, aes(x = Group, y = Pred),
-                       height = 0, width = .5, size = 2, alpha = .3)
+                       height = 0, width = .25, size = 2, alpha = .3)
   p + mytheme + geom_hline(yintercept = 0) + ggtitle(myggtitle)
 }
 
