@@ -1,0 +1,1 @@
+This subfolder is used to save figures from the R scripts. These can then later be used in word files or powerpoint presentations.

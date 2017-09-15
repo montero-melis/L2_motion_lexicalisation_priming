@@ -1,0 +1,1 @@
+This subfolder is used to save R objects containing models that take a long time to fit, using the load_or_fit() function. See that function for details.

@@ -9,8 +9,9 @@
 *.docx
 *.html
 
-analysis/figures/*
-analysis/gamms/*
+*.tiff
+
+analysis/gamms/*.rda
 gamms/*
 
 audiofiles/*
