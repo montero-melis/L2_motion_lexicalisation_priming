@@ -1,0 +1,593 @@
+---
+title: "reply_vanRij"
+author: "Guillermo Montero-Melis"
+date: "13 september 2017"
+output:
+  html_document:
+    depth: 3
+    number_sections: yes
+    theme: default
+    toc: yes
+  pdf_document:
+    number_sections: yes
+    toc: yes
+  word_document:
+    toc: yes
+
+---
+
+In this report we carry out the GAMM analyses suggested by Jacolien van Rij (emails from 12 Sept 2017).
+
+## Libraries
+
+```{r, include = TRUE, echo = TRUE, warning = FALSE, message = FALSE}
+library(dplyr)
+packageVersion('dplyr')
+library(tidyr)
+packageVersion('tidyr')  # useful for gather() to convert from wide to long
+library(mgcv)  # GAMs and GAMMs (Wood 2006)
+packageVersion('mgcv')  # GAMs and GAMMs (Wood 2006)
+library(itsadug)
+packageVersion('itsadug')
+# library(lme4)
+# packageVersion('lme4')
+# library(ggplot2)
+# packageVersion('ggplot2')
+# library(boot)  # for inv.logit()
+# packageVersion('boot')  # for inv.logit()
+# library(knitr)  # for kable()
+# packageVersion('knitr')  # for kable()
+# library(lazyeval)  # lazy evaluation used in bysubj() function [summarise_]
+# packageVersion('lazyeval')
+# library(effects)
+# library(xtable)
+```
+
+
+
+
+## Data loading and processing
+
+```{r}
+##  Load data
+# The data is created in the script 'processing/compute_dependent_measures.R'
+# There is the normal and the liberally coded version (see script for difference).
+# Here I use the normal coding.
+
+# load
+d <- read.csv('../data/data_DVs.csv', fileEncoding = 'UTF-8', stringsAsFactors = TRUE)
+# simplify somewhat
+d <- d %>%
+  select(Subject:VideoName, P_V, M_V) %>%
+  rename(Trial = VideoTrial)
+# head(d)
+# str(d)
+
+# Rename "Control" condition to "Baseline"
+levels(d$Condition)[levels(d$Condition) == "Control"] <- "Baseline"
+
+# participant data
+ppts <- read.csv("../data/participants.csv", fileEncoding = "UTF-8",
+                 stringsAsFactors = TRUE)
+# transform ClozeScore to z-score (as.vector prevents it from becoming a matrix)
+ppts$zClozeScore <- as.vector(scale(ppts$ClozeScore))
+# center ClozeScore but not scaling (as.vector prevents it from becoming a matrix)
+ppts$cClozeScore <- as.vector(scale(ppts$ClozeScore, scale = FALSE))
+
+# add speakers' clozescore to d:
+d <- left_join(d, ppts %>% select(Subject, ClozeScore, zClozeScore, cClozeScore))
+
+# Subject needs to be a factor
+d$Subject <- factor(d$Subject)
+
+# in Group, let the native speakers (NS) be the reference group
+d$Group <- factor(d$Group, levels = c('NS', 'L2'))
+
+head(d)
+str(d)
+```
+
+
+## Source some convenience functions
+
+```{r}
+## Source somewhat more complex functions
+
+# source multiplot function
+source("functions/multiplot_fnc.R")
+
+# Function used to load models if they have already been saved,
+# rather than fitting them anew each time the script is called
+source("functions/load_or_fit_fnc.R")
+
+# Two functions to a) plot the differences between NS and L2 speakers from GAMMs,
+# and b) plot the effects by L2 speakers' proficiency from GAMMs
+source("functions/plot_gams_fnc.R")
+```
+
+
+
+# Guillermo's original analyses
+
+## Data for GAMs
+
+- We will subset the data so that we can run one model for native speakers and another one for L2 speakers
+- In each model we compare Baseline Path vs Primed Path and Baseline Manner vs Exposed Manner
+
+Below: Subset data, define factors, set coding scheme, etc.
+
+```{r}
+## Single factor to model VerbType * Condition, using dummy coding:
+# (The way to analyze crossed factors is to combine their levels into 
+# a single factor, see Wood's comment here
+# http://grokbase.com/t/r/r-help/113qaadxt4/r-how-to-add-in-interaction-terms-in-gamm)
+
+# First need to convert data to long format:
+d_long <- gather(d, VerbType, Used, P_V:M_V)
+# single factor
+d_long$VbType_Cond <- with(d_long, interaction(VerbType, Condition))
+
+# For the subjects  to be properly fitted as random smooths in the GAMs
+# we have to "pretend" that a baseline subject is two different subjects,
+# one for the comparison to path-primed, the other to manner-primed participants;
+# this may not be ideal statistically, but not doing this would turn the random
+# smooths into random intercepts, which is much worse.
+d_long$Subject <- with(d_long, interaction(Subject, VerbType))
+
+## Subset data:
+# Data for analysis of Native speakers (note we are removing observations that
+# correspond to path verbs produced in the manner-primed condition or to manner
+# verbs produced in the path-primed condition)
+d_ns <- d_long %>% filter(Group == "NS" & ! VbType_Cond %in% c("P_V.Manner", "M_V.Path"))
+# drop unused factors for subject (I think this is important for gam fitting)
+d_ns$Subject <- factor(d_ns$Subject)
+# Data for analysis of L2 speakers
+d_l2 <- d_long %>% filter(Group == "L2" & ! VbType_Cond %in% c("P_V.Manner", "M_V.Path"))
+d_l2$Subject <- factor(d_l2$Subject)
+
+# Order levels correctly in each data frame
+d_ns$VbType_Cond <- factor(d_ns$VbType_Cond, levels = c("P_V.Baseline", "P_V.Path",
+                                                      "M_V.Baseline", "M_V.Manner"))
+d_l2$VbType_Cond <- factor(d_l2$VbType_Cond, levels = c("P_V.Baseline", "P_V.Path",
+                                                      "M_V.Baseline", "M_V.Manner"))
+# note that log-odds of path verbs in baseline condition becomes the reference
+# level in both groups (NS and L2 speakers)
+contrasts(d_ns$VbType_Cond)
+contrasts(d_l2$VbType_Cond)
+```
+
+
+## Differences in adaptation over time (trial-by-trial analysis using GAMs)
+
+
+### Native speakers -- trial-by-trial
+
+Previous models (not shown here) showed that random *intercepts* by items made sense, but not random slopes.
+We add the former but not the latter.
+
+Thus, the model is specified as:
+
+`PathVerb ~ VbType_Cond + s(Trial, by = VbType_Cond) + s(Trial, Subject, bs = 'fs') + s(VideoName, bs = 're')`
+
+Predictors are:
+
+- `VbType_Cond`: Group-Condition interaction as a fixed effect
+- `s(Trial, by = VbType_Cond)`: A smooth function of `Trial` allowing the function to differ for each level of Group-Condition (thin plate regression splines, the default)
+- `s(Trial, Subject, bs = 'fs')`: Factor smooths for `Subject` to capture non-linear random effects of speakers
+- `s(VideoName, bs = 're')`: Random intercepts by items (i.e., `VideoName`)
+
+
+```{r gam_ns}
+# the expression that is passed to load_or_fit()
+gam_ns.expr <- "bam(Used ~ VbType_Cond + s(Trial, by = VbType_Cond) +
+                    s(Trial, Subject, bs = 'fs') + s(VideoName, bs = 're'),
+                  data = d_ns,
+                  family = 'binomial')"
+# load model or fit
+load_or_fit("gam_ns", gam_ns.expr)
+```
+
+Summary of the model:
+
+```{r}
+summary(gam_ns)
+```
+
+
+
+Significance of the different terms in the model:
+
+```{r}
+anova(gam_ns)
+```
+
+
+Plot model estimates by condition, random smooth adjustments by speakers and QQ-plot of random by-item intercepts:
+
+```{r, results = 'hide'}
+## plot
+plot_smooth(gam_ns, view = 'Trial', plot_all = 'VbType_Cond', rm.ranef=TRUE)
+```
+
+
+```{r}
+# show by-speaker random smooths and by-item random intercepts
+par(mfrow = c(1, 2))
+plot(gam_ns, select = 5)
+plot(gam_ns, select = 6)
+```
+
+
+
+Plot differences between conditions (model estimates):
+
+```{r}
+plot_gam_main(gam_ns, "NS")  # choose this on Linux machine
+# on my old windows computer:
+# plot_gam_main(gam_ns, "NS", mark.diff = FALSE)  # use of mark.diff is a hack to
+# avoid an error that will stop the whole thing when I compile it on my work pc
+```
+
+
+
+
+
+# Following J van Rij's suggestions
+
+I directly go to JvR's 3rd suggestion; quote:
+
+```
+[...] So a better idea is probably to go completely binary:
+
+dat$IsPrime <- ifelse(dat$Condition == "Prime", 1, 0)
+dat$IsPath   <- ifelse(dat$Group == "Path-verb", 1, 0)
+dat$IsPathAndPrime <- ifelse(dat$Condition == "Prime" & dat$Group ==  "Path-verb", 1, 0)
+
+# 3-way interaction model:
+DV ~ s(Trial) + s(Trial, by=IsPrime) + s(Trial, by=IsPath) + s(Trial, by=IsPathAndPrime)
+# only 2-way interactions:
+DV ~ s(Trial) + s(Trial, by=IsPrime) + s(Trial, by=IsPath)
+
+The partial effect of the interaction term ("the difference of the difference") could be visualized by mgcv's plot() function, or by itsadug's get_modelterm() and plot_error() for more flexibility (see examples in help file of get_modelterm()).
+```
+
+## Data coding
+
+
+```{r}
+# Original coding of data involves two separate binary DVs for each description:
+# P_V = was a path verb used (yes/no); M_V = was a manner verb used (yes/no)
+head(d, 3)
+
+# Instead of two separate DVs for the use of Path and Manner verbs, create an
+# indicator variable VerbType and let the DV (=Used) denote whether that verb
+# type was used (=1) or not (=0)
+d_jvr <- gather(d, VerbType, Used, P_V:M_V)
+
+# Drop unused variables to simplify somewhat
+d_jvr <- d_jvr %>% select(-(ClozeScore:cClozeScore))
+
+# Apply JvR's coding scheme:
+d_jvr$IsPrimed <- ifelse(d_jvr$Condition == "Baseline", 0, 1)
+d_jvr$IsManner <- ifelse(d_jvr$VerbType == "P_V", 0, 1)
+d_jvr$IsMannerAndPrimed <- with(d_jvr, ifelse(IsPrimed == 1 & IsManner ==  1, 1, 0))
+
+# We remove observations that correspond to path verbs produced in the manner-
+# primed condition or to manner verbs produced in the path-primed condition
+d_jvr <- d_jvr %>% filter(! ((Condition == "Path" & VerbType == "M_V") | 
+                           Condition == "Manner" & VerbType == "P_V"))
+
+# this is how we have defined our conditions
+unique(d_jvr[, c("Condition", "VerbType", "IsPrimed", "IsManner", "IsMannerAndPrimed")])
+
+# For the subjects in baseline condition to be properly fitted as random smooths
+# in the GAMswe have to "pretend" that a baseline subject is two different
+# subjects, one for the comparison to path-primed, the other to manner-primed
+# participants; this may not be ideal statistically, but not doing this would
+# turn the random smooths into random intercepts, which is worse.
+d_jvr$Subject <- with(d_jvr, interaction(Subject, VerbType))
+
+# Subset data for native speakers only and for L2 learners only
+d_jvr_ns <- d_jvr %>% filter(Group == "NS")
+d_jvr_ns$Subject <- factor(d_jvr_ns$Subject)  # drop unused levels
+d_jvr_l2 <- d_jvr %>% filter(Group == "L2")
+d_jvr_l2$Subject <- factor(d_jvr_l2$Subject)  # drop unused levels
+
+head(d_jvr_ns)
+str(d_jvr_ns)
+summary(d_jvr_ns)
+```
+
+
+## GAMMs Native speakers
+
+### 3-way interaction model:
+
+```{r}
+# the expression that is passed to load_or_fit()
+gam_ns_jvr_3way.expr <- "bam(Used ~
+s(Trial) + s(Trial, by = IsPrimed) + s(Trial, by = IsManner) + s(Trial, by = IsMannerAndPrimed) +
+s(Trial, Subject, bs = 'fs', m = 1) + s(Trial, VideoName, bs = 'fs', m = 1),
+data = d_jvr_ns,
+family = 'binomial')"
+# load model or fit
+load_or_fit("gam_ns_jvr_3way", gam_ns_jvr_3way.expr)
+```
+
+
+The model issues the following warning when fitted:
+
+```
+## model has repeated 1-d smooths of same variable.
+```
+The model summary suggests that the critical 3-way interaction is not significant, see coefficient `s(Trial):IsMannerAndPrimed`
+(this will be confirmed when plotting its estimate below):
+
+```{r}
+summary(gam_ns_jvr_3way)
+```
+
+The fourth plot shows the interaction term `s(Trial):IsMannerAndPrimed`. Its 95% CI overlaps with zero, i.e. there is no adjustment to be made to the MannerAndPrimed condition beyond the additive effect of IsPrimed and IsManner.
+
+```{r}
+plot.gam(gam_ns_jvr_3way)
+```
+
+Now, when trying to visualize the estimated effects using `get_modelterm()` and `plot_error()`, the result suggests something is wrong with this model. I don't know how to make sense of the following plot:
+
+```{r}
+# # Get list with predictions:
+# p <- get_modelterm(gam_ns_jvr_3way, select = 4)
+# emptyPlot(range(p$terms), range(p$fit), h=0)
+# plot_error(p$terms, p$fit, p$se.fit, shade=TRUE, xpd=TRUE)
+
+# Get list with predictions and plot each of the coefficients
+# Repeat the same thing with coefficients 1 through 3
+for(i in 1:4) {
+  p <- get_modelterm(gam_ns_jvr_3way, select = i)
+  emptyPlot(range(p$terms), range(p$fit), h=0)
+  plot_error(p$terms, p$fit, p$se.fit, shade=TRUE, xpd=TRUE)
+}
+
+
+```
+
+Plot the random effects (following the example in `?get_modelterm`):
+
+```{r}
+# Plot random effects in separate panels:
+pp <- get_modelterm(gam_ns_jvr_3way, select=5, as.data.frame=TRUE)
+
+require(lattice)
+lattice::xyplot(fit~Trial|Subject, 
+                data=pp, type="l",
+                xlab="Trial", ylab="Partial effect")
+```
+
+We can see that counting Subjects in the baseline condition twice, once for P_V and once for M_V, might in fact lead to redundancy in the data. Here we plot a selection and it seems like the estimated random effects for a subject for P_V are the mirror image of their estimated random effects for M_V:
+
+```{r}
+# Plot selection of subjects:
+pp <- get_modelterm(gam_ns_jvr_3way, select=5,
+                    cond=list(Subject=c(
+                      'NS_186.P_V', 'NS_186.M_V', 'NS_187.P_V', 'NS_187.M_V',
+                      'NS_188.P_V', 'NS_188.M_V', 'NS_190.P_V', 'NS_190.M_V',
+                      'NS_160.P_V', 'NS_160.M_V')),
+                    as.data.frame=TRUE)
+lattice::xyplot(fit~Trial|Subject, 
+                data=pp, type="l",
+                xlab="Trial", ylab="Partial effect")
+```
+
+
+
+The autocorrelation of the residuals in the model seems not to be great:
+
+```{r}
+acf(resid(gam_ns_jvr_3way))
+```
+
+
+### 2-way interaction model:
+
+
+```{r}
+# the expression that is passed to load_or_fit()
+gam_ns_jvr_2way.expr <- "bam(Used ~
+s(Trial) + s(Trial, by = IsPrimed) + s(Trial, by = IsManner) +
+s(Trial, Subject, bs = 'fs', m = 1) + s(Trial, VideoName, bs = 'fs', m = 1),
+data = d_jvr_ns,
+family = 'binomial')"
+# load model or fit
+load_or_fit("gam_ns_jvr_2way", gam_ns_jvr_2way.expr)
+```
+
+
+The model issues the following warning when fitted:
+
+```
+## model has repeated 1-d smooths of same variable.
+```
+
+```{r}
+summary(gam_ns_jvr_2way)
+```
+
+Plot estimates:
+
+```{r}
+plot.gam(gam_ns_jvr_2way)
+```
+
+Again, when trying to visualize the estimated effects using `get_modelterm()` and `plot_error()`, the result suggests something is wrong with the model:
+
+```{r}
+# Repeat the same thing with coefficients 1 through 3
+for(i in 1:3) {
+  p <- get_modelterm(gam_ns_jvr_2way, select = i)
+  emptyPlot(range(p$terms), range(p$fit), h=0)
+  plot_error(p$terms, p$fit, p$se.fit, shade=TRUE, xpd=TRUE)
+}
+```
+
+Plot the random effects (following the example in `?get_modelterm`):
+
+```{r}
+# Plot random effects in separate panels:
+pp <- get_modelterm(gam_ns_jvr_2way, select=4, as.data.frame=TRUE)
+
+require(lattice)
+lattice::xyplot(fit~Trial|Subject, 
+                data=pp, type="l",
+                xlab="Trial", ylab="Partial effect")
+```
+
+
+The autocorrelation of the residuals in the model seems not to be great:
+
+```{r}
+acf(resid(gam_ns_jvr_2way))
+```
+
+
+### Model comparison
+
+Does the model with the 3-way interaction provide a significantly better fit than the one without it? No!
+
+```{r}
+itsadug::compareML(gam_ns_jvr_3way, gam_ns_jvr_2way) 
+```
+
+
+
+## GAMMs L2 learners
+
+### 3-way interaction model:
+
+```{r}
+# the expression that is passed to load_or_fit()
+gam_l2_jvr_3way.expr <- "bam(Used ~
+s(Trial) + s(Trial, by = IsPrimed) + s(Trial, by = IsManner) + s(Trial, by = IsMannerAndPrimed) +
+s(Trial, Subject, bs = 'fs', m = 1) + s(Trial, VideoName, bs = 'fs', m = 1),
+data = d_jvr_l2,
+family = 'binomial')"
+# load model or fit
+load_or_fit("gam_l2_jvr_3way", gam_l2_jvr_3way.expr)
+```
+
+
+The model issues the following warning when fitted:
+
+```
+## Warning in gam.side(sm, X, tol = .Machine$double.eps^0.5): model has
+## repeated 1-d smooths of same variable.
+```
+The model summary suggests that the critical 3-way interaction is not significant. This is confirmed when plotting its estimate below.
+
+```{r}
+summary(gam_l2_jvr_3way)
+```
+
+The fourth plot shows the interaction term. Its 95% CI overlaps with zero, i.e. there is no adjustment to be made to the MannerAndPrimed condition beyond the additive effect of IsPrimed and IsManner.
+
+```{r}
+plot.gam(gam_l2_jvr_3way)
+```
+
+Now, when trying to visualize the estimated effects using `get_modelterm()` and `plot_error()`, the result suggests something is wrong with this model:
+
+```{r}
+# Get list with predictions:
+p <- get_modelterm(gam_l2_jvr_3way, select = 4)
+emptyPlot(range(p$terms), range(p$fit), h=0)
+plot_error(p$terms, p$fit, p$se.fit, shade=TRUE, xpd=TRUE)
+```
+
+
+The autocorrelation of the residuals in the model again seems low, although somewhat greater than for the native speaker model:
+
+```{r}
+acf(resid(gam_l2_jvr_3way))
+```
+
+
+### 2-way interaction model:
+
+
+```{r}
+# the expression that is passed to load_or_fit()
+gam_l2_jvr_2way.expr <- "bam(Used ~
+s(Trial) + s(Trial, by = IsPrimed) + s(Trial, by = IsManner) +
+s(Trial, Subject, bs = 'fs', m = 1) + s(Trial, VideoName, bs = 'fs', m = 1),
+data = d_jvr_l2,
+family = 'binomial')"
+# load model or fit
+load_or_fit("gam_l2_jvr_2way", gam_l2_jvr_2way.expr)
+```
+
+
+The model issues the following warning when fitted:
+
+```
+## model has repeated 1-d smooths of same variable.
+```
+
+```{r}
+summary(gam_l2_jvr_2way)
+```
+
+Plot estimates:
+
+```{r}
+plot.gam(gam_l2_jvr_2way)
+```
+
+Again, when trying to visualize the estimated effects using `get_modelterm()` and `plot_error()`, the result suggests something is wrong with the model:
+
+```{r}
+# Repeat the same thing with coefficients 1 through 3
+for(i in 1:3) {
+  p <- get_modelterm(gam_l2_jvr_2way, select = i)
+  emptyPlot(range(p$terms), range(p$fit), h=0)
+  plot_error(p$terms, p$fit, p$se.fit, shade=TRUE, xpd=TRUE)
+}
+```
+
+Plot the random effects (following the example in `?get_modelterm`):
+
+```{r}
+# Plot random effects in separate panels:
+pp <- get_modelterm(gam_l2_jvr_2way, select=4, as.data.frame=TRUE)
+
+require(lattice)
+lattice::xyplot(fit~Trial|Subject, 
+                data=pp, type="l",
+                xlab="Trial", ylab="Partial effect")
+```
+
+
+The autocorrelation of the residuals in the model seems not to be great:
+
+```{r}
+acf(resid(gam_l2_jvr_2way))
+```
+
+
+
+### Model comparison
+
+Does the model with the 3-way interaction provide a significantly better fit than the one without it? No!
+
+```{r}
+itsadug::compareML(gam_l2_jvr_3way, gam_l2_jvr_2way) 
+```
+
+
+
+# Session info
+
+```{r}
+sessionInfo()
+```
+
+
