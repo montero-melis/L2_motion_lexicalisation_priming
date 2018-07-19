@@ -91,8 +91,6 @@ ppts$cClozeScore <- as.vector(scale(ppts$ClozeScore, scale = FALSE))
 # Subject needs to be a factor	
 d$Subject <- factor(d$Subject)	
 
-# in Group, let the native speakers (NS) be the reference group	
-d$Group <- factor(d$Group, levels = c('NS', 'L2'))	
 
 
 # # Add info about prime verbs to the data file (by joining two dataframes)	
@@ -135,21 +133,18 @@ d_long$Subject <- with(d_long, interaction(Subject, VerbType))
 # correspond to path verbs produced in the manner-primed condition or to manner	
 # verbs produced in the path-primed condition)	
 d_mod <- d_long %>% filter(! VbType_Cond %in% c("P_V.Manner", "M_V.Path"))	
+rm(d_long)  # remove to avoid using it by mistake
+
 # drop unused factors for subject (I think this is important for gam fitting)	
 d_mod$Subject <- factor(d_mod$Subject)	
 
-# Use contrast coding to compare groups	
-contrasts(d_mod$Group) <- - contr.sum(2) / 2	
-colnames(contrasts(d_mod$Group)) <- "L2_vs_NS"	
-contrasts(d_mod$Group)	
 
-
-## Specify some global parameters	
-
-# adjust figure heght/width when not going with default (espec. for 2x2 plots)	
-myfighe_NS_L2 <- 6	
-myfighe_L2_prof <- 6	
-myfigwi <- 7	
+# ## Specify some global parameters	
+# 
+# # adjust figure heght/width when not going with default (espec. for 2x2 plots)	
+# myfighe_NS_L2 <- 6	
+# myfighe_L2_prof <- 6	
+# myfigwi <- 7	
 
 
 ## Source somewhat more complex functions	
@@ -192,60 +187,52 @@ glmm_tb <- function(fm) {
 
 
 #' # Analyses and results	
-#' 	
-#' 	
 
 
-#' ## Differences in adaptation over time (trial-by-trial analysis using GAMs)	
+#' ### Adaptation -- L2 vs natives using GLMMs
 
-#' 	
-#' ### L2-speaker adaptation -- beginning of experiment	
-#' 	
-#' We now model only the linear part of the curve for Path and Manner, so that we can run a mixed logit model and test for differences in slopes between path and manner conditions.	
-#' 	
-#' 	
-# linear part corresponds to trials 1-9	
-d_l2_beg <- d_l2 %>% filter(Trial %in% 1:9)	
-# This time we want to analyze it as a 2 x 2 design: 	
-# VerbType (Path vs Manner) x Condition (Exposed vs Baseline)	
-# The two factors interact with themselves and with Trial (centred)	
+# We analyze it as a 2x2x2 design, with Trial as an additional continuous predictor,
+# All predictors interact:
+# - VerbType: Path vs Manner
+# - Condition: Exposed vs Baseline
+# - LanguageGroup: L2 vs NS
+# - Trial: 1-32 (centred)
 
 # VerbType -- use contrast coding	
-d_l2_beg$VerbType <- factor(d_l2_beg$VerbType)	
-contrasts(d_l2_beg$VerbType) <- - contr.sum(2) / 2	
-colnames(contrasts(d_l2_beg$VerbType)) <- "P_vs_M"	
-contrasts(d_l2_beg$VerbType)	
+d_mod$VerbType <- factor(d_mod$VerbType)	
+contrasts(d_mod$VerbType) <- - contr.sum(2) / 2	
+colnames(contrasts(d_mod$VerbType)) <- "P_vs_M"	
+contrasts(d_mod$VerbType)	
+
+# (Language) Group -- use contrast coding	
+contrasts(d_mod$Group) <- contr.sum(2) / 2	
+colnames(contrasts(d_mod$Group)) <- "L2_vs_NS"	
+contrasts(d_mod$Group)	
 
 # Condition (now becomes a binary variable: Path/Manner become "Primed")	
-levels(d_l2_beg$Condition)[levels(d_l2_beg$Condition) %in% c("Path", "Manner")] <- "Primed"	
-levels(d_l2_beg$Condition)	
-table(d_l2_beg$Condition)  # roughly balanced	
+levels(d_mod$Condition)[levels(d_mod$Condition) %in% c("Path", "Manner")] <- "Primed"	
+levels(d_mod$Condition)	
+table(d_mod$Condition)  # roughly balanced (remember Baseline ppts are "doubled")
 # contrast coding	
-contrasts(d_l2_beg$Condition) <- - contr.sum(2) / 2	
-colnames(contrasts(d_l2_beg$Condition)) <- "Primed_vs_Baseline"	
-contrasts(d_l2_beg$Condition)	
+contrasts(d_mod$Condition) <- - contr.sum(2) / 2	
+colnames(contrasts(d_mod$Condition)) <- "Primed_vs_Baseline"	
+contrasts(d_mod$Condition)	
 
 # Centre Trial	
-d_l2_beg$cTrial <- d_l2_beg$Trial - mean(d_l2_beg$Trial)	
+d_mod$cTrial <- d_mod$Trial - mean(d_mod$Trial)	
 
-# Note that some items (i.e. VideoName) might now be missing	
-length(unique(d_l2_beg$VideoName))  # but they aren't	
-sort(table(d_l2_beg$VideoName))	
-# broken down by verbtype...	
-with(d_l2_beg, table(VerbType, VideoName))	
-# ... and by condition	
-with(d_l2_beg, table(Condition, VideoName))	
+head(d_mod)	
 
+## Fit logit mixed models	
+# -- due to the many predictors, model fitting will take a long time
 
-head(d_l2_beg)	
-#' 	
-#' 	
-#' We can now fit the logit mixed model	
-#' 	
-#' 	
-# The following snippet fitted different models to analyze the first trials;	
-# in the end we choose the more conservative one that still converges 	
-# -- here glmm_adapt_beg3b; this is the one that is fitted below and reported.	
+# minimal random effects
+fm_min <- glmer(Used ~ Condition * VerbType * Group * cTrial +
+                  (1 | Subject) + (1 | VideoName),
+                data = d_mod, family = "binomial",
+                control = glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
+summary(fm_min)
+
 
 # # minimal random effects	
 # glmm_adapt_beg_min <- glmer(Used ~ Condition * VerbType * cTrial +	
