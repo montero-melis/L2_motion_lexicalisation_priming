@@ -287,7 +287,7 @@ gam_tb <- function(fm = NULL, mytype = "html") {
   } else if (mydoctype == "pdf_document") {
     gamtabs(fm)
   } else {
-    print("I don't know how to print a gam_table for this document type!")
+    print("A gam_table can't be printed for this document type! (Perhaps you forgot to uncomment the relevant lines in the source script?)")
   }
 }
 ```
@@ -895,6 +895,12 @@ plot(allEffects(glmm_adapt_beg))
 
 ### Adaptation to path verbs vs proficiency
 
+TO DO:
+
+Model comparison (like for manner below) to test whether the addition of the interaction term 
+`te(Trial, ClozeScore, by = Condition)`
+significantly improves the model.
+
 ```{r}
 fm_p_L2prof.expr <- "bam(Used ~
     Condition +
@@ -1048,7 +1054,7 @@ plot_diff2(fm_m_L2prof, view = c('Trial', 'ClozeScore'),
 
 ## Control analyses for L2 speakers
 
-For the L2 speakers, there is a possibility that adaptation is not guided by their expectations (as we argue in the paper), but by their lexical knowledge of the L2 verbs.
+For the L2 speakers, there is a possibility that adaptation is not guided by their expectations (as argued in the paper), but by their lexical knowledge of the L2 verbs.
 For example, it might  be that they are primed only by the specific verbs they know, but not by those they do not know.
 To explore this possibility, we run the same analyses removing the two manner verbs that were less well known to L2 speakers in the baseline condition: *arrastrar* (=drag, 65% translation accuracy) and *tirar de* (=pull, 55% transl. acc.).
 
