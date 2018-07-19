@@ -30,11 +30,9 @@
 # the data, take advantage of the function "analysis/functions/rmd2rscript.R"!
 
 
-
 #  ------------------------------------------------------------------------
-#  Set up data
+#  Libraries and functions
 #  ------------------------------------------------------------------------
-
 
 library(dplyr)
 library(lme4)
@@ -48,15 +46,62 @@ library(tidyr)
 # library(effects)	
 # library(xtable)	
 
-
 setwd("analysis/")
 
-#' ## Data loading and processing	
-#' 	
-#' ### Load data	
-#' 	
-#' 	
+
+## Source somewhat more complex functions	
+
+# # source functions to compute collinearity diagnostics	
+# source("functions/kappa_mer_fnc.R")	
+# source("functions/vif_mer_fnc.R")	
+# 
+# # Function that plots mixed model-estimates in logit space from baseline	
+# # conditions, including speaker estimates	
+# source("functions/plot_glmm_fnc.R")	
+# 
+# # source multiplot function	
+# source("functions/multiplot_fnc.R")	
+
+# Function used to load models if they have already been saved,
+# rather than fitting them anew each time the script is called
+source("functions/load_or_fit_fnc.R")
+
+# # Two functions to a) plot the differences between NS and L2 speakers from GAMMs,	
+# # and b) plot the effects by L2 speakers' proficiency from GAMMs	
+# source("functions/plot_gams_fnc.R")	
+
+# ## Specify some global parameters	
+# 
+# # adjust figure heght/width when not going with default (espec. for 2x2 plots)	
+# myfighe_NS_L2 <- 6	
+# myfighe_L2_prof <- 6	
+# myfigwi <- 7	
+
+
+## Simpler convenience functions:	
+
+# # print deviance explained as percentage	
+# dev_expl <- function(fm) {	
+#   devi <- summary(fm)$dev.expl	
+#   paste0(round(100 * devi, 1), '% dev. explained')	
+# }	
+
+# create a neat table of the summary of fixed effects of a mixed model	
+glmm_tb <- function(fm) {	
+  m <- round(summary(fm)$coefficients, 3)	
+  tb <- as.data.frame(m)	
+  names(tb) <- c("Estimate", "SE", "z-value", "p-value")	
+  kable(tb)	
+}	
+
+
+
+#  ------------------------------------------------------------------------
+#  Set up data
+#  ------------------------------------------------------------------------
+
 ##  Load data	
+
 # The data is created in the script 'processing/compute_dependent_measures.R'	
 # There is the normal and the liberally coded version (see script for difference).	
 # Here I use the normal coding.	
@@ -67,12 +112,13 @@ d <- read.csv('../data/data_DVs.csv', fileEncoding = 'UTF-8', stringsAsFactors =
 d <- d %>%	
   select(Subject:VideoName, P_V, M_V) %>%	
   rename(Trial = VideoTrial)	
+# Rename "Control" condition to "Baseline"	
+levels(d$Condition)[levels(d$Condition) == "Control"] <- "Baseline"	
+# Subject needs to be a factor	
+d$Subject <- factor(d$Subject)	
 
 head(d)
 str(d)
-
-# Rename "Control" condition to "Baseline"	
-levels(d$Condition)[levels(d$Condition) == "Control"] <- "Baseline"	
 
 # participant data	
 ppts <- read.csv("../data/participants.csv", fileEncoding = "UTF-8",	
@@ -80,27 +126,19 @@ ppts <- read.csv("../data/participants.csv", fileEncoding = "UTF-8",
 
 # No audio data recorded for Subject 14 (L2) due to experimental error; exclude	
 ppts <- ppts[ppts$Subject != 14, ]	
-# transform ClozeScore to z-score (as.vector prevents it from becoming a matrix)	
-ppts$zClozeScore <- as.vector(scale(ppts$ClozeScore))	
-# center ClozeScore but not scaling (as.vector prevents it from becoming a matrix)	
-ppts$cClozeScore <- as.vector(scale(ppts$ClozeScore, scale = FALSE))	
 
+# # transform ClozeScore to z-score (as.vector prevents it from becoming a matrix)	
+# ppts$zClozeScore <- as.vector(scale(ppts$ClozeScore))	
+# # center ClozeScore but not scaling (as.vector prevents it from becoming a matrix)	
+# ppts$cClozeScore <- as.vector(scale(ppts$ClozeScore, scale = FALSE))	
 # # add speakers' clozescore to d:	
 # d <- left_join(d, ppts %>% select(Subject, ClozeScore, zClozeScore, cClozeScore))	
-
-# Subject needs to be a factor	
-d$Subject <- factor(d$Subject)	
-
-
 
 # # Add info about prime verbs to the data file (by joining two dataframes)	
 # # Load table with priming verbs and then join	
 # primes <- read.csv("../data/priming-verbs.csv")	
 # head(primes)	
 # d <- left_join(d, primes)	
-
-head(d)	
-str(d)	
 
 
 #' ### Data for GAMs comparing NS and L2 speakers	
@@ -139,57 +177,12 @@ rm(d_long)  # remove to avoid using it by mistake
 d_mod$Subject <- factor(d_mod$Subject)	
 
 
-# ## Specify some global parameters	
-# 
-# # adjust figure heght/width when not going with default (espec. for 2x2 plots)	
-# myfighe_NS_L2 <- 6	
-# myfighe_L2_prof <- 6	
-# myfigwi <- 7	
 
+#  ------------------------------------------------------------------------
+#  Analyses with GLMMs
+#  ------------------------------------------------------------------------
 
-## Source somewhat more complex functions	
-
-# # source functions to compute collinearity diagnostics	
-# source("functions/kappa_mer_fnc.R")	
-# source("functions/vif_mer_fnc.R")	
-# 
-# # Function that plots mixed model-estimates in logit space from baseline	
-# # conditions, including speaker estimates	
-# source("functions/plot_glmm_fnc.R")	
-# 
-# # source multiplot function	
-# source("functions/multiplot_fnc.R")	
-# 
-# # Function used to load models if they have already been saved,	
-# # rather than fitting them anew each time the script is called	
-# source("functions/load_or_fit_fnc.R")	
-# 
-# # Two functions to a) plot the differences between NS and L2 speakers from GAMMs,	
-# # and b) plot the effects by L2 speakers' proficiency from GAMMs	
-# source("functions/plot_gams_fnc.R")	
-
-
-## Simpler convenience functions:	
-
-# # print deviance explained as percentage	
-# dev_expl <- function(fm) {	
-#   devi <- summary(fm)$dev.expl	
-#   paste0(round(100 * devi, 1), '% dev. explained')	
-# }	
-
-# create a neat table of the summary of fixed effects of a mixed model	
-glmm_tb <- function(fm) {	
-  m <- round(summary(fm)$coefficients, 3)	
-  tb <- as.data.frame(m)	
-  names(tb) <- c("Estimate", "SE", "z-value", "p-value")	
-  kable(tb)	
-}	
-
-
-#' # Analyses and results	
-
-
-#' ### Adaptation -- L2 vs natives using GLMMs
+## Adaptation -- L2 vs natives using GLMMs
 
 # We analyze it as a 2x2x2 design, with Trial as an additional continuous predictor,
 # All predictors interact:
@@ -223,83 +216,28 @@ d_mod$cTrial <- d_mod$Trial - mean(d_mod$Trial)
 
 head(d_mod)	
 
-## Fit logit mixed models	
+
+## Fit logit mixed models	(using load_or_fit() function)
 # -- due to the many predictors, model fitting will take a long time
 
-# minimal random effects
-fm_min <- glmer(Used ~ Condition * VerbType * Group * cTrial +
-                  (1 | Subject) + (1 | VideoName),
-                data = d_mod, family = "binomial",
-                control = glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
-summary(fm_min)
-
-
-# # minimal random effects	
-# glmm_adapt_beg_min <- glmer(Used ~ Condition * VerbType * cTrial +	
-#                           (1 | Subject) + (1 | VideoName),	
-#                         data = d_l2_beg, family = "binomial",	
-#                         control = glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))	
-# summary(glmm_adapt_beg_min)	
-
-# progressively adding r.e. ...	
-
-# # 1 random slope	
-# glmm_adapt_beg1a <- glmer(Used ~ Condition * VerbType * cTrial +	
-#                           (1 + cTrial | Subject) + (1 | VideoName),	
-#                         data = d_l2_beg, family = "binomial",	
-#                         control = glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))	
-# summary(glmm_adapt_beg1a)	
-# 	
-# glmm_adapt_beg1b <- glmer(Used ~ Condition * VerbType * cTrial +	
-#                           (1 | Subject) + (1 + Condition | VideoName),	
-#                         data = d_l2_beg, family = "binomial",	
-#                         control = glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))	
-# summary(glmm_adapt_beg1b)	
-# 	
-# # fails to converge:	
-# # glmm_adapt_beg1c <- glmer(Used ~ Condition * VerbType * cTrial +	
-# #                           (1 | Subject) + (1 + VerbType | VideoName),	
-# #                         data = d_l2_beg, family = "binomial",	
-# #                         control = glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))	
-# # summary(glmm_adapt_beg1c)	
-# 	
-# # 2 random slopes	
-# glmm_adapt_beg2a <- glmer(Used ~ Condition * VerbType * cTrial +	
-#                           (1 + cTrial | Subject) + (1 + Condition | VideoName),	
-#                         data = d_l2_beg, family = "binomial",	
-#                         control = glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))	
-# summary(glmm_adapt_beg2a)	
-# 	
-# # fails to converge:	
-# # glmm_adapt_beg2b <- glmer(Used ~ Condition * VerbType * cTrial +	
-# #                           (1 + cTrial | Subject) + (1 + VerbType | VideoName),	
-# #                         data = d_l2_beg, family = "binomial",	
-# #                         control = glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))	
-# # summary(glmm_adapt_beg2b)	
-
-# glmm_adapt_beg2c <- glmer(Used ~ Condition * VerbType * cTrial +	
-#                           (1 | Subject) + (1 + Condition + VerbType | VideoName),	
-#                         data = d_l2_beg, family = "binomial",	
-#                         control = glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))	
-# summary(glmm_adapt_beg2c)	
-
-# 3 random slopes	
-
-# fails to converge:	
-# glmm_adapt_beg3a <- glmer(Used ~ Condition * VerbType * cTrial +	
-#                           (1 + cTrial | Subject) + (1 + Condition + VerbType | VideoName),	
-#                         data = d_l2_beg, family = "binomial",	
-#                         control = glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))	
-# summary(glmm_adapt_beg3a)	
-
-# glmm_adapt_beg3b <- glmer(Used ~ Condition * VerbType * cTrial +	
-#                           (1 | Subject) + (1 + Condition * VerbType | VideoName),	
-#                         data = d_l2_beg, family = "binomial",	
-#                         control = glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))	
-# summary(glmm_adapt_beg3b)	
-
+# minimal random effects, only by-subject and by-item intercepts
+glmm_L1L2_min.expr <- "glmer(Used ~ Condition * VerbType * Group * cTrial +
+                         (1 | Subject) + (1 | VideoName),
+                       data = d_mod, family = 'binomial',
+                       control = glmerControl(optimizer='bobyqa', optCtrl=list(maxfun=2e5)))"
+# load model or fit
+load_or_fit("glmm_L1L2_min", glmm_L1L2_min.expr)
+summary(glmm_L1L2_min)
 
 # maximal random effects	
+glmm_L1L2_max.expr <- "glmer(Used ~ Condition * VerbType * Group * cTrial +
+                         (1 + cTrial | Subject) + (1 + Condition * VerbType * Group | VideoName),
+                       data = d_mod, family = 'binomial',
+                       control = glmerControl(optimizer='bobyqa', optCtrl=list(maxfun=2e5)))"
+# load model or fit
+load_or_fit("glmm_L1L2_max", glmm_L1L2_max.expr)
+summary(glmm_L1L2_max)
+
 
 # fails to converge	
 # glmm_adapt_beg_max <- glmer(Used ~ Condition * VerbType * cTrial +	
@@ -319,10 +257,7 @@ summary(fm_min)
 # summary(glmm_adapt_beg3b)	
 
 # In the end we choose the more conservative model: glmm_adapt_beg3b	
-#' 	
-#' 	
-#' 	
-#' 	
+
 # The final model to analyze adaptation to path vs manner verbs during the	
 # beginning (=linear in log-odds space) phase of the experiment	
 # the expression that is passed to load_or_fit()	
@@ -332,13 +267,10 @@ data = d_l2_beg, family = 'binomial',
 control = glmerControl(optimizer='bobyqa', optCtrl=list(maxfun=2e5)))"	
 # load model or fit	
 load_or_fit("glmm_adapt_beg", glmm_adapt_beg.expr)	
-#' 	
-#' 	
-#' 	
-#' 	
+
+
 #' Plot 	
-#' 	
-#' 	
+
 plot(allEffects(glmm_adapt_beg))	
 
 
