@@ -1,0 +1,271 @@
+---
+title: "Interaction analysis: adaptation patterns in L2ers vs L1ers"
+author: '[Guillermo Montero-Melis](http://www.biling.su.se/montero_melis_guillermo)'
+date: '`r as.character(format(Sys.Date(), format="%d/%m/%Y"))`'
+output:
+  html_document:
+    depth: 2
+    number_sections: yes
+    theme: default
+    toc: yes
+  pdf_document:
+    number_sections: yes
+    toc: yes
+  word_document:
+    toc: yes
+---
+
+Intro
+=====
+
+This script tests whether there is a difference in adaptation at the group
+level when comparing L1 and L2 speakers.
+
+**Background**:
+
+In the paper (draft6 from 180601), we write:
+
+ 
+"Thus, learners differed from native speakers in the direction one would
+expect if they were basing their L2 expectations on a mixture of their L1
+and L2 experience. Even if learners did not show a statistically stronger
+adaptation to path verbs than to manner verbs, they showed this numerical
+tendency, whereas native speakers showed the opposite tendency (they adapted
+to manner verbs but not to path verbs)."
+
+Florian (comments on above draft) notes that this leads to the "classic 
+interaction fallacy. We can’t conclude from different patterns, that they are
+significantly different. This needs to be acknowleged, or better (required, 
+I’d say) L1 vs. L2 should be included in the/a follow-up analysis."
+
+Since this type of high-order interaction analysis in a factorial design is 
+difficult to implement in the GAM framework (see, e.g.,
+[here](http://grokbase.com/t/r/r-help/113qaadxt4/r-how-to-add-in-interaction-terms-in-gamm)),
+we carry out a mixed logistic regression to ask this. 
+
+Note, however, that this is not ideal because the trends in the data are not
+linear (in log-odds space).
+*and* because we will be testing a 4-way interaction:
+VerbType (Path/Manner) x PrimeCondition (baseline/primed) x
+LanguageGroup (L1/L2) x Trial (1 through 32).
+Power to detect this effect will be low.
+
+
+Set up workspace
+================
+
+##  Load libraries and functions
+
+Libraries:
+
+```{r}
+library(dplyr)
+library(lme4)
+library(tidyr)
+# library(ggplot2)
+# library(mgcv)  # GAMs and GAMMs (Wood 2006)	
+# library(itsadug)	
+# library(boot)  # for inv.logit()	
+# library(knitr)  # for kable()	
+# library(lazyeval)  # lazy evaluation used in bysubj() function [summarise_]	
+# library(effects)	
+# library(xtable)	
+```
+
+Functions:
+
+```{r}
+## Source somewhat more complex functions	
+
+# # source functions to compute collinearity diagnostics	
+# source("functions/kappa_mer_fnc.R")	
+# source("functions/vif_mer_fnc.R")	
+# 
+# # Function that plots mixed model-estimates in logit space from baseline	
+# # conditions, including speaker estimates	
+# source("functions/plot_glmm_fnc.R")	
+# 
+# # source multiplot function	
+# source("functions/multiplot_fnc.R")	
+
+# Function used to load models if they have already been saved,
+# rather than fitting them anew each time the script is called
+source("functions/load_or_fit_fnc.R")
+```
+
+```{r}
+## Simpler convenience functions:	
+
+# # print deviance explained as percentage	
+# dev_expl <- function(fm) {	
+#   devi <- summary(fm)$dev.expl	
+#   paste0(round(100 * devi, 1), '% dev. explained')	
+# }	
+
+# create a neat table of the summary of fixed effects of a mixed model	
+glmm_tb <- function(fm) {	
+  m <- round(summary(fm)$coefficients, 3)	
+  tb <- as.data.frame(m)	
+  names(tb) <- c("Estimate", "SE", "z-value", "p-value")	
+  kable(tb)	
+}	
+```
+
+
+```{r, include=FALSE}
+# ## Specify some global parameters	
+# 
+# # adjust figure heght/width when not going with default (espec. for 2x2 plots)	
+# myfighe_NS_L2 <- 6	
+# myfighe_L2_prof <- 6	
+# myfigwi <- 7	
+```
+
+
+## Load and process data	
+
+Load annotated description data for production task:
+
+```{r}
+# The data is created in the script 'processing/compute_dependent_measures.R'
+# There is the normal and the liberally coded version (see script for difference).	
+# Here I use the normal coding.	
+
+# load	
+d <- read.csv('../data/data_DVs.csv', fileEncoding = 'UTF-8', stringsAsFactors = TRUE)	
+# simplify somewhat	
+d <- d %>%	
+  select(Subject:VideoName, P_V, M_V) %>%	
+  rename(Trial = VideoTrial)	
+# Rename "Control" condition to "Baseline"	
+levels(d$Condition)[levels(d$Condition) == "Control"] <- "Baseline"	
+# Subject needs to be a factor	
+d$Subject <- factor(d$Subject)	
+head(d)
+str(d)
+```
+
+
+Reshape data to long format and some further processing:
+
+```{r}
+# Convert data to long format:	
+d_long <- gather(d, VerbType, Used, P_V:M_V)	
+# single factor
+d_long$VbType_Cond <- with(d_long, interaction(VerbType, Condition))	
+
+# For the subjects  to be properly fitted as random terms in the models
+# we have to "pretend" that a baseline subject is two different subjects,	
+# one for the comparison to path-primed, the other to manner-primed participants;	
+# this may not be ideal statistically (we'll assume independence where there)
+# isn't, but not doing this would mess up the estimation of random effects.	
+d_long$Subject <- with(d_long, interaction(Subject, VerbType))	
+
+## Subset data for model fitting:
+# We are removing observations that	
+# correspond to path verbs produced in the manner-primed condition or to manner	
+# verbs produced in the path-primed condition)	
+d_mod <- d_long %>% filter(! VbType_Cond %in% c("P_V.Manner", "M_V.Path"))	
+rm(d_long)  # remove to avoid using it by mistake
+
+# drop unused factors for subject (may be important for random effects estimation)
+d_mod$Subject <- factor(d_mod$Subject)	
+```
+
+
+
+L2 vs native adaptation (analyses with GLMMs)
+=====================
+
+## Factor explanation and coding
+
+We analyze the data as a 2 x 2 x 2 design, with Trial as an additional (4th) continuous predictor,
+in which all predictors interact:
+
+- `VerbType`: Path vs Manner
+- `Condition`: Primed vs Baseline
+- `LanguageGroup`: L2 vs NS
+- `Trial`: 1-32 (but centred)
+
+Factor coding and centering:
+
+```{r}
+# VerbType -- use contrast coding	
+d_mod$VerbType <- factor(d_mod$VerbType)	
+contrasts(d_mod$VerbType) <- - contr.sum(2) / 2	
+colnames(contrasts(d_mod$VerbType)) <- "P_vs_M"	
+contrasts(d_mod$VerbType)	
+
+# (Language) Group -- use contrast coding	
+contrasts(d_mod$Group) <- contr.sum(2) / 2	
+colnames(contrasts(d_mod$Group)) <- "L2_vs_NS"	
+contrasts(d_mod$Group)	
+
+# Condition (now becomes a binary variable: Path/Manner become "Primed")	
+levels(d_mod$Condition)[levels(d_mod$Condition) %in% c("Path", "Manner")] <- "Primed"	
+table(d_mod$Condition)  # roughly balanced (remember Baseline ppts are "doubled")
+# contrast coding	
+contrasts(d_mod$Condition) <- - contr.sum(2) / 2	
+colnames(contrasts(d_mod$Condition)) <- "Primed_vs_Baseline"	
+contrasts(d_mod$Condition)	
+
+# Centre Trial	
+d_mod$cTrial <- d_mod$Trial - mean(d_mod$Trial)	
+
+head(d_mod)	
+```
+
+
+## Fit logit mixed models
+
+NB:
+
+- To fit the models, use `load_or_fit()` function to avoid refitting them each 
+time the document is knit.
+- Due to the many predictors, model fitting will take a long time.
+
+
+### Minimal model
+
+A model with random by-item and by-subject intercepts (takes 3-4 minutes to fit):
+
+```{r}
+# minimal random effects, only by-subject and by-item intercepts
+# expression to be passed to the load_or_fit function:
+glmm_L1L2_min.expr <- "glmer(Used ~ Condition * VerbType * Group * cTrial +
+                         (1 | Subject) + (1 | VideoName),
+                       data = d_mod, family = 'binomial',
+                       control = glmerControl(optimizer='bobyqa', optCtrl=list(maxfun=2e5)))"
+# load model or fit it
+load_or_fit("glmm_L1L2_min", glmm_L1L2_min.expr)
+```
+
+Model summary:
+
+```{r}
+summary(glmm_L1L2_min)
+```
+
+
+### Maximal model
+
+The model with maximal random effects	(as per Barr et al., 2013).
+The problem with this model is that it takes a very long time (and possibly won't converge, haven't tried yet).
+
+```{r}
+
+glmm_L1L2_max.expr <- "glmer(Used ~ Condition * VerbType * Group * cTrial +
+                         (1 + cTrial | Subject) + (1 + Condition * VerbType * Group | VideoName),
+                       data = d_mod, family = 'binomial',
+                       control = glmerControl(optimizer='bobyqa', optCtrl=list(maxfun=2e5)))"
+# load model or fit
+# load_or_fit("glmm_L1L2_max", glmm_L1L2_max.expr)
+```
+
+Model summary:
+
+```{r}
+# summary(glmm_L1L2_max)
+```
+
+
