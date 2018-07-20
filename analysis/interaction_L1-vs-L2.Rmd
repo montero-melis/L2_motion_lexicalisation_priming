@@ -58,7 +58,7 @@ Set up workspace
 
 Libraries:
 
-```{r}
+```{r, message=FALSE}
 library(dplyr)
 library(lme4)
 library(tidyr)
@@ -74,7 +74,7 @@ library(tidyr)
 
 Functions:
 
-```{r}
+```{r, message=FALSE}
 ## Source somewhat more complex functions	
 
 # # source functions to compute collinearity diagnostics	
@@ -305,7 +305,7 @@ signficance**.
 Now, let's interpret each fixed-effects coefficient in the model
 (it might help to look at Figures 3 and 4 of the manuscript):
 
-**Intecept and main effects**
+**Intercept and main effects**
 
 1. *`Intercept`:The intercept is not very useful here, but it means that on average
 there was more than 50% chance that path or manner verbs were used in a target
