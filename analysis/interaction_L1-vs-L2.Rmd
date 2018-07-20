@@ -1,15 +1,15 @@
 ---
-title: "Interaction analysis: adaptation patterns in L2ers vs L1ers"
+title: 'Interaction analysis: adaptation patterns in L2ers vs L1ers'
 author: '[Guillermo Montero-Melis](http://www.biling.su.se/montero_melis_guillermo)'
 date: '`r as.character(format(Sys.Date(), format="%d/%m/%Y"))`'
 output:
+  pdf_document:
+    number_sections: yes
+    toc: yes
   html_document:
     depth: 2
     number_sections: yes
     theme: default
-    toc: yes
-  pdf_document:
-    number_sections: yes
     toc: yes
   word_document:
     toc: yes
@@ -227,6 +227,8 @@ time the document is knit.
 
 ### Minimal model
 
+#### Model fit
+
 A model with random by-item and by-subject intercepts (takes 3-4 minutes to fit):
 
 ```{r}
@@ -240,11 +242,229 @@ glmm_L1L2_min.expr <- "glmer(Used ~ Condition * VerbType * Group * cTrial +
 load_or_fit("glmm_L1L2_min", glmm_L1L2_min.expr)
 ```
 
-Model summary:
+#### Model summary and interpretation
 
 ```{r}
-summary(glmm_L1L2_min)
+# summary(glmm_L1L2_min)
+# Pasted from console for more readability:
 ```
+
+```
+Generalized linear mixed model fit by maximum likelihood (Laplace Approximation) ['glmerMod']
+ Family: binomial  ( logit )
+Formula: Used ~ Condition * VerbType * Group * cTrial + (1 | Subject) +      (1 | VideoName)
+   Data: d_mod
+Control: glmerControl(optimizer = "bobyqa", optCtrl = list(maxfun = 2e+05))
+
+     AIC      BIC   logLik deviance df.resid 
+  4576.2   4693.7  -2270.1   4540.2     5022 
+
+Scaled residuals: 
+    Min      1Q  Median      3Q     Max 
+-7.8742 -0.4624  0.1455  0.4826  6.3824 
+
+Random effects:
+ Groups    Name        Variance Std.Dev.
+ Subject   (Intercept) 3.237484 1.79930 
+ VideoName (Intercept) 0.004066 0.06376 
+Number of obs: 5040, groups:  Subject, 158; VideoName, 32
+
+Fixed effects:
+                                                                 Estimate Std. Error z value Pr(>|z|)    
+(Intercept)                                                      0.347314   0.152779   2.273 0.023008 *  
+ConditionPrimed_vs_Baseline                                      1.990114   0.305570   6.513 7.38e-11 ***
+VerbTypeP_vs_M                                                   2.076861   0.305622   6.796 1.08e-11 ***
+GroupL2_vs_NS                                                    0.091500   0.304732   0.300 0.763975    
+cTrial                                                           0.025222   0.004540   5.555 2.77e-08 ***
+ConditionPrimed_vs_Baseline:VerbTypeP_vs_M                      -0.506026   0.609712  -0.830 0.406571    
+ConditionPrimed_vs_Baseline:GroupL2_vs_NS                        1.348544   0.609427   2.213 0.026911 *  
+VerbTypeP_vs_M:GroupL2_vs_NS                                     1.696637   0.609470   2.784 0.005373 ** 
+ConditionPrimed_vs_Baseline:cTrial                               0.045803   0.009076   5.046 4.50e-07 ***
+VerbTypeP_vs_M:cTrial                                            0.076000   0.009078   8.372  < 2e-16 ***
+GroupL2_vs_NS:cTrial                                             0.032772   0.009081   3.609 0.000308 ***
+ConditionPrimed_vs_Baseline:VerbTypeP_vs_M:GroupL2_vs_NS         0.217301   1.217782   0.178 0.858378    
+ConditionPrimed_vs_Baseline:VerbTypeP_vs_M:cTrial               -0.024951   0.018159  -1.374 0.169429    
+ConditionPrimed_vs_Baseline:GroupL2_vs_NS:cTrial                 0.051452   0.018151   2.835 0.004587 ** 
+VerbTypeP_vs_M:GroupL2_vs_NS:cTrial                             -0.040150   0.018159  -2.211 0.027033 *  
+ConditionPrimed_vs_Baseline:VerbTypeP_vs_M:GroupL2_vs_NS:cTrial -0.022956   0.036303  -0.632 0.527172    
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Correlation matrix not shown by default, as p = 16 > 12.
+Use print(x, correlation=TRUE)  or
+	 vcov(x)	 if you need it
+```
+
+Let us interpret this model with minimal random effects structure as an **upper 
+bound of the effects** we might reliably find in the data (effects that don't)
+show up here are unlikely to be true, but converse is not true).
+
+First of all, **the 4-way interaction of interest is not even close to
+signficance**.
+
+Now, let's interpret each fixed-effects coefficient in the model
+(it might help to look at Figures 3 and 4 of the manuscript):
+
+**Intecept and main effects**
+
+1. *`Intercept`:The intercept is not very useful here, but it means that on average
+there was more than 50% chance that path or manner verbs were used in a target
+description when averaging across all predictor variables.
+1. ***`ConditionPrimed_vs_Baseline`: Participants in a primed condition were 2 logits
+more likely to use a path or manner verb than those in the baseline (unprimed)
+condition.
+1. ***`VerbTypeP_vs_M`: Path verbs were 2.1 logits more likely to be used than manner
+verbs.
+1. `GroupL2_vs_NS`: On average, natives and L2ers were equally likely to use
+path or manner verbs.
+1. ***`cTrial`: On average, more path or manner verbs were used as the experiment
+progressed.
+
+**Two-way interactions**
+
+1. `ConditionPrimed_vs_Baseline:VerbTypeP_vs_M`: No significant difference in
+the priming effect of path and manner verbs with respect to baseline
+(averaged over language groups).
+2. *`ConditionPrimed_vs_Baseline:GroupL2_vs_NS`: There was a larger priming effect
+for L2ers than for native speakers (averaged over verb types).
+1. **`VerbTypeP_vs_M:GroupL2_vs_NS`: L2ers produced more path verbs than manner verbs
+compared to native speakers (averaged across primed and baseline conditions).
+1. ***`ConditionPrimed_vs_Baseline:cTrial`: The general increase of Path and Manner
+verbs as the experiment progressed was greater in the primed than in the baseline
+condition.
+1. ***`VerbTypeP_vs_M:cTrial`: The increase in use of path verbs during the 
+experiment was greater than the increase in use of manner verbs.
+1. ***`GroupL2_vs_NS:cTrial`: The increase in use of path or manner verbs during the
+experiment was greater for L2ers than for natives.
+
+**Three-way interactions**
+
+1. `ConditionPrimed_vs_Baseline:VerbTypeP_vs_M:GroupL2_vs_NS`: There was no
+difference in how strongly L2ers and natives were primed by path vs manner
+verbs (compared to baseline in each language group and for each verb type).
+Such an effect would speak to the claim that the adaptation patterns
+differed for the two language groups (the other relevant term being the 4-way
+interaction reported below).
+2. `ConditionPrimed_vs_Baseline:VerbTypeP_vs_M:cTrial`: No significant difference
+in how much use of path or manner verbs increased in primed condition against
+baseline as the experiment proceeded.
+3. **`ConditionPrimed_vs_Baseline:GroupL2_vs_NS:cTrial`: L2 speakers increased
+their rate of prime verb use (path and manner averaged) verbs more rapidly
+than native speakers as the experiment progressed (measured against their
+respective baselines).
+4. *`VerbTypeP_vs_M:GroupL2_vs_NS:cTrial`: The increase in use of path verbs
+relative to manner verbs as the experiment progressed was less pronounced
+in L2ers than in natives (seems to be driven by the fact that L2ers are more
+strongly primed by manner verbs than natives).
+
+**Four-way interaction**
+
+- `ConditionPrimed_vs_Baseline:VerbTypeP_vs_M:GroupL2_vs_NS:cTrial`:
+This was the effect of interest, for which there is no evidence in the data.
+In the GAMs, we observed that manner adaptation was stronger than path adaptation
+as the experiment went along for natives (which would correspond to a negative
+coefficient for the `ConditionPrimed_vs_Baseline:VerbTypeP_vs_M:cTrial` term),
+whereas the opposite seemed to be true for L2ers (corresponding to a negative
+coefficient). What this 4-way interaction tells us is that there is no evidence
+for this difference.
+
+**Random effects**
+
+Finally, note that the **random variance** induced by participants (here modelled
+as random intercepts only) is by far greater than that induced by items 
+(SDs of 1.8 vs 0.1 log-odds respectively).
+This may suggest that increasing model complexity might not make much difference
+to the fixed-effect estimates.
+This is because random slopes can only be fitted by items (all predictors are
+between subjects), except for random slope for `Trial`.
+
+NB: 
+I don't know what the effect on the subject-variance estimate is of having
+counted each participant in the baseline condition as two distinct participants,
+one for their path verb production and another for their manner verb production.
+
+#### Conclusion
+
+With the caveat that power for the effects we were looking for was probably
+low, the conclusion is that there is no evidence for differences between
+L2ers and natives regarding their patterns of adaptation to path and manner
+verbs.
+
+
+### Adding trial as by-subject slope
+
+#### Model fitting
+
+Like the minimal model, but now also adding a by-subject random slope for `cTrial`
+(takes 4-5 minutes to fit):
+
+```{r}
+# minimal random effects, only by-subject and by-item intercepts
+# expression to be passed to the load_or_fit function:
+glmm_L1L2_cTrial.expr <- "glmer(Used ~ Condition * VerbType * Group * cTrial +
+                         (1 + cTrial | Subject) + (1 | VideoName),
+                       data = d_mod, family = 'binomial',
+                       control = glmerControl(optimizer='bobyqa', optCtrl=list(maxfun=2e5)))"
+# load model or fit it
+load_or_fit("glmm_L1L2_cTrial", glmm_L1L2_cTrial.expr)
+```
+
+#### Model summary and interpretation
+
+```{r}
+# summary(glmm_L1L2_cTrial)
+```
+
+```
+Generalized linear mixed model fit by maximum likelihood (Laplace Approximation) ['glmerMod']
+ Family: binomial  ( logit )
+Formula: Used ~ Condition * VerbType * Group * cTrial + (1 + cTrial |      Subject) + (1 | VideoName)
+   Data: d_mod
+Control: glmerControl(optimizer = "bobyqa", optCtrl = list(maxfun = 2e+05))
+
+     AIC      BIC   logLik deviance df.resid 
+  4474.7   4605.2  -2217.3   4434.7     5020 
+
+Scaled residuals: 
+    Min      1Q  Median      3Q     Max 
+-4.8466 -0.4428  0.0865  0.4728  4.8962 
+
+Random effects:
+ Groups    Name        Variance Std.Dev. Corr
+ Subject   (Intercept) 4.191177 2.04724      
+           cTrial      0.006924 0.08321  0.64
+ VideoName (Intercept) 0.006446 0.08029      
+Number of obs: 5040, groups:  Subject, 158; VideoName, 32
+
+Fixed effects:
+                                                                 Estimate Std. Error z value Pr(>|z|)    
+(Intercept)                                                      0.432929   0.174470   2.481 0.013087 *  
+ConditionPrimed_vs_Baseline                                      2.289580   0.350231   6.537 6.26e-11 ***
+VerbTypeP_vs_M                                                   2.382111   0.350641   6.794 1.09e-11 ***
+GroupL2_vs_NS                                                    0.193206   0.347185   0.556 0.577874    
+cTrial                                                           0.032478   0.008676   3.743 0.000182 ***
+ConditionPrimed_vs_Baseline:VerbTypeP_vs_M                      -0.554743   0.694080  -0.799 0.424146    
+ConditionPrimed_vs_Baseline:GroupL2_vs_NS                        1.586444   0.694569   2.284 0.022367 *  
+VerbTypeP_vs_M:GroupL2_vs_NS                                     1.728687   0.694197   2.490 0.012767 *  
+ConditionPrimed_vs_Baseline:cTrial                               0.080178   0.017814   4.501 6.76e-06 ***
+VerbTypeP_vs_M:cTrial                                            0.108378   0.017820   6.082 1.19e-09 ***
+GroupL2_vs_NS:cTrial                                             0.036181   0.017245   2.098 0.035897 *  
+ConditionPrimed_vs_Baseline:VerbTypeP_vs_M:GroupL2_vs_NS         0.339213   1.387616   0.244 0.806877    
+ConditionPrimed_vs_Baseline:VerbTypeP_vs_M:cTrial               -0.033225   0.034467  -0.964 0.335054    
+ConditionPrimed_vs_Baseline:GroupL2_vs_NS:cTrial                 0.067122   0.034528   1.944 0.051898 .  
+VerbTypeP_vs_M:GroupL2_vs_NS:cTrial                             -0.033957   0.034460  -0.985 0.324420    
+ConditionPrimed_vs_Baseline:VerbTypeP_vs_M:GroupL2_vs_NS:cTrial -0.001462   0.068915  -0.021 0.983072    
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Correlation matrix not shown by default, as p = 16 > 12.
+Use print(x, correlation=TRUE)  or
+	 vcov(x)	 if you need it
+```
+
+What we see is that the model output is roughly similar up until the 2-way
+interactions, but significance for all the 3-way interactions disappears.
+
 
 
 ### Maximal model
@@ -269,3 +489,103 @@ Model summary:
 ```
 
 
+
+L2 vs native adaptation in first half of the experiment (i.e. where patterns are more linear)
+=====================
+
+It could be the case that the effects cannot be seen when modelling adaptation
+effects as linear in log-odds space (as done with logistic mixed models),
+because the patterns in the data are markedly nonlinear. This is the rationale
+for using GAMs in the paper in the first place. 
+
+One way to address this, is to focus on the part of the experiment that is "most
+linear", which is roughly the 1st half of the experiment. So now we carry out
+the same analyses as above but subsetting the data to contain only that of trials
+1-16 in the experiment.
+This is similar to the GLMM analysis we currently report in the paper (see 
+Question 2), but here a bit more data is kept (in the analysis reported in the
+paper it's just trials 1-9, here we include 1-16).
+
+Thus, below everything is the same as above, except we are only using the data
+for the first half of the experiment for each participant.
+
+To give away the result, **nothing critical changes when focusing only on
+the first half of the experiment**.
+
+```{r}
+# subset data
+d_half <- d_mod[d_mod$Trial %in% 1:16,]
+# recentre trial
+d_half$cTrial <- d_half$Trial - mean(d_half$Trial)
+```
+
+
+## Fit logit mixed models
+
+### Minimal model
+
+
+A model with random by-item and by-subject intercepts (takes 1 minute to fit):
+
+```{r}
+# minimal random effects, only by-subject and by-item intercepts
+# expression to be passed to the load_or_fit function:
+glmm_L1L2_half_min.expr <- "glmer(Used ~ Condition * VerbType * Group * cTrial +
+                         (1 | Subject) + (1 | VideoName),
+                       data = d_half, family = 'binomial',
+                       control = glmerControl(optimizer='bobyqa', optCtrl=list(maxfun=2e5)))"
+# load model or fit it
+load_or_fit("glmm_L1L2_half_min", glmm_L1L2_half_min.expr)
+```
+
+```{r}
+# summary(glmm_L1L2_half_min)
+# Pasted from console for more readability:
+```
+
+```
+> summary(glmm_L1L2_half_min)
+Generalized linear mixed model fit by maximum likelihood (Laplace Approximation) ['glmerMod']
+ Family: binomial  ( logit )
+Formula: Used ~ Condition * VerbType * Group * cTrial + (1 | Subject) +      (1 | VideoName)
+   Data: d_half
+Control: glmerControl(optimizer = "bobyqa", optCtrl = list(maxfun = 2e+05))
+
+     AIC      BIC   logLik deviance df.resid 
+  2561.3   2666.2  -1262.6   2525.3     2500 
+
+Scaled residuals: 
+    Min      1Q  Median      3Q     Max 
+-9.2826 -0.5454  0.1038  0.5173  3.5986 
+
+Random effects:
+ Groups    Name        Variance Std.Dev.
+ Subject   (Intercept) 2.63870  1.6244  
+ VideoName (Intercept) 0.01838  0.1356  
+Number of obs: 2518, groups:  Subject, 158; VideoName, 32
+
+Fixed effects:
+                                                                Estimate Std. Error z value Pr(>|z|)    
+(Intercept)                                                      0.25195    0.14723   1.711 0.087043 .  
+ConditionPrimed_vs_Baseline                                      1.74882    0.29179   5.993 2.06e-09 ***
+VerbTypeP_vs_M                                                   1.69265    0.29197   5.797 6.74e-09 ***
+GroupL2_vs_NS                                                    0.05204    0.29053   0.179 0.857852    
+cTrial                                                           0.05263    0.01275   4.128 3.65e-05 ***
+ConditionPrimed_vs_Baseline:VerbTypeP_vs_M                       0.13390    0.58114   0.230 0.817773    
+ConditionPrimed_vs_Baseline:GroupL2_vs_NS                        1.39742    0.58139   2.404 0.016236 *  
+VerbTypeP_vs_M:GroupL2_vs_NS                                     2.34828    0.58207   4.034 5.48e-05 ***
+ConditionPrimed_vs_Baseline:cTrial                               0.08361    0.02545   3.285 0.001019 ** 
+VerbTypeP_vs_M:cTrial                                            0.16237    0.02548   6.373 1.86e-10 ***
+GroupL2_vs_NS:cTrial                                             0.10595    0.02549   4.157 3.22e-05 ***
+ConditionPrimed_vs_Baseline:VerbTypeP_vs_M:GroupL2_vs_NS         0.89101    1.16193   0.767 0.443179    
+ConditionPrimed_vs_Baseline:VerbTypeP_vs_M:cTrial                0.07503    0.05084   1.476 0.139991    
+ConditionPrimed_vs_Baseline:GroupL2_vs_NS:cTrial                 0.18955    0.05090   3.724 0.000196 ***
+VerbTypeP_vs_M:GroupL2_vs_NS:cTrial                              0.05971    0.05084   1.174 0.240238    
+ConditionPrimed_vs_Baseline:VerbTypeP_vs_M:GroupL2_vs_NS:cTrial  0.09888    0.10168   0.972 0.330848    
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Correlation matrix not shown by default, as p = 16 > 12.
+Use print(x, correlation=TRUE)  or
+	 vcov(x)	 if you need it
+```
