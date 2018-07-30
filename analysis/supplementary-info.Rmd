@@ -388,9 +388,11 @@ contrasts(d_fm_baseline$Type)
 d_fm_baseline$cClozeScore <- as.vector(scale(d_fm_baseline$ClozeScore, scale = FALSE))
 
 # Model treats the individual verbs as random effects
-fm_transl <- glmer(Score ~ Type * cClozeScore + 
-                     (1 | Subject) + (1 | Target_verb),
-                   data = d_fm_baseline, family = "binomial")
+fm_transl.expr <- "glmer(Score ~ Type * cClozeScore +
+                          (1 | Subject) + (1 | Target_verb),
+                        data = d_fm_baseline, family = 'binomial')"
+# load model or fit
+load_or_fit("fm_transl", fm_transl.expr)
 summary(fm_transl)
 
 fm_transl_eff <- allEffects(fm_transl)
@@ -398,7 +400,6 @@ plot(fm_transl_eff, type = "link",
      xlab = "Proficiency\n(centred cloze score)",
      ylab = "Log-odds of correct\ntranslation of verb meaning",
      main = "Translation task")
-
 ```
 
 
@@ -428,9 +429,12 @@ The model includes random intercepts by speaker and item (random slopes by item 
 Model fit and summary of fixed effects:
 
 ```{r, echo = TRUE}
-glmm_pve <- glmer(P_V ~ Group + (1 | Subject) + (1 + Group | VideoName),
-                data = d_basel, family = "binomial", 
-                control = glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
+# load model or fit
+glmm_pve.expr <- "glmer(P_V ~ Group + (1 | Subject) + (1 + Group | VideoName),
+                data = d_basel, family = 'binomial', 
+                control = glmerControl(optimizer='bobyqa', optCtrl=list(maxfun=2e5)))"
+load_or_fit("glmm_pve", glmm_pve.expr)
+# output table
 glmm_tb(glmm_pve)
 ```
 
@@ -455,9 +459,12 @@ The model includes random intercepts by speaker and item (adding random slopes b
 Model fit and summary of fixed effects:
 
 ```{r, echo = TRUE}
-glmm_mve <- glmer(M_V ~ Group + (1 | Subject) + (1 + Group | VideoName),
-                data = d_basel, family = "binomial", 
-                control = glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
+# load model or fit
+glmm_mve.expr <- "glmer(M_V ~ Group + (1 | Subject) + (1 + Group | VideoName),
+                data = d_basel, family = 'binomial', 
+                control = glmerControl(optimizer='bobyqa', optCtrl=list(maxfun=2e5)))"
+load_or_fit("glmm_mve", glmm_mve.expr)
+# output table
 glmm_tb(glmm_mve)
 ```
 
@@ -505,9 +512,11 @@ Of course, we use only the L2 data.
 ### Path-verbs
 
 ```{r}
-glmm_pve_prof <- glmer(P_V ~ cClozeScore + (1 | Subject) + (1 | VideoName),
-                       data = d_basel_l2, family = "binomial", 
-                       control = glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
+# load model or fit
+glmm_pve_prof.expr <- "glmer(P_V ~ cClozeScore + (1 | Subject) + (1 | VideoName),
+                       data = d_basel_l2, family = 'binomial', 
+                       control = glmerControl(optimizer='bobyqa', optCtrl=list(maxfun=2e5)))"
+load_or_fit("glmm_pve_prof", glmm_pve_prof.expr)
 ```
 
 
@@ -521,9 +530,10 @@ As L2 speakers in the baseline condition become more proficient, they become mor
 ### Manner-verbs
 
 ```{r}
-glmm_mve_prof <- glmer(M_V ~ cClozeScore + (1 | Subject) + (1 | VideoName),
-                       data = d_basel_l2, family = "binomial", 
-                       control = glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
+glmm_mve_prof.expr <- "glmer(M_V ~ cClozeScore + (1 | Subject) + (1 | VideoName),
+                       data = d_basel_l2, family = 'binomial', 
+                       control = glmerControl(optimizer='bobyqa', optCtrl=list(maxfun=2e5)))"
+load_or_fit("glmm_mve_prof", glmm_mve_prof.expr)
 ```
 
 
@@ -538,7 +548,7 @@ However, L2 speakers in the baseline condition do not change their likelihood of
 ```{r, fig.width = myfigwi, fig.height = 3.5}
 # I use this approach to plot model estimates for cClozeScore
 # http://stats.stackexchange.com/questions/135255/obtaining-adjusted-predicted-proportions-with-lme4-using-the-glmer-function
-# and using the following advice to combine them into a multiplot:
+# and the following advice to combine them into a multiplot:
 # http://stackoverflow.com/questions/15227184/combine-two-plots-created-with-effects-package-in-r
 eff_p <- effect("cClozeScore", glmm_pve_prof)
 eff_m <- effect("cClozeScore", glmm_mve_prof)
@@ -782,8 +792,8 @@ We can now fit the logit mixed model
 # # minimal random effects
 # glmm_adapt_beg_min <- glmer(Used ~ Condition * VerbType * cTrial +
 #                           (1 | Subject) + (1 | VideoName),
-#                         data = d_l2_beg, family = "binomial",
-#                         control = glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
+#                         data = d_l2_beg, family = 'binomial',
+#                         control = glmerControl(optimizer='bobyqa', optCtrl=list(maxfun=2e5)))
 # summary(glmm_adapt_beg_min)
 
 # progressively adding r.e. ...
@@ -791,41 +801,41 @@ We can now fit the logit mixed model
 # # 1 random slope
 # glmm_adapt_beg1a <- glmer(Used ~ Condition * VerbType * cTrial +
 #                           (1 + cTrial | Subject) + (1 | VideoName),
-#                         data = d_l2_beg, family = "binomial",
-#                         control = glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
+#                         data = d_l2_beg, family = 'binomial',
+#                         control = glmerControl(optimizer='bobyqa', optCtrl=list(maxfun=2e5)))
 # summary(glmm_adapt_beg1a)
 # 
 # glmm_adapt_beg1b <- glmer(Used ~ Condition * VerbType * cTrial +
 #                           (1 | Subject) + (1 + Condition | VideoName),
-#                         data = d_l2_beg, family = "binomial",
-#                         control = glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
+#                         data = d_l2_beg, family = 'binomial',
+#                         control = glmerControl(optimizer='bobyqa', optCtrl=list(maxfun=2e5)))
 # summary(glmm_adapt_beg1b)
 # 
 # # fails to converge:
 # # glmm_adapt_beg1c <- glmer(Used ~ Condition * VerbType * cTrial +
 # #                           (1 | Subject) + (1 + VerbType | VideoName),
-# #                         data = d_l2_beg, family = "binomial",
-# #                         control = glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
+# #                         data = d_l2_beg, family = 'binomial',
+# #                         control = glmerControl(optimizer='bobyqa', optCtrl=list(maxfun=2e5)))
 # # summary(glmm_adapt_beg1c)
 # 
 # # 2 random slopes
 # glmm_adapt_beg2a <- glmer(Used ~ Condition * VerbType * cTrial +
 #                           (1 + cTrial | Subject) + (1 + Condition | VideoName),
-#                         data = d_l2_beg, family = "binomial",
-#                         control = glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
+#                         data = d_l2_beg, family = 'binomial',
+#                         control = glmerControl(optimizer='bobyqa', optCtrl=list(maxfun=2e5)))
 # summary(glmm_adapt_beg2a)
 # 
 # # fails to converge:
 # # glmm_adapt_beg2b <- glmer(Used ~ Condition * VerbType * cTrial +
 # #                           (1 + cTrial | Subject) + (1 + VerbType | VideoName),
-# #                         data = d_l2_beg, family = "binomial",
-# #                         control = glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
+# #                         data = d_l2_beg, family = 'binomial',
+# #                         control = glmerControl(optimizer='bobyqa', optCtrl=list(maxfun=2e5)))
 # # summary(glmm_adapt_beg2b)
 
 # glmm_adapt_beg2c <- glmer(Used ~ Condition * VerbType * cTrial +
 #                           (1 | Subject) + (1 + Condition + VerbType | VideoName),
-#                         data = d_l2_beg, family = "binomial",
-#                         control = glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
+#                         data = d_l2_beg, family = 'binomial',
+#                         control = glmerControl(optimizer='bobyqa', optCtrl=list(maxfun=2e5)))
 # summary(glmm_adapt_beg2c)
 
 # 3 random slopes
@@ -833,14 +843,14 @@ We can now fit the logit mixed model
 # fails to converge:
 # glmm_adapt_beg3a <- glmer(Used ~ Condition * VerbType * cTrial +
 #                           (1 + cTrial | Subject) + (1 + Condition + VerbType | VideoName),
-#                         data = d_l2_beg, family = "binomial",
-#                         control = glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
+#                         data = d_l2_beg, family = 'binomial',
+#                         control = glmerControl(optimizer='bobyqa', optCtrl=list(maxfun=2e5)))
 # summary(glmm_adapt_beg3a)
 
 # glmm_adapt_beg3b <- glmer(Used ~ Condition * VerbType * cTrial +
 #                           (1 | Subject) + (1 + Condition * VerbType | VideoName),
-#                         data = d_l2_beg, family = "binomial",
-#                         control = glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
+#                         data = d_l2_beg, family = 'binomial',
+#                         control = glmerControl(optimizer='bobyqa', optCtrl=list(maxfun=2e5)))
 # summary(glmm_adapt_beg3b)
 
 
@@ -849,8 +859,8 @@ We can now fit the logit mixed model
 # fails to converge
 # glmm_adapt_beg_max <- glmer(Used ~ Condition * VerbType * cTrial +
 #                           (1 + cTrial | Subject) + (1 + Condition * VerbType | VideoName),
-#                         data = d_l2_beg, family = "binomial",
-#                         control = glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
+#                         data = d_l2_beg, family = 'binomial',
+#                         control = glmerControl(optimizer='bobyqa', optCtrl=list(maxfun=2e5)))
 # summary(glmm_adapt_beg_max)
 
 # # compare all converging models
@@ -895,13 +905,12 @@ plot(allEffects(glmm_adapt_beg))
 
 ### Adaptation to path verbs vs proficiency
 
-TO DO:
-
-Model comparison (like for manner below) to test whether the addition of the interaction term 
+We start by fitting two models, one with and one without the interaction term
 `te(Trial, ClozeScore, by = Condition)`
-significantly improves the model.
+Using model comparison, we can see if this term significantly improves the model.
 
-```{r}
+```{r model_path_with_interac}
+# model with interaction
 fm_p_L2prof.expr <- "bam(Used ~
     Condition +
     te(Trial, ClozeScore, by = Condition) +
@@ -911,10 +920,45 @@ fm_p_L2prof.expr <- "bam(Used ~
   family = 'binomial')"
 # load model or fit
 load_or_fit("fm_p_L2prof", fm_p_L2prof.expr)
-summary(fm_p_L2prof)
 ```
 
-Summary using gamtabs:
+
+```{r model_path_no_interac}
+# model without the interaction
+fm_p_L2prof_no3way.expr <- "bam(Used ~ 
+                                 Condition + 
+                                 s(Trial, by = Condition) + 
+                                 s(ClozeScore, by = Condition) + 
+                                 s(Trial, Subject, bs = 'fs') +
+                                 s(VideoName, bs = 're'),
+                               data = dp_l2, family = 'binomial')"
+# load model or fit
+load_or_fit("fm_p_L2prof_no3way", fm_p_L2prof_no3way.expr)
+```
+
+
+Model comparison:
+
+```{r}
+# compare the models with itsadug::compareML()
+# (see email correspondence with Florian J. Subject: "Our skype on L2 adaptation paper" (15 Feb 2017))
+itsadug::compareML(fm_p_L2prof, fm_p_L2prof_no3way)
+```
+
+Yes, adding the interaction term significantly improves the model fit.
+So we keep the more complex model that allows the relation between production
+of path verbs in the baseline and primed conditions to vary with proficiency.
+
+Summary of each model:
+
+```{r}
+summary(fm_p_L2prof)
+summary(fm_p_L2prof_no3way)
+```
+
+
+
+Summary of model *with interaction* using gamtabs:
   
 ```{r, results = "asis"}
 gam_tb(fm_p_L2prof)
@@ -1005,6 +1049,8 @@ summary(fm_m_L2prof_no3way)
 # (see email correspondence with Florian J. Subject: "Our skype on L2 adaptation pape" (15 Feb 2017))
 itsadug::compareML(fm_m_L2prof, fm_m_L2prof_no3way)
 ```
+
+And indeed this interaction significantly improves the model fit.
 
 
 Summary using gamtabs:
