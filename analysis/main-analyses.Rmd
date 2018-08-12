@@ -1,0 +1,275 @@
+---
+title: 'Main analyses: adaptation patterns in L2ers vs L1ers'
+author: '[Guillermo Montero-Melis](http://www.biling.su.se/montero_melis_guillermo)'
+date: '`r as.character(format(Sys.Date(), format="%d/%m/%Y"))`'
+output:
+  html_document:
+    depth: 2
+    number_sections: yes
+    theme: default
+    toc: yes
+  pdf_document:
+    number_sections: yes
+    toc: yes
+  word_document:
+    toc: yes
+---
+
+
+Intro
+=====
+
+After skyping on 30 July, we decided to streamline the analyses and make
+them more consistent across the whole paper.
+
+The main points we took up were:
+
+- Use GAMM and visualizations when reporting the main results for Questions 
+1--3
+- Be clear that to the best of our knowledge the GAMM implementation we use
+does not allow for testing interactions (see, e.g.,
+[here](http://grokbase.com/t/r/r-help/113qaadxt4/r-how-to-add-in-interaction-terms-in-gamm))
+- Report therefore interaction effects using GLMMs while explaining the limitations of such
+an analysis: 
+First, the trends in the data are not linear (in log-odds space), as
+shown in GAMMs, yet this is an assumption in GLMM.
+Second, We will be testing up to 4-way interactions with a between-subject design,
+so power to detect this effect will be low. 
+- Run a GLMM for each of the GAMMs in a systematic fashion.
+- In addition, for Q3, run a comparison of three different groups: 
+L2 low proficiency vs L2 high proficiency, L2 low profic vs native speakers.
+We hypothesize no difference between L2 high and natives, but a significant
+difference between low profic and natives.
+- Adhere to the same type of analysis approach throughout: use an indicator
+variable (Manner vs Path) and a Condition factor (Primed vs baseline)-
+
+**Question to TFJ**: 
+Would it make sense in our case to use Bayes Factors? Would we gain anything?
+
+
+Set up workspace
+================
+
+##  Load libraries and functions
+
+Libraries:
+
+```{r, message=TRUE}
+library(dplyr)
+library(lme4)
+library(tidyr)
+library(ggplot2)
+# library(mgcv)  # GAMs and GAMMs (Wood 2006)	
+# library(itsadug)	
+# library(boot)  # for inv.logit()	
+library(knitr)  # for kable()
+# library(lazyeval)  # lazy evaluation used in bysubj() function [summarise_]	
+# library(effects)	
+# library(xtable)	
+```
+
+
+Functions:
+
+```{r, message=TRUE}
+## Source somewhat more complex functions	
+
+# # source functions to compute collinearity diagnostics	
+# source("functions/kappa_mer_fnc.R")	
+# source("functions/vif_mer_fnc.R")	
+
+# Function that plots mixed model-estimates in logit space from baseline
+# conditions, including speaker estimates
+source("functions/plot_glmm_fnc.R")
+
+# # source multiplot function	
+# source("functions/multiplot_fnc.R")	
+
+# Function used to load models if they have already been saved,
+# rather than fitting them anew each time the script is called
+source("functions/load_or_fit_fnc.R")
+```
+
+```{r}
+## Simpler convenience functions:	
+
+# # print deviance explained as percentage	
+# dev_expl <- function(fm) {	
+#   devi <- summary(fm)$dev.expl	
+#   paste0(round(100 * devi, 1), '% dev. explained')	
+# }	
+
+# create a neat table of the summary of fixed effects of a mixed model	
+glmm_tb <- function(fm) {	
+  m <- round(summary(fm)$coefficients, 3)	
+  tb <- as.data.frame(m)	
+  names(tb) <- c("Estimate", "SE", "z-value", "p-value")	
+  kable(tb)	
+}	
+```
+
+
+```{r, include=FALSE}
+# ## Specify some global parameters	
+# 
+# # adjust figure heght/width when not going with default (espec. for 2x2 plots)	
+# myfighe_NS_L2 <- 6	
+# myfighe_L2_prof <- 6	
+# myfigwi <- 7	
+```
+
+
+## Load and process data	
+
+Load annotated description data for production task:
+
+```{r}
+# The data is created in the script 'processing/compute_dependent_measures.R'
+# There is the normal and the liberally coded version (see script for difference).	
+# Here I use the normal coding.	
+
+# load	
+d <- read.csv('../data/data_DVs.csv', fileEncoding = 'UTF-8', stringsAsFactors = TRUE)	
+# simplify somewhat	
+d <- d %>%	
+  dplyr::select(Subject:VideoName, P_V, M_V) %>%	
+  rename(Trial = VideoTrial)	
+# Rename "Control" condition to "Baseline"	
+levels(d$Condition)[levels(d$Condition) == "Control"] <- "Baseline"	
+# Subject needs to be a factor	
+d$Subject <- factor(d$Subject)	
+head(d)
+str(d)
+```
+
+
+Reshape data to long format and some further processing:
+
+```{r}
+# Convert data to long format:	
+d_long <- gather(d, VerbType, Used, P_V:M_V)	
+# single factor
+d_long$VbType_Cond <- with(d_long, interaction(VerbType, Condition))	
+
+# For the subjects  to be properly fitted as random terms in the models
+# we have to "pretend" that a baseline subject is two different subjects,	
+# one for the comparison to path-primed, the other to manner-primed participants;	
+# this may not be ideal statistically (we'll assume independence where there)
+# isn't, but not doing this would mess up the estimation of random effects.	
+d_long$Subject <- with(d_long, interaction(Subject, VerbType))	
+
+## Subset data for model fitting:
+# We are removing observations that	
+# correspond to path verbs produced in the manner-primed condition or to manner	
+# verbs produced in the path-primed condition)	
+d_mod <- d_long %>% filter(! VbType_Cond %in% c("P_V.Manner", "M_V.Path"))	
+rm(d_long)  # remove to avoid using it by mistake
+
+# drop unused factors for subject (may be important for random effects estimation)
+d_mod$Subject <- factor(d_mod$Subject)
+
+# define factor coding scheme (contrast coding)
+# group
+contrasts(d_mod$Group) <- contr.sum(2)
+colnames(contrasts(d_mod$Group)) <- "L2_vs_NS"
+contrasts(d_mod$Group)
+# Verb type
+d_mod$VerbType <- factor(d_mod$VerbType)
+contrasts(d_mod$VerbType) <- contr.sum(2)
+colnames(contrasts(d_mod$VerbType)) <- "M_vs_P"
+contrasts(d_mod$VerbType)
+
+head(d_mod)
+```
+
+
+Baseline condition
+==================
+
+We compare overall use of path and manner verbs in the baseline condition and
+for the two groups (L2ers, natives).
+The predictors are:
+
+- *Verb type*: Indicator variable with two levels (1 = manner, -1 = path)
+- *Group*: factor with two levels (1 = L2ers, -1 = native speakers)
+
+
+## Data and processing
+
+Subset data to use only participants in baseline:
+
+```{r}
+# Subset data to use only baseline condition
+d_basel <- d_mod %>% filter(Condition == "Baseline")
+with(d_basel, table(Group, VerbType))
+```
+
+
+Recode subject identifiers:
+
+```{r}
+# In the baseline condition, we can model each subject as providing two 
+# observations per trial: whether they produced a path verb and whether they
+# produced a manner verb. The VerbType variable tells indicates that.
+# Recode therefore individual subjects reverting the "doubling" of baseline
+# subjects
+# Before:
+head(unique(d_basel[, c("Subject", "Group")]), 3)
+d_basel$Subject <- sub("\\..*", "", d_basel$Subject)
+# After:
+head(unique(d_basel[, c("Subject", "Group")]), 3)
+d_basel$Subject <- factor(d_basel$Subject)  # factor
+```
+
+
+Coding scheme:
+
+```{r}
+# verify coding scheme for factors
+contrasts(d_basel$Group)  # group
+contrasts(d_basel$VerbType)  # verb type
+```
+
+
+## Descriptives
+
+```{r}
+# Descriptive data for all analysed conditions
+# table (will need to be appropriately formatted in report)
+tb_descriptive_basel <- d_basel %>%
+  group_by(VerbType, Group) %>%
+  summarise(Occurrences = sum(Used),
+            TotalN = n(),
+            Percentage = round(100 * sum(Used) / n(), 1))
+kable(tb_descriptive_basel)
+```
+
+
+## GLMM
+
+
+```{r, echo = TRUE}
+# load model or fit
+glmm_basel.expr <- "glmer(Used ~ VerbType * Group + 
+(1 + VerbType | Subject) + (1 + VerbType * Group | VideoName),
+data = d_basel, family = 'binomial',
+control = glmerControl(optimizer='bobyqa', optCtrl=list(maxfun=2e5)))"
+load_or_fit("glmm_basel", glmm_basel.expr)
+# output table
+glmm_tb(glmm_basel)
+```
+
+Model summary
+
+```{r}
+summary(glmm_basel)
+```
+
+
+Plot the results
+
+```{r}
+# the function is defined in analysis/functions/plot_glmm_fnc.R
+plot_basel(glmm_basel, d_basel, nb_sims = 50)  # CHANGE THIS!!!
+```
+
