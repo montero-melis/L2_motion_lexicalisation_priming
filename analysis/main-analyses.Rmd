@@ -142,8 +142,45 @@ d <- d %>%
 levels(d$Condition)[levels(d$Condition) == "Control"] <- "Baseline"	
 # Centre Trial	
 d$cTrial <- d$Trial - mean(d$Trial)	
-# Subject needs to be a factor	
-d$Subject <- factor(d$Subject)	
+# check out
+head(d)
+str(d)
+```
+
+Add L2 proficiency scores:
+
+```{r}
+# participant data
+ppts <- read.csv("../data/participants.csv", fileEncoding = "UTF-8",
+                 stringsAsFactors = TRUE)
+# No audio data recorded for Subject 14 (L2) due to experimental error; exclude
+ppts <- ppts[ppts$Subject != 14, ]
+# transform ClozeScore to z-score (as.vector prevents it from becoming a matrix)
+ppts$zClozeScore <- as.vector(scale(ppts$ClozeScore))
+# center ClozeScore but not scaling (as.vector prevents it from becoming a matrix)
+ppts$cClozeScore <- as.vector(scale(ppts$ClozeScore, scale = FALSE))
+
+# Turn L2 proficiency into a categorical (ordered) variable.
+# Do this by assigning cloze scores <= 40th percentile to "low",
+# scores >= 60th percentile to "high", and the rest to "medium", 
+# which shall not be analyzed in the group comparison followign up on Question 3
+cutoff_prof <- quantile(ppts$ClozeScore, seq(0 , 1, length.out = 6), na.rm = TRUE)
+ppts$Profic_categ <- with(ppts,
+                          ifelse(ClozeScore <= cutoff_prof[3], "low prof",
+                                 ifelse(ClozeScore >= cutoff_prof[4], "high prof", 
+                                        "medium prof")))
+# native speakers
+ppts$Profic_categ[with(ppts, is.na(Profic_categ) & Group == "NS")] <- "native"
+# Leads to the following nuber of observations:
+table(ppts$Profic_categ)
+# Note unbalance: high prof group is not equally represented in the three conditions
+addmargins(with(ppts, table(Profic_categ, Condition)))
+# add speakers' clozescore and derived measures to d:
+d <- left_join(d, ppts %>% dplyr::select(Subject, ClozeScore, zClozeScore,
+                                         cClozeScore, Profic_categ))
+# Subject needs to be a factor
+d$Subject <- factor(d$Subject)
+# check out
 head(d)
 str(d)
 ```
@@ -311,9 +348,7 @@ Q1:
 
 ```{r}
 ## Subset data:
-# Data for analysis of Native speakers (note we are removing observations that
-# correspond to path verbs produced in the manner-primed condition or to manner
-# verbs produced in the path-primed condition)
+# Data for analysis of Native speakers
 d_ns <- d_mod %>% filter(Group == "NS")
 # drop unused factors for subject (I think this is important for gam fitting)
 d_ns$Subject <- factor(d_ns$Subject)
@@ -823,7 +858,7 @@ results do not support this prediction.
 
 
 
-Combined analysis for questions 2 and 3
+Combined analysis for questions 2 and 3 (GLMM)
 =======================================
 
 
@@ -1058,9 +1093,396 @@ counted each participant in the baseline condition as two distinct participants,
 one for their path verb production and another for their manner verb production.
 
 
-#### Conclusion
+## Conclusion
 
 With the caveat that power for the effects we were looking for was probably
 low, the conclusion is that there is no evidence for differences between
 L2ers and natives regarding their patterns of adaptation to path and manner
 verbs, at least when analyzed as a group.
+
+
+Question 3: Effect of L2 proficiency on trial-by-trial adaptation
+=================================================================
+
+
+Q3:
+
+*Our third and last question is whether L2 learners come to increasingly resemble native speakers in how they adapt to recent input as they become more proficient in their L2. If learners are indeed adapting to the input as a function of their expectations, and if their expectations become more attuned to the L2 (and rely less on the L1) with growing proficiency, we should see that learners progressively come to adapt more strongly to manner verbs and less strongly to path verbs  . This prediction does not follow from classical accounts of transfer in L2 processing/acquisition, and it would provide additional credence to the inverse frequency effects observed for native speakers in the analysis for our first question, and thus for theories that attribute adaptation to error-based or related learning mechanisms.*
+
+
+## GAMM analysis
+
+The difference with respect to our previous analysis (as reported in, e.g.,  
+`adaptation-L2_DRAFT6_180730.docx`) is that we fit a *single* model rather than
+two separate ones for path and manner verbs as DVs.
+In other words, we use the indicator variable approach we used in all previous
+analyses.
+
+
+### Data and processing
+
+The data is the same as we used to address Question 2, only now we will use
+the predictor `ClozeScore` to measure L2 proficiency.
+
+```{r}
+head(d_l2)
+```
+
+
+### GAMM fitting
+
+We start by fitting two models, one with and one without the interaction term
+`te(Trial, ClozeScore, by = Condition)`
+Using model comparison, we can see if this term significantly improves the model.
+
+Model including 3-way interaction
+
+```{r model_path_with_interac}
+# model with interaction
+gam_L2prof.expr <- "bam(Used ~
+    VbType_Cond +
+    te(Trial, ClozeScore, by = VbType_Cond) +
+    s(Trial, Subject, bs = 'fs') +
+    s(VideoName, bs = 're'),
+  data = d_l2,
+  family = 'binomial')"
+# load model or fit
+load_or_fit("gam_L2prof", gam_L2prof.expr)
+```
+
+Model excluding the 3-way interaction
+
+```{r model_path_no_interac}
+# model without the interaction
+gam_L2prof_no3way.expr <- "bam(Used ~ 
+                                 VbType_Cond + 
+                                 s(Trial, by = VbType_Cond) + 
+                                 s(ClozeScore, by = VbType_Cond) + 
+                                 s(Trial, Subject, bs = 'fs') +
+                                 s(VideoName, bs = 're'),
+                               data = d_l2, family = 'binomial')"
+# load model or fit
+load_or_fit("gam_L2prof_no3way", gam_L2prof_no3way.expr)
+```
+
+
+
+The two models above differ in whether the effect of `Trial` is allowed
+to interact with the effect of L2 proficiency (`ClozeScore`) at different
+levels of `VbType_Cond`.
+In the first model, the term `te(Trial, ClozeScore, by = VbType_Cond)` does
+allow for this interaction.
+
+In the second model, however, this interaction is not defined:
+
+- The term `s(Trial, by = VbType_Cond)` allows the effect of Trial to be
+different for the different levels of `VbType_Cond`
+- The term `s(ClozeScore, by = VbType_Cond)` in turn allows the effect of
+L2 proficiency (`ClozeScore`) to vary for the different levels of `VbType_Cond`
+- However, the two effects can only be additive. Our prediction ins precisely
+that they are not, i.e. that the difference between baseline and each of the primed
+conditions will depend on L2 proficiency.
+
+### Model comparison
+
+```{r}
+# compare the models with itsadug::compareML()
+# (see email correspondence with Florian J. Subject: "Our skype on L2 adaptation
+# paper" (15 Feb 2017))
+itsadug::compareML(gam_L2prof, gam_L2prof_no3way)
+```
+
+The additional complexity of the model *with* the interaction leads to a 
+significantly better model.
+
+In the remainder, we report the model with the interaction.
+
+
+### Output and summary plots
+
+Summary of the model:
+
+```{r}
+summary(gam_L2prof)
+```
+
+
+Summary using gamtabs:
+
+(NB: Copy function from `supplementary-info.Rmd` if I want to use the function.)
+
+
+```{r, results = "asis"}
+# gam_tb(gam_L2prof)
+```
+
+
+Significance of the different terms in the model:
+
+```{r}
+anova(gam_L2prof)
+```
+
+
+Plot model estimates by condition, random smooth adjustments by speakers and QQ-plot of random by-item intercepts:
+
+```{r, results = 'hide'}
+# ## plot
+plot_smooth(gam_L2prof, view = 'Trial', plot_all = 'VbType_Cond', rm.ranef=TRUE)
+```
+
+```{r, results = 'hide'}
+## plot
+plot_smooth(gam_L2prof, view = 'ClozeScore', plot_all = 'VbType_Cond', rm.ranef=TRUE)
+```
+
+```{r}
+# # show by-speaker random smooths and by-item random intercepts
+# par(mfrow = c(1, 2))
+# plot(gam_L2prof, select = 5)
+# plot(gam_L2prof, select = 6)
+```
+
+
+### Result plots
+
+Plot differences between conditions (model estimates):
+
+
+
+
+```{r, fig.height = myfighe_NS_L2, fig.width = myfigwi, echo = TRUE, results = 'hide'}
+plot_L2_profic_singlemodel(gam_L2prof, primed_cond = 'Path')
+plot_L2_profic_singlemodel(gam_L2prof, primed_cond = 'Manner')
+```
+
+
+```{r, fig.height = 4, fig.width = 8, echo = TRUE, results = 'hide'}
+plot_L2_profic_singlemodel(gam_L2prof, primed_cond = 'Path')
+plot_L2_profic_singlemodel(gam_L2prof, primed_cond = 'Manner')
+```
+
+
+```{r}
+# # save to disk for thesis chapter
+# tiff(file = "figures/gam_natives.tiff", width = 5, height = 5.2, units = "in", pointsize = 10, res = 800)
+# plot_gam_main(gam_l2, "L2")
+# dev.off()
+```
+
+
+## GLMM analysis
+
+### Rationale
+
+Our primary analysis will use data from all the trials.
+We are already losing power by dichotomizing L2 proficiency, and by removing
+a number of participants in the mid-range of L2 proficiency.
+So by keeping the data for all trials, we try not to further reduce power.
+
+We divided L2 proficiency to categorize L2 speakers into
+high/low L2 proficiency speakers.
+What we did exactly was to categorize participants with proficiency scores
+equal or below the 40th percentile as *low* proficiency (N = 24), those equal or
+above the 60th percentile as *high* (N = 25), and exclude the rest of the 
+participants (10 excluded).
+This does unfortunately not lead to a balanced data set:
+
+```{r}
+addmargins(with(ppts, table(Profic_categ, Condition)))
+```
+
+
+```{r}
+# Subset data set and select the variables we need
+d_mod_dichot <- d_mod %>% 
+  filter(Profic_categ != "medium prof") %>%
+  dplyr::select(Subject:cTrial, Profic_categ:Used, Condition_bin)
+head(d_mod_dichot)
+```
+
+### Coding schemes
+
+Verify factors `Condition_bin` and `VerbType` are contrast coded:
+
+```{r}
+# Verify factors are contrast coded:
+contrasts(d_mod_dichot$Condition_bin)
+contrasts(d_mod_dichot$VerbType)
+```
+
+We will use simple coding for `d_mod_dichot$Profic_categ`, so that the model
+coefficients compare:
+
+- L2 high vs natives
+- L2 low vs natives
+- The intercept represents the grand mean of all three conditions
+
+I follow the [IDRE/UCLA tutorial](https://stats.idre.ucla.edu/r/library/r-library-contrast-coding-systems-for-categorical-variables/#SIMPLE):
+
+(NB: I am not sure this is an orthogonal coding scheme and what consequences
+this has, especially when involving higher-order interactions.)
+
+```{r}
+# order factor levels
+d_mod_dichot$Profic_categ <- factor(d_mod_dichot$Profic_categ,
+                                    levels = c("native", "high prof", "low prof"))
+# set contrasts
+mysimple <- matrix(c(-1/3, 2/3, -1/3,
+                     -1/3, -1/3, 2/3), 
+                   ncol = 2)
+mysimple
+contrasts(d_mod_dichot$Profic_categ) <- mysimple
+colnames(contrasts(d_mod_dichot$Profic_categ)) <- c("L2hi_vs_NS", "L2lo_vs_NS")
+contrasts(d_mod_dichot$Profic_categ)
+```
+
+
+### GLMM fitting -- using data from all trials
+
+The minimal model wrt random effects structure (intercepts-only model)
+
+```{r}
+glmm_L1L2_dichot.expr <- "glmer(Used ~
+    Profic_categ * VerbType * Condition_bin * cTrial +
+    (1 | Subject) + (1 | VideoName),
+  data = d_mod_dichot, family = 'binomial',
+  control = glmerControl(optimizer='bobyqa', optCtrl=list(maxfun=2e5)))"
+# load model or fit it
+load_or_fit("glmm_L1L2_dichot", glmm_L1L2_dichot.expr)
+```
+
+
+The maximal model (does not converge):
+
+```{r}
+# # MAXIMAL random effects
+# # expression to be passed to the load_or_fit function:
+# glmm_l2_max.expr <- "glmer(Used ~ Condition_bin * VerbType * cTrial +
+#                          (1 + cTrial | Subject) + (1 + Condition_bin * VerbType | VideoName),
+#                        data = d_mod_dichot, family = 'binomial',
+#                        control = glmerControl(optimizer='bobyqa', optCtrl=list(maxfun=2e5)))"
+# # load model or fit it
+# load_or_fit("glmm_l2_max", glmm_l2_max.expr)
+```
+
+
+Probably the random slope that accounts for most variability is the effect of
+Trial by subject, so fit this model:
+
+```{r}
+
+glmm_L1L2_dichot_trial.expr <- "glmer(Used ~
+    Profic_categ * VerbType * Condition_bin * cTrial +
+    (1 + cTrial | Subject) + (1 | VideoName),
+  data = d_mod_dichot, family = 'binomial',
+  control = glmerControl(optimizer='bobyqa', optCtrl=list(maxfun=2e5)))"
+# load model or fit it
+load_or_fit("glmm_L1L2_dichot_trial", glmm_L1L2_dichot_trial.expr)
+
+# # Like MINIMAL but add random by-subject slope for cTrial
+# # expression to be passed to the load_or_fit function:
+# glmm_l2_trial.expr <- "glmer(Used ~ Condition_bin * VerbType * cTrial +
+#                          (1 + cTrial | Subject) + (1 | VideoName),
+#                        data = d_mod_dichot, family = 'binomial',
+#                        control = glmerControl(optimizer='bobyqa', optCtrl=list(maxfun=2e5)))"
+# # load model or fit it
+# load_or_fit("glmm_l2_trial", glmm_l2_trial.expr)
+```
+
+
+
+```{r}
+summary(glmm_L1L2_dichot)
+```
+
+
+```
+Model summary here
+```
+
+
+```{r}
+summary(glmm_L1L2_dichot_trial)
+```
+
+
+```{r}
+# summary(glmm_l2_trial)
+```
+
+
+### GLMM fitting -- use data that shows linear trend only
+
+Subset data
+
+```{r}
+# d_mod_dichot_lin <- d_l2 %>% filter(Trial <= 13)
+# # recenter cTrial
+# d_l2_lin$cTrial <- d_l2_lin$Trial - mean(d_l2_lin$Trial) 
+```
+
+The minimal model wrt random effects structure (intercepts-only model)
+
+```{r}
+# # MINIMAL random effects, only by-subject and by-item intercepts
+# # expression to be passed to the load_or_fit function:
+# glmm_l2_lin_min.expr <- "glmer(Used ~ Condition_bin * VerbType * cTrial +
+#                          (1 | Subject) + (1 | VideoName),
+#                        data = d_l2_lin, family = 'binomial',
+#                        control = glmerControl(optimizer='bobyqa', optCtrl=list(maxfun=2e5)))"
+# # load model or fit it
+# load_or_fit("glmm_l2_lin_min", glmm_l2_lin_min.expr)
+```
+
+
+The maximal model (does not converge):
+
+```{r}
+# # MAXIMAL random effects
+# # Fails to converge with error message:
+# # "unable to evaluate scaled gradientModel failed to converge: degenerate
+# # Hessian with 1 negative eigenvalues"
+# # expression to be passed to the load_or_fit function:
+# glmm_l2_lin_max.expr <- "glmer(Used ~ Condition_bin * VerbType * cTrial +
+#                          (1 + cTrial | Subject) + (1 + Condition_bin * VerbType | VideoName),
+#                        data = d_l2_lin, family = 'binomial',
+#                        control = glmerControl(optimizer='bobyqa', optCtrl=list(maxfun=2e5)))"
+# # load model or fit it
+# load_or_fit("glmm_l2_lin_max", glmm_l2_lin_max.expr)
+```
+
+
+Probably the random slope that accounts for most variability is the effect of
+Trial by subject, so fit this model:
+
+```{r}
+# # Like MINIMAL but add random by-subject slope for cTrial
+# # expression to be passed to the load_or_fit function:
+# glmm_l2_lin_trial.expr <- "glmer(Used ~ Condition_bin * VerbType * cTrial +
+#                          (1 + cTrial | Subject) + (1 | VideoName),
+#                        data = d_l2_lin, family = 'binomial',
+#                        control = glmerControl(optimizer='bobyqa', optCtrl=list(maxfun=2e5)))"
+# # load model or fit it
+# load_or_fit("glmm_l2_lin_trial", glmm_l2_lin_trial.expr)
+
+```
+
+
+```{r}
+# summary(glmm_l2_lin_min)
+```
+
+
+```{r}
+# summary(glmm_l2_lin_trial)
+```
+
+
+### Model interpretation
+
+
+
+
+## Conclusion
+
