@@ -59,8 +59,8 @@ library(dplyr)
 library(lme4)
 library(tidyr)
 library(ggplot2)
-# library(mgcv)  # GAMs and GAMMs (Wood 2006)	
-# library(itsadug)	
+library(mgcv)  # GAMs and GAMMs (Wood 2006)
+library(itsadug)
 # library(boot)  # for inv.logit()	
 library(knitr)  # for kable()
 # library(lazyeval)  # lazy evaluation used in bysubj() function [summarise_]	
@@ -88,6 +88,10 @@ source("functions/plot_glmm_fnc.R")
 # Function used to load models if they have already been saved,
 # rather than fitting them anew each time the script is called
 source("functions/load_or_fit_fnc.R")
+
+# Two functions to a) plot the differences between NS and L2 speakers from GAMMs,
+# and b) plot the effects by L2 speakers' proficiency from GAMMs
+source("functions/plot_gams_fnc.R")
 ```
 
 ```{r}
@@ -110,12 +114,12 @@ glmm_tb <- function(fm) {
 
 
 ```{r, include=FALSE}
-# ## Specify some global parameters	
-# 
-# # adjust figure heght/width when not going with default (espec. for 2x2 plots)	
-# myfighe_NS_L2 <- 6	
-# myfighe_L2_prof <- 6	
-# myfigwi <- 7	
+## Specify some global parameters
+
+# adjust figure heght/width when not going with default (espec. for 2x2 plots)
+myfighe_NS_L2 <- 6
+myfighe_L2_prof <- 6
+myfigwi <- 7
 ```
 
 
@@ -136,6 +140,8 @@ d <- d %>%
   rename(Trial = VideoTrial)	
 # Rename "Control" condition to "Baseline"	
 levels(d$Condition)[levels(d$Condition) == "Control"] <- "Baseline"	
+# Centre Trial	
+d$cTrial <- d$Trial - mean(d$Trial)	
 # Subject needs to be a factor	
 d$Subject <- factor(d$Subject)	
 head(d)
@@ -147,25 +153,31 @@ Reshape data to long format and some further processing:
 
 ```{r}
 # Convert data to long format:	
-d_long <- gather(d, VerbType, Used, P_V:M_V)	
-# single factor
+d_long <- gather(d, VerbType, Used, P_V:M_V)
+
+# Combine VerbType (Path/Manner) and Condition (baseline/primed) into a single
+# factor -- this is needed for the GAMMs
 d_long$VbType_Cond <- with(d_long, interaction(VerbType, Condition))	
 
-# For the subjects  to be properly fitted as random terms in the models
-# we have to "pretend" that a baseline subject is two different subjects,	
+# For the subjects  to be properly fitted as random terms in the regression 
+# models, we have to "pretend" that a baseline subject is two different subjects,
 # one for the comparison to path-primed, the other to manner-primed participants;	
-# this may not be ideal statistically (we'll assume independence where there)
-# isn't, but not doing this would mess up the estimation of random effects.	
+# this may not be ideal statistically (we'll assume independence where there
+# isn't), but not doing this would mess up the estimation of random effects.	
 d_long$Subject <- with(d_long, interaction(Subject, VerbType))	
 
 ## Subset data for model fitting:
 # We are removing observations that	
 # correspond to path verbs produced in the manner-primed condition or to manner	
 # verbs produced in the path-primed condition)	
-d_mod <- d_long %>% filter(! VbType_Cond %in% c("P_V.Manner", "M_V.Path"))	
+d_mod <- d_long %>% filter(! VbType_Cond %in% c("P_V.Manner", "M_V.Path"))
 rm(d_long)  # remove to avoid using it by mistake
 
-# drop unused factors for subject (may be important for random effects estimation)
+# drop unused factor levels and order levels correctly
+d_mod$VbType_Cond <- factor(d_mod$VbType_Cond, 
+                            levels = c("P_V.Baseline", "P_V.Path", "M_V.Baseline",
+                                       "M_V.Manner"))
+# drop unused factors for subject (important for random effects estimation)
 d_mod$Subject <- factor(d_mod$Subject)
 
 # define factor coding scheme (contrast coding)
@@ -178,6 +190,14 @@ d_mod$VerbType <- factor(d_mod$VerbType)
 contrasts(d_mod$VerbType) <- contr.sum(2)
 colnames(contrasts(d_mod$VerbType)) <- "M_vs_P"
 contrasts(d_mod$VerbType)
+# Condition recoded as a binary factor (Path/Manner become "Primed")
+d_mod$Condition_bin <- d_mod$Condition
+levels(d_mod$Condition_bin)[levels(d_mod$Condition_bin) %in% c("Path", "Manner")] <- "Primed"	
+table(d_mod$Condition_bin)  # roughly balanced (remember Baseline ppts are "doubled")
+# contrast coding	
+contrasts(d_mod$Condition_bin) <- - contr.sum(2)
+colnames(contrasts(d_mod$Condition_bin)) <- "Primed_vs_Baseline"	
+contrasts(d_mod$Condition_bin)	
 
 head(d_mod)
 ```
@@ -266,10 +286,781 @@ summary(glmm_basel)
 ```
 
 
-Plot the results
+Plot the results:
+
+*NB: CHANGE CODE BELOW!!! increase nb_sims!!!*
 
 ```{r}
 # the function is defined in analysis/functions/plot_glmm_fnc.R
-plot_basel(glmm_basel, d_basel, nb_sims = 50)  # CHANGE THIS!!!
+plot_basel(glmm_basel, d_basel, nb_sims = 50)  # CHANGE THIS!!! increase nb_sims
 ```
 
+
+
+
+Question 1: Trial-by-trial adaptation of native speakers 
+========================================================
+
+Q1:
+
+*Will native speakers show an inverse preference effect in their adaptation to the lexicalization patterns in the input? Theories that attribute adaptation to error-based or related learning mechanisms, predict this to be the case. If so, natives should adapt more strongly to manner verbs (uncommon in Spanish) than to path verbs (preferred in Spanish). This finding would also provide a conceptual replication of previous work on inverse preference effects in L1 syntactic priming (see references in the introduction), but for LEXICAL ENCODING and on another L1, Spanish.*
+
+## GAMM analysis
+
+### Data and processing
+
+```{r}
+## Subset data:
+# Data for analysis of Native speakers (note we are removing observations that
+# correspond to path verbs produced in the manner-primed condition or to manner
+# verbs produced in the path-primed condition)
+d_ns <- d_mod %>% filter(Group == "NS")
+# drop unused factors for subject (I think this is important for gam fitting)
+d_ns$Subject <- factor(d_ns$Subject)
+
+# note log-odds of path verbs in baseline condition becomes the reference level
+contrasts(d_ns$VbType_Cond)
+```
+
+
+### GAMM fitting
+
+Previous models (not reported here) showed that random *intercepts* by items
+made sense, but not random slopes. We add the former but not the latter.
+
+Thus, the model is specified as:
+
+`DV ~ VbType_Cond + s(Trial, by = VbType_Cond) + s(Trial, Subject, bs = 'fs') + s(VideoName, bs = 're')`
+
+Predictors are:
+
+- `VbType_Cond`: VerbType-Condition interaction as a fixed effect. The four levels
+of this variable decompose into two crossed factors:
+  - `VerbType`: Indicator variable that defines what is being measured by the DV,
+  either the occurrence of path verbs or of manner verbs
+  - `Condition`: Primed vs baseline
+- `s(Trial, by = VbType_Cond)`: A smooth function of `Trial` allowing the function to differ for each level of Group-Condition (thin plate regression splines, the default)
+- `s(Trial, Subject, bs = 'fs')`: Factor smooths for `Subject` to capture non-linear random effects of speakers
+- `s(VideoName, bs = 're')`: Random intercepts by items (i.e., `VideoName`)
+
+
+```{r gam_ns}
+# the expression that is passed to load_or_fit()
+gam_ns.expr <- "bam(Used ~ VbType_Cond + s(Trial, by = VbType_Cond) +
+                    s(Trial, Subject, bs = 'fs') + s(VideoName, bs = 're'),
+                  data = d_ns,
+                  family = 'binomial')"
+# load model or fit
+load_or_fit("gam_ns", gam_ns.expr)
+```
+
+
+### Output and summary plots
+
+Summary of the model:
+
+```{r}
+summary(gam_ns)
+```
+
+
+Summary using gamtabs:
+
+(NB: Copy function from `supplementary-info.Rmd` if I want to use the function.)
+
+
+```{r, results = "asis"}
+# gam_tb(gam_ns)
+```
+
+
+Significance of the different terms in the model:
+
+```{r}
+anova(gam_ns)
+```
+
+
+Plot model estimates by condition, random smooth adjustments by speakers and QQ-plot of random by-item intercepts:
+
+```{r, results = 'hide'}
+## plot
+plot_smooth(gam_ns, view = 'Trial', plot_all = 'VbType_Cond', rm.ranef=TRUE)
+```
+
+
+```{r}
+# show by-speaker random smooths and by-item random intercepts
+par(mfrow = c(1, 2))
+plot(gam_ns, select = 5)
+plot(gam_ns, select = 6)
+```
+
+
+### Result plots
+
+Plot differences between conditions (model estimates):
+
+```{r, fig.height = myfighe_NS_L2, fig.width = myfigwi, echo = FALSE, results = 'hide'}
+plot_gam_main(gam_ns, "NS")  # choose this on Linux machine
+# on my old windows computer:
+# plot_gam_main(gam_ns, "NS", mark.diff = FALSE)  # use of mark.diff is a hack to
+# avoid an error that will stop the whole thing when I compile it on my work pc
+```
+
+
+```{r}
+# # save to disk for thesis chapter
+# tiff(file = "figures/gam_natives.tiff", width = 5, height = 5.2, units = "in", pointsize = 10, res = 800)
+# plot_gam_main(gam_ns, "NS")
+# dev.off()
+```
+
+
+## GLMM analysis
+
+### Rationale
+
+Based on the GAMM analysis, we can see that for native speakers there was a
+significant adaptation effect for Manner, but not for Path verbs.
+However, we cannot conclude from different patterns, that they are
+significantly different. 
+Because this type of interaction analysis in a factorial design is 
+difficult to implement in the GAM framework we are using (see, e.g.,
+[here](http://grokbase.com/t/r/r-help/113qaadxt4/r-how-to-add-in-interaction-terms-in-gamm)),
+we carry out a follow-up mixed logistic regression analysis to address this
+interaction. 
+
+
+### GLMM fitting
+
+Verify factors are contrast coded:
+
+```{r}
+# Verify factors are contrast coded:
+contrasts(d_ns$Condition_bin)
+contrasts(d_ns$VerbType)
+```
+
+
+The minimal model wrt random effects structure (intercepts-only model)
+
+```{r}
+# MINIMAL random effects, only by-subject and by-item intercepts
+# expression to be passed to the load_or_fit function:
+glmm_ns_min.expr <- "glmer(Used ~ Condition_bin * VerbType * cTrial +
+                         (1 | Subject) + (1 | VideoName),
+                       data = d_ns, family = 'binomial',
+                       control = glmerControl(optimizer='bobyqa', optCtrl=list(maxfun=2e5)))"
+# load model or fit it
+load_or_fit("glmm_ns_min", glmm_ns_min.expr)
+```
+
+The maximal model does not converge:
+
+```{r}
+# # MAXIMAL random effects -- fails to converge, with error message:
+# # "unable to evaluate scaled gradientModel failed to converge: degenerate
+# # Hessian with 7 negative eigenvalues"
+# # expression to be passed to the load_or_fit function:
+# glmm_ns_max.expr <- "glmer(Used ~ Condition_bin * VerbType * cTrial +
+#                          (1 + cTrial | Subject) + (1 + Condition_bin * VerbType | VideoName),
+#                        data = d_ns, family = 'binomial',
+#                        control = glmerControl(optimizer='bobyqa', optCtrl=list(maxfun=2e5)))"
+# # load model or fit it
+# load_or_fit("glmm_ns_max", glmm_ns_max.expr)
+```
+
+
+Probably the random slope that accounts for most variability is the effect of
+Trial by subject, so fit this model:
+
+```{r}
+# Like MINIMAL but add random by-subject slope for cTrial
+# expression to be passed to the load_or_fit function:
+glmm_ns_trial.expr <- "glmer(Used ~ Condition_bin * VerbType * cTrial +
+                         (1 + cTrial | Subject) + (1 | VideoName),
+                       data = d_ns, family = 'binomial',
+                       control = glmerControl(optimizer='bobyqa', optCtrl=list(maxfun=2e5)))"
+# load model or fit it
+load_or_fit("glmm_ns_trial", glmm_ns_trial.expr)
+
+```
+
+
+
+```{r}
+summary(glmm_ns_min)
+```
+
+
+```{r}
+summary(glmm_ns_trial)
+```
+
+
+### Model interpretation (native speakers)
+
+The two GLMMs are qualitatively very similar. The interpretation of the
+estimates for the main effects is as follows (I follow the model output of 
+`glmm_ns_trial`, which is the more conservative one):
+
+- `Condition_binPrimed_vs_Baseline`: On average, participants are more likely
+to use a certain type of verb (path or manner) if there are primed with that
+verb type than if they are not.
+- `VerbTypeM_vs_P`: Path verbs were more likely to be used than Manner verbs
+- `cTrial`: Trial does not on average increase the likelihood of producing a
+target verb.
+- `Condition_binPrimed_vs_Baseline:VerbTypeM_vs_P`: The effect of priming
+did not differ across verb types
+- `Condition_binPrimed_vs_Baseline:cTrial`: When primed, participants tended
+to increase the use of the primed verb more than in the baseline condition.
+- `VerbTypeM_vs_P:cTrial`: Production of path verbs tended to increase more
+over the course of the experiment than production of manner verbs.
+- `Condition_binPrimed_vs_Baseline:VerbTypeM_vs_P:cTrial`: This 3-way 
+interaction is the one that directly tests whether the adaptation effect
+over the experiment was greater for manner than for path verbs. The 
+estimate for this effect is not significantly different from zero, so the
+results do not support this prediction.
+
+
+Question 2: Trial-by-trial adaptation of L2 learners
+========================================================
+
+Q2:
+
+*Our second question is whether L2 learners adapt to recent input as a function of both their L1 and L2 experience or of their L2 experience only. If learners’ expectations about the L2 input are mediated by their L1 experi¬ence, this should bias them towards expecting manner verbs more, and path verbs less, than native Spanish speakers. In this case, learners should—in comparison to natives—adapt more to path verbs and less to manner verbs. If, on the other hand, learners’ expectations are only a function of their L2 experience, then learners should adapt qualitatively like native speakers: more strongly to manner verbs than to path verbs.*
+
+
+## GAMM analysis
+
+### Data and processing
+
+```{r}
+## Subset data:
+# Data for analysis of Native speakers (note we are removing observations that
+# correspond to path verbs produced in the manner-primed condition or to manner
+# verbs produced in the path-primed condition)
+d_l2 <- d_mod %>% filter(Group == "L2")
+# drop unused factors for subject (I think this is important for gam fitting)
+d_l2$Subject <- factor(d_l2$Subject)
+
+# note log-odds of path verbs in baseline condition becomes the reference level
+contrasts(d_l2$VbType_Cond)
+```
+
+
+### GAMM fitting
+
+Previous models (not reported here) showed that random *intercepts* by items
+made sense, but not random slopes. We add the former but not the latter.
+
+Thus, the model is specified as:
+
+`DV ~ VbType_Cond + s(Trial, by = VbType_Cond) + s(Trial, Subject, bs = 'fs') + s(VideoName, bs = 're')`
+
+Predictors are:
+
+- `VbType_Cond`: VerbType-Condition interaction as a fixed effect. The four levels
+of this variable decompose into two crossed factors:
+  - `VerbType`: Indicator variable that defines what is being measured by the DV,
+  either the occurrence of path verbs or of manner verbs
+  - `Condition`: Primed vs baseline
+- `s(Trial, by = VbType_Cond)`: A smooth function of `Trial` allowing the function to differ for each level of Group-Condition (thin plate regression splines, the default)
+- `s(Trial, Subject, bs = 'fs')`: Factor smooths for `Subject` to capture non-linear random effects of speakers
+- `s(VideoName, bs = 're')`: Random intercepts by items (i.e., `VideoName`)
+
+
+```{r gam_l2}
+# the expression that is passed to load_or_fit()
+gam_l2.expr <- "bam(Used ~ VbType_Cond + s(Trial, by = VbType_Cond) +
+                    s(Trial, Subject, bs = 'fs') + s(VideoName, bs = 're'),
+                  data = d_l2,
+                  family = 'binomial')"
+# load model or fit
+load_or_fit("gam_l2", gam_l2.expr)
+```
+
+
+### Output and summary plots
+
+Summary of the model:
+
+```{r}
+summary(gam_l2)
+```
+
+
+Summary using gamtabs:
+
+(NB: Copy function from `supplementary-info.Rmd` if I want to use the function.)
+
+
+```{r, results = "asis"}
+# gam_tb(gam_l2)
+```
+
+
+Significance of the different terms in the model:
+
+```{r}
+anova(gam_l2)
+```
+
+
+Plot model estimates by condition, random smooth adjustments by speakers and QQ-plot of random by-item intercepts:
+
+```{r, results = 'hide'}
+## plot
+plot_smooth(gam_l2, view = 'Trial', plot_all = 'VbType_Cond', rm.ranef=TRUE)
+```
+
+
+```{r}
+# show by-speaker random smooths and by-item random intercepts
+par(mfrow = c(1, 2))
+plot(gam_l2, select = 5)
+plot(gam_l2, select = 6)
+```
+
+
+### Result plots
+
+Plot differences between conditions (model estimates):
+
+```{r, fig.height = myfighe_NS_L2, fig.width = myfigwi, echo = FALSE, results = 'hide'}
+plot_gam_main(gam_l2, "L2")  # choose this on Linux machine
+# on my old windows computer:
+# plot_gam_main(gam_l2, "L2", mark.diff = FALSE)  # use of mark.diff is a hack to
+# avoid an error that will stop the whole thing when I compile it on my work pc
+```
+
+
+```{r}
+# # save to disk for thesis chapter
+# tiff(file = "figures/gam_natives.tiff", width = 5, height = 5.2, units = "in", pointsize = 10, res = 800)
+# plot_gam_main(gam_l2, "L2")
+# dev.off()
+```
+
+
+## GLMM analysis
+
+### Rationale
+
+The rationale is the same as for native speakers.
+The difference is that the patterns are less linear for L2ers than for
+natives. We therefore do two analyses:
+
+1) Using the data from all the trials;
+2) Using only the data from the trials that are approximately linear (based
+on visual inspection).
+
+
+### GLMM fitting -- use data from all trials
+
+Verify factors are contrast coded:
+
+```{r}
+# Verify factors are contrast coded:
+contrasts(d_l2$Condition_bin)
+contrasts(d_l2$VerbType)
+```
+
+The minimal model wrt random effects structure (intercepts-only model)
+
+```{r}
+# MINIMAL random effects, only by-subject and by-item intercepts
+# expression to be passed to the load_or_fit function:
+glmm_l2_min.expr <- "glmer(Used ~ Condition_bin * VerbType * cTrial +
+                         (1 | Subject) + (1 | VideoName),
+                       data = d_l2, family = 'binomial',
+                       control = glmerControl(optimizer='bobyqa', optCtrl=list(maxfun=2e5)))"
+# load model or fit it
+load_or_fit("glmm_l2_min", glmm_l2_min.expr)
+```
+
+
+The maximal model (does not converge):
+
+```{r}
+# # MAXIMAL random effects
+# # expression to be passed to the load_or_fit function:
+# glmm_l2_max.expr <- "glmer(Used ~ Condition_bin * VerbType * cTrial +
+#                          (1 + cTrial | Subject) + (1 + Condition_bin * VerbType | VideoName),
+#                        data = d_l2, family = 'binomial',
+#                        control = glmerControl(optimizer='bobyqa', optCtrl=list(maxfun=2e5)))"
+# # load model or fit it
+# load_or_fit("glmm_l2_max", glmm_l2_max.expr)
+```
+
+
+Probably the random slope that accounts for most variability is the effect of
+Trial by subject, so fit this model:
+
+```{r}
+# Like MINIMAL but add random by-subject slope for cTrial
+# expression to be passed to the load_or_fit function:
+glmm_l2_trial.expr <- "glmer(Used ~ Condition_bin * VerbType * cTrial +
+                         (1 + cTrial | Subject) + (1 | VideoName),
+                       data = d_l2, family = 'binomial',
+                       control = glmerControl(optimizer='bobyqa', optCtrl=list(maxfun=2e5)))"
+# load model or fit it
+load_or_fit("glmm_l2_trial", glmm_l2_trial.expr)
+
+```
+
+
+
+```{r}
+summary(glmm_l2_min)
+```
+
+
+```{r}
+summary(glmm_l2_trial)
+```
+
+
+### GLMM fitting -- use data that shows linear trend only
+
+Subset data
+
+```{r}
+d_l2_lin <- d_l2 %>% filter(Trial <= 13)
+# recenter cTrial
+d_l2_lin$cTrial <- d_l2_lin$Trial - mean(d_l2_lin$Trial) 
+```
+
+The minimal model wrt random effects structure (intercepts-only model)
+
+```{r}
+# MINIMAL random effects, only by-subject and by-item intercepts
+# expression to be passed to the load_or_fit function:
+glmm_l2_lin_min.expr <- "glmer(Used ~ Condition_bin * VerbType * cTrial +
+                         (1 | Subject) + (1 | VideoName),
+                       data = d_l2_lin, family = 'binomial',
+                       control = glmerControl(optimizer='bobyqa', optCtrl=list(maxfun=2e5)))"
+# load model or fit it
+load_or_fit("glmm_l2_lin_min", glmm_l2_lin_min.expr)
+```
+
+
+The maximal model (does not converge):
+
+```{r}
+# # MAXIMAL random effects
+# # Fails to converge with error message:
+# # "unable to evaluate scaled gradientModel failed to converge: degenerate
+# # Hessian with 1 negative eigenvalues"
+# # expression to be passed to the load_or_fit function:
+# glmm_l2_lin_max.expr <- "glmer(Used ~ Condition_bin * VerbType * cTrial +
+#                          (1 + cTrial | Subject) + (1 + Condition_bin * VerbType | VideoName),
+#                        data = d_l2_lin, family = 'binomial',
+#                        control = glmerControl(optimizer='bobyqa', optCtrl=list(maxfun=2e5)))"
+# # load model or fit it
+# load_or_fit("glmm_l2_lin_max", glmm_l2_lin_max.expr)
+```
+
+
+Probably the random slope that accounts for most variability is the effect of
+Trial by subject, so fit this model:
+
+```{r}
+# Like MINIMAL but add random by-subject slope for cTrial
+# expression to be passed to the load_or_fit function:
+glmm_l2_lin_trial.expr <- "glmer(Used ~ Condition_bin * VerbType * cTrial +
+                         (1 + cTrial | Subject) + (1 | VideoName),
+                       data = d_l2_lin, family = 'binomial',
+                       control = glmerControl(optimizer='bobyqa', optCtrl=list(maxfun=2e5)))"
+# load model or fit it
+load_or_fit("glmm_l2_lin_trial", glmm_l2_lin_trial.expr)
+
+```
+
+
+```{r}
+summary(glmm_l2_lin_min)
+```
+
+
+```{r}
+summary(glmm_l2_lin_trial)
+```
+
+
+### Model interpretation (L2ers)
+
+As was the case for the native speakers, the two GLMMs we fitted for L2 speakers
+are qualitatively very similar.
+But for L2 speakers, we fit two additional models for which we subset the data
+selecting only data for trials 1 through 13, corresponding to the parts for
+which the relation between trial and log-odds of producing a verb were 
+approximately linear.
+These four models do not differ substantially from each other.
+
+Below, I interpret the main effects estimates for the model output of 
+`glmm_l2_lin_trial`, which is the one that selects only the linear part of
+the data:
+
+- `Condition_binPrimed_vs_Baseline`: On average, participants are more likely
+to use a certain type of verb (path or manner) if there are primed with that
+verb type than if they are not.
+- `VerbTypeM_vs_P`: Path verbs were more likely to be used than Manner verbs
+- `cTrial`: Trial did on average increase the likelihood of producing a
+target verb (as opposed to native speakers where this effect wasn't significant).
+- `Condition_binPrimed_vs_Baseline:VerbTypeM_vs_P`: The effect of priming
+did not differ across verb types
+- `Condition_binPrimed_vs_Baseline:cTrial`: When primed, participants tended
+to increase the use of the primed verb more than in the baseline condition.
+- `VerbTypeM_vs_P:cTrial`: Production of path verbs tended to increase more
+over the course of the experiment than production of manner verbs.
+- `Condition_binPrimed_vs_Baseline:VerbTypeM_vs_P:cTrial`: This 3-way 
+interaction is the one that directly tests whether the adaptation effect
+over the experiment was greater for path than for manner verbs. The 
+estimate for this effect is not significantly different from zero, so the
+results do not support this prediction.
+
+
+
+Combined analysis for questions 2 and 3
+=======================================
+
+
+This section tests whether there is a difference in adaptation at the group
+level when comparing L1 and L2 speakers.
+It is an analysis that compares the results from Questions 2 and 3,
+and explores whether there is 4-way interaction suggesting that adaptation
+patterns differ for natives and L2ers.
+
+## Background
+
+In the paper (draft6 from 180601), we write:
+
+"Thus, learners differed from native speakers in the direction one would
+expect if they were basing their L2 expectations on a mixture of their L1
+and L2 experience. Even if learners did not show a statistically stronger
+adaptation to path verbs than to manner verbs, they showed this numerical
+tendency, whereas native speakers showed the opposite tendency (they adapted
+to manner verbs but not to path verbs)."
+
+Florian (comments on above draft) notes that this leads to the "classic 
+interaction fallacy. We can’t conclude from different patterns, that they are
+significantly different. This needs to be acknowleged, or better (required, 
+I’d say) L1 vs. L2 should be included in the/a follow-up analysis."
+
+Since this type of high-order interaction analysis in a factorial design is 
+difficult to implement in the GAM framework (see, e.g.,
+[here](http://grokbase.com/t/r/r-help/113qaadxt4/r-how-to-add-in-interaction-terms-in-gamm)),
+we carry out a mixed logistic regression to ask this. 
+
+Note, however, that this is not ideal because the trends in the data are not
+linear (in log-odds space) *and* because we will be testing a 4-way interaction:
+VerbType (Path/Manner) x PrimeCondition (baseline/primed) x
+LanguageGroup (L1/L2) x Trial (1 through 32).
+Power to detect this effect will be low.
+
+
+
+## Factor explanation and coding
+
+We analyze the data as a 2 x 2 x 2 design, with Trial as an additional (4th)
+continuous predictor, in which all predictors interact:
+
+- `VerbType`: Path vs Manner
+- `Condition_bin`: Primed vs Baseline
+- `LanguageGroup`: L2 vs NS
+- `Trial`: 1-32 (but centred)
+
+We will fit a model for the subset of the data that shows a linear trend
+(see analysis of L2 data for Question 2).
+
+
+```{r}
+# Subset data
+d_mod_lin <- d_mod %>% filter(Trial <= 13)
+# recenter cTrial
+d_mod_lin$cTrial <- d_mod_lin$Trial - mean(d_mod_lin$Trial) 
+```
+
+
+Verify factor coding and centering:
+
+```{r}
+# VerbType -- use contrast coding	
+contrasts(d_mod_lin$VerbType)	
+# (Language) Group -- use contrast coding	
+contrasts(d_mod_lin$Group)	
+# Condition - contrast coding	
+contrasts(d_mod_lin$Condition_bin)
+# Centred Trial	
+head(d_mod_lin$cTrial)	
+```
+
+
+## GLMM fitting -- data that shows linear trend only
+
+Random effects structure:
+
+- By-item and by-subject intercepts
+- `cTrial` as by-subject random slopes
+
+
+```{r}
+# expression to be passed to the load_or_fit function:
+glmm_L1L2_lin_cTrial.expr <- "glmer(Used ~ Condition_bin * VerbType * Group * cTrial +
+                         (1 + cTrial | Subject) + (1 | VideoName),
+                       data = d_mod_lin, family = 'binomial',
+                       control = glmerControl(optimizer='bobyqa', optCtrl=list(maxfun=2e5)))"
+# load model or fit it
+load_or_fit("glmm_L1L2_lin_cTrial", glmm_L1L2_lin_cTrial.expr)
+```
+
+
+## Interpretation
+
+Model summary:
+
+```{r}
+# summary(glmm_L1L2_lin_cTrial)
+# Pasted from console for more readability:
+```
+
+```
+> summary(glmm_L1L2_lin_cTrial)
+Generalized linear mixed model fit by maximum likelihood (Laplace Approximation) ['glmerMod']
+ Family: binomial  ( logit )
+Formula: Used ~ Condition_bin * VerbType * Group * cTrial + (1 + cTrial |      Subject) + (1 | VideoName)
+   Data: d_mod_lin
+Control: glmerControl(optimizer = "bobyqa", optCtrl = list(maxfun = 2e+05))
+
+     AIC      BIC   logLik deviance df.resid 
+  2129.4   2241.9  -1044.7   2089.4     2027 
+
+Scaled residuals: 
+    Min      1Q  Median      3Q     Max 
+-6.7972 -0.5259  0.0812  0.5212  3.2799 
+
+Random effects:
+ Groups    Name        Variance Std.Dev. Corr
+ Subject   (Intercept) 3.094535 1.75913      
+           cTrial      0.020373 0.14274  0.61
+ VideoName (Intercept) 0.008656 0.09304      
+Number of obs: 2047, groups:  Subject, 158; VideoName, 32
+
+Fixed effects:
+                                                                    Estimate Std. Error z value Pr(>|z|)    
+(Intercept)                                                          0.22009    0.16123   1.365 0.172215    
+Condition_binPrimed_vs_Baseline                                      0.89731    0.16256   5.520 3.39e-08 ***
+VerbTypeM_vs_P                                                      -0.76474    0.16268  -4.701 2.59e-06 ***
+GroupL2_vs_NS                                                        0.01354    0.16040   0.084 0.932740    
+cTrial                                                               0.06261    0.02181   2.871 0.004092 ** 
+Condition_binPrimed_vs_Baseline:VerbTypeM_vs_P                      -0.04191    0.16025  -0.262 0.793672    
+Condition_binPrimed_vs_Baseline:GroupL2_vs_NS                        0.38710    0.16099   2.404 0.016197 *  
+VerbTypeM_vs_P:GroupL2_vs_NS                                        -0.62265    0.16137  -3.858 0.000114 ***
+Condition_binPrimed_vs_Baseline:cTrial                               0.07399    0.02270   3.259 0.001119 ** 
+VerbTypeM_vs_P:cTrial                                               -0.07868    0.02271  -3.464 0.000531 ***
+GroupL2_vs_NS:cTrial                                                 0.07426    0.02184   3.401 0.000673 ***
+Condition_binPrimed_vs_Baseline:VerbTypeM_vs_P:GroupL2_vs_NS        -0.12941    0.16025  -0.808 0.419355    
+Condition_binPrimed_vs_Baseline:VerbTypeM_vs_P:cTrial               -0.02411    0.02176  -1.108 0.267784    
+Condition_binPrimed_vs_Baseline:GroupL2_vs_NS:cTrial                 0.08683    0.02199   3.949 7.85e-05 ***
+VerbTypeM_vs_P:GroupL2_vs_NS:cTrial                                 -0.03105    0.02215  -1.402 0.160957    
+Condition_binPrimed_vs_Baseline:VerbTypeM_vs_P:GroupL2_vs_NS:cTrial -0.02231    0.02174  -1.026 0.304788    
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+```
+
+
+
+Note that **the 4-way interaction of interest is not even close to
+signficance**.
+
+Now, let's interpret each fixed-effects coefficient in the model
+(it might help to look at Figures 3 and 4 of the manuscript):
+
+**Intercept and main effects**
+
+1. `Intercept`:The intercept is not very useful here, but it means that on average
+there was slightly over 50% chance (but not significantly so) that path or manner
+verbs were used in a target description when averaging across all predictor variables.
+1. ***`ConditionPrimed_vs_Baseline`: Participants in a primed condition were 2 logits
+more likely to use a path or manner verb than those in the baseline (unprimed)
+condition.
+1. ***`VerbTypeP_vs_M`: Path verbs were 2.1 logits more likely to be used than manner
+verbs.
+1. `GroupL2_vs_NS`: On average, natives and L2ers were equally likely to use
+path or manner verbs.
+1. **`cTrial`: On average, more path or manner verbs were used as the experiment
+progressed.
+
+**Two-way interactions**
+
+1. `ConditionPrimed_vs_Baseline:VerbTypeP_vs_M`: No significant difference in
+the priming effect of path and manner verbs with respect to baseline
+(averaged over language groups).
+2. *`ConditionPrimed_vs_Baseline:GroupL2_vs_NS`: There was a larger priming effect
+for L2ers than for native speakers (averaged over verb types).
+1. ***`VerbTypeP_vs_M:GroupL2_vs_NS`: L2ers produced more path verbs than manner verbs
+compared to native speakers (averaged across primed and baseline conditions).
+1. **`ConditionPrimed_vs_Baseline:cTrial`: The general increase of Path and Manner
+verbs as the experiment progressed was greater in the primed than in the baseline
+condition.
+1. ***`VerbTypeP_vs_M:cTrial`: The increase in use of path verbs during the 
+experiment was greater than the increase in use of manner verbs.
+1. ***`GroupL2_vs_NS:cTrial`: The increase in use of path or manner verbs during the
+experiment was greater for L2ers than for natives.
+
+**Three-way interactions**
+
+1. `ConditionPrimed_vs_Baseline:VerbTypeP_vs_M:GroupL2_vs_NS`: There was no
+difference in how strongly L2ers and natives were primed by path vs manner
+verbs (compared to baseline in each language group and for each verb type).
+Such an effect would speak to the claim that the adaptation patterns
+differed for the two language groups (the other relevant term being the 4-way
+interaction reported below).
+2. `ConditionPrimed_vs_Baseline:VerbTypeP_vs_M:cTrial`: No significant difference
+in how much use of path or manner verbs increased in primed condition against
+baseline as the experiment proceeded.
+3. ***`ConditionPrimed_vs_Baseline:GroupL2_vs_NS:cTrial`: L2 speakers increased
+their rate of prime verb use (path and manner averaged) verbs more rapidly
+than native speakers as the experiment progressed (measured against their
+respective baselines).
+4. *`VerbTypeP_vs_M:GroupL2_vs_NS:cTrial`: The increase in use of path verbs
+relative to manner verbs as the experiment progressed was less pronounced
+in L2ers than in natives (seems to be driven by the fact that L2ers are more
+strongly primed by manner verbs than natives).
+
+**Four-way interaction**
+
+- `ConditionPrimed_vs_Baseline:VerbTypeP_vs_M:GroupL2_vs_NS:cTrial`:
+This was the effect of interest, for which there is no evidence in the data.
+In the GAMs, we observed that manner adaptation was stronger than path adaptation
+as the experiment went along for natives (which would correspond to a negative
+coefficient for the `ConditionPrimed_vs_Baseline:VerbTypeP_vs_M:cTrial` term),
+whereas the opposite seemed to be true for L2ers (corresponding to a negative
+coefficient). What this 4-way interaction tells us is that there is no evidence
+for this difference.
+
+**Random effects**
+
+Finally, note that the **random variance** induced by participants (modelled
+as random intercepts and random slopes for `cTrial`, with SDs of 1.8 and 0.14,
+respectively) was by far greater than that induced by items (SD of 0.09).
+This may suggest that increasing model complexity might not make much difference
+to the fixed-effect estimates, since all the random slopes that we have *not*
+modelled can only be fitted by items (all predictors are between subjects except
+for `cTrial`.)
+
+NB: 
+
+I don't know what the effect on the subject-variance estimate is of having
+counted each participant in the baseline condition as two distinct participants,
+one for their path verb production and another for their manner verb production.
+
+
+#### Conclusion
+
+With the caveat that power for the effects we were looking for was probably
+low, the conclusion is that there is no evidence for differences between
+L2ers and natives regarding their patterns of adaptation to path and manner
+verbs, at least when analyzed as a group.
