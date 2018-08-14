@@ -100,6 +100,45 @@ plot_L2_profic_eurosla <- function(fm, primed_cond = NULL, ylim1 = c(-6, 8),
 }
 
 
+# Adaptation of the previous function when a SINGLE model is fit to path and
+# manner verbs (rather than fitting two separate models).
+# Note, however, that we will still call the function twice, once for each
+# comparison, even if the comparison is extracted from the estimates of the
+# same model.
+plot_L2_profic_singlemodel <- function(fm, primed_cond = NULL, ylim1 = c(-6, 8),
+                                   cloze_range = c(10, 35), nb_plots = 4) {
+  cloze_scores <- seq(cloze_range[1], cloze_range[2], length.out = nb_plots)
+  # Choose the relevant verb type based on argument "primed_cond"
+  if (! primed_cond %in% c("Path", "Manner")) {
+    stop("argument primed_con has to be either Path or Manner")
+  } else if (primed_cond == "Path") {
+    myverbtype <- "P_V"
+  } else {
+    myverbtype <- "M_V"
+  }
+  baseline_cond <- paste(myverbtype, "Baseline", sep = ".")
+  my_primed_cond <- paste(myverbtype, primed_cond, sep = ".")
+  # we want to have one common legend for all plots
+  layout(rbind(1, matrix(2:(nb_plots + 1), ncol = nb_plots, byrow=TRUE)), heights = c(1, 6))
+  # add common legend
+  par(mai=c(0,0,0,0))
+  plot.new()
+  legend(x = "center", ncol = 2, legend = c(paste0(primed_cond, '-primed'), 'Baseline'),
+         col = c('red', 'blue'), lty = 1:2, box.lty = 0, cex = 1.5)
+  # Now make plot for the model estimates at the different cloze scores in cloze_scores
+  # par(mai=rep(0.2, 4))
+  par(mai = c(.4, .6, .3, 0), mgp = c(1.6, .8, 0))
+  for(cloze in cloze_scores) {
+    plot_smooth(fm, view = 'Trial', cond = list(VbType_Cond = baseline_cond, ClozeScore = cloze),
+                col = 'blue', lty = 2, rug = FALSE, ylim = ylim1, rm.ranef = TRUE,
+                hide.label = TRUE, ylab = paste0('Log-odds\nof ', tolower(primed_cond), ' verb'),
+                main = paste('L2 proficiency =', round(cloze)))
+    plot_smooth(fm, view = 'Trial', cond = list(VbType_Cond = my_primed_cond, ClozeScore = cloze),
+                col = 'red', rug = FALSE, rm.ranef = TRUE, hide.label = TRUE, add = TRUE)
+  }
+}
+
+
 
 # function to plot the effects by L2 speakers' proficiency from GAMs
 # this time showing DIFFERENCES
