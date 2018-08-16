@@ -24,6 +24,8 @@ them more consistent across the whole paper.
 
 The main points we took up were:
 
+- Adhere to the same type of analysis approach throughout: use an indicator
+variable (Manner vs Path) and a Condition factor (Primed vs baseline)-
 - Use GAMM and visualizations when reporting the main results for Questions 
 1--3
 - Be clear that to the best of our knowledge the GAMM implementation we use
@@ -36,12 +38,13 @@ shown in GAMMs, yet this is an assumption in GLMM.
 Second, We will be testing up to 4-way interactions with a between-subject design,
 so power to detect this effect will be low. 
 - Run a GLMM for each of the GAMMs in a systematic fashion.
-- In addition, for Q3, run a comparison of three different groups: 
-L2 low proficiency vs L2 high proficiency, L2 low profic vs native speakers.
+- In particular, for Q3, I have run a GLMM that allows us to compare adaptation
+among the following groups: L2 low proficiency vs native speakers, and L2 high
+proficiency vs native speakers. 
+We hypothesized no difference between the high L2 proficiency group and natives,
+but a significant difference between the low proficiency group and natives.
 We hypothesize no difference between L2 high and natives, but a significant
 difference between low profic and natives.
-- Adhere to the same type of analysis approach throughout: use an indicator
-variable (Manner vs Path) and a Condition factor (Primed vs baseline)-
 
 **Question to TFJ**: 
 Would it make sense in our case to use Bayes Factors? Would we gain anything?
@@ -97,11 +100,11 @@ source("functions/plot_gams_fnc.R")
 ```{r}
 ## Simpler convenience functions:	
 
-# # print deviance explained as percentage	
-# dev_expl <- function(fm) {	
-#   devi <- summary(fm)$dev.expl	
-#   paste0(round(100 * devi, 1), '% dev. explained')	
-# }	
+# print deviance explained as percentage and rounded to 1 decimal
+dev_expl <- function(fm) {
+  devi <- summary(fm)$dev.expl
+  round(100 * devi, 1)
+}
 
 # create a neat table of the summary of fixed effects of a mixed model	
 glmm_tb <- function(fm) {	
@@ -325,11 +328,9 @@ summary(glmm_basel)
 
 Plot the results:
 
-*NB: CHANGE CODE BELOW!!! increase nb_sims!!!*
-
 ```{r}
 # the function is defined in analysis/functions/plot_glmm_fnc.R
-plot_basel(glmm_basel, d_basel, nb_sims = 50)  # CHANGE THIS!!! increase nb_sims
+plot_basel(glmm_basel, d_basel, nb_sims = 2000)  # Adjust nb_sims
 ```
 
 
@@ -954,14 +955,15 @@ load_or_fit("glmm_L1L2_lin_cTrial", glmm_L1L2_lin_cTrial.expr)
 
 ## Interpretation
 
-Model summary:
+Model summary (see immediately below for a more readable output):
 
 ```{r}
-# summary(glmm_L1L2_lin_cTrial)
-# Pasted from console for more readability:
+summary(glmm_L1L2_lin_cTrial)
 ```
 
+
 ```
+# Pasted from console for more readability:
 > summary(glmm_L1L2_lin_cTrial)
 Generalized linear mixed model fit by maximum likelihood (Laplace Approximation) ['glmerMod']
  Family: binomial  ( logit )
@@ -1003,6 +1005,10 @@ VerbTypeM_vs_P:GroupL2_vs_NS:cTrial                                 -0.03105    
 Condition_binPrimed_vs_Baseline:VerbTypeM_vs_P:GroupL2_vs_NS:cTrial -0.02231    0.02174  -1.026 0.304788    
 ---
 Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Correlation matrix not shown by default, as p = 16 > 12.
+Use print(x, correlation=TRUE)  or
+	 vcov(x)	 if you need it
 ```
 
 
@@ -1112,17 +1118,28 @@ Q3:
 
 ## GAMM analysis
 
-The difference with respect to our previous analysis (as reported in, e.g.,  
+The difference with respect to our previous analysis (as reported in, e.g.,
 `adaptation-L2_DRAFT6_180730.docx`) is that we fit a *single* model rather than
 two separate ones for path and manner verbs as DVs.
 In other words, we use the indicator variable approach we used in all previous
 analyses.
+
+We will thus predict the use of either path or manner verbs (depending
+on the value of `VerbType`) as a function of:
+
+- `Condition`: primed vs. baseline
+- `Trial`: 1 through 32 (continuous variable)
+- `ClozeScore`: A continuous measure of L2 proficiency
+- Recall that the indicator variable `VerbType` is combined with `Condition`
+to yield a 4-level factor, `VbType_Cond`.
 
 
 ### Data and processing
 
 The data is the same as we used to address Question 2, only now we will use
 the predictor `ClozeScore` to measure L2 proficiency.
+
+First rows of the data set:
 
 ```{r}
 head(d_l2)
@@ -1137,9 +1154,9 @@ Using model comparison, we can see if this term significantly improves the model
 
 Model including 3-way interaction
 
-```{r model_path_with_interac}
+```{r model_l2prof_with_interac}
 # model with interaction
-gam_L2prof.expr <- "bam(Used ~
+gam_l2prof.expr <- "bam(Used ~
     VbType_Cond +
     te(Trial, ClozeScore, by = VbType_Cond) +
     s(Trial, Subject, bs = 'fs') +
@@ -1147,14 +1164,14 @@ gam_L2prof.expr <- "bam(Used ~
   data = d_l2,
   family = 'binomial')"
 # load model or fit
-load_or_fit("gam_L2prof", gam_L2prof.expr)
+load_or_fit("gam_l2prof", gam_l2prof.expr)
 ```
 
 Model excluding the 3-way interaction
 
-```{r model_path_no_interac}
+```{r model_l2prof_no_interac}
 # model without the interaction
-gam_L2prof_no3way.expr <- "bam(Used ~ 
+gam_l2prof_no3way.expr <- "bam(Used ~ 
                                  VbType_Cond + 
                                  s(Trial, by = VbType_Cond) + 
                                  s(ClozeScore, by = VbType_Cond) + 
@@ -1162,24 +1179,23 @@ gam_L2prof_no3way.expr <- "bam(Used ~
                                  s(VideoName, bs = 're'),
                                data = d_l2, family = 'binomial')"
 # load model or fit
-load_or_fit("gam_L2prof_no3way", gam_L2prof_no3way.expr)
+load_or_fit("gam_l2prof_no3way", gam_l2prof_no3way.expr)
 ```
 
 
 
 The two models above differ in whether the effect of `Trial` is allowed
-to interact with the effect of L2 proficiency (`ClozeScore`) at different
+to interact with the effect of `ClozeScore` (L2 proficiency) at different
 levels of `VbType_Cond`.
 In the first model, the term `te(Trial, ClozeScore, by = VbType_Cond)` does
 allow for this interaction.
-
 In the second model, however, this interaction is not defined:
 
 - The term `s(Trial, by = VbType_Cond)` allows the effect of Trial to be
 different for the different levels of `VbType_Cond`
 - The term `s(ClozeScore, by = VbType_Cond)` in turn allows the effect of
-L2 proficiency (`ClozeScore`) to vary for the different levels of `VbType_Cond`
-- However, the two effects can only be additive. Our prediction ins precisely
+`ClozeScore` (L2 proficiency) to vary for the different levels of `VbType_Cond`
+- However, the two effects can only be additive. Our prediction is precisely
 that they are not, i.e. that the difference between baseline and each of the primed
 conditions will depend on L2 proficiency.
 
@@ -1189,13 +1205,15 @@ conditions will depend on L2 proficiency.
 # compare the models with itsadug::compareML()
 # (see email correspondence with Florian J. Subject: "Our skype on L2 adaptation
 # paper" (15 Feb 2017))
-itsadug::compareML(gam_L2prof, gam_L2prof_no3way)
+itsadug::compareML(gam_l2prof, gam_l2prof_no3way)
 ```
 
 The additional complexity of the model *with* the interaction leads to a 
 significantly better model.
-
-In the remainder, we report the model with the interaction.
+We interpret this as supporting the idea that the adaptation effect to
+Path and Manner changes with L2 proficiency.
+In the remainder, we report the model with the interaction, and we use model
+visualization to interpret this interaction.
 
 
 ### Output and summary plots
@@ -1203,8 +1221,20 @@ In the remainder, we report the model with the interaction.
 Summary of the model:
 
 ```{r}
-summary(gam_L2prof)
+summary(gam_l2prof)
 ```
+
+Note that this model, which includes L2 proficiency, explains
+`r dev_expl(gam_l2prof)`%
+of the deviance in the data, whereas the model fit for Question 2, which
+treated L2ers as a homogenous group, explained
+`r dev_expl(gam_l2)`%
+of the deviance.
+This is a mere
+`r dev_expl(gam_l2prof) - dev_expl(gam_l2)`%
+in the amount of deviance explained -- not very impressive.
+
+
 
 
 Summary using gamtabs:
@@ -1213,14 +1243,14 @@ Summary using gamtabs:
 
 
 ```{r, results = "asis"}
-# gam_tb(gam_L2prof)
+# gam_tb(gam_l2prof)
 ```
 
 
 Significance of the different terms in the model:
 
 ```{r}
-anova(gam_L2prof)
+anova(gam_l2prof)
 ```
 
 
@@ -1228,19 +1258,19 @@ Plot model estimates by condition, random smooth adjustments by speakers and QQ-
 
 ```{r, results = 'hide'}
 # ## plot
-plot_smooth(gam_L2prof, view = 'Trial', plot_all = 'VbType_Cond', rm.ranef=TRUE)
+plot_smooth(gam_l2prof, view = 'Trial', plot_all = 'VbType_Cond', rm.ranef=TRUE)
 ```
 
 ```{r, results = 'hide'}
 ## plot
-plot_smooth(gam_L2prof, view = 'ClozeScore', plot_all = 'VbType_Cond', rm.ranef=TRUE)
+plot_smooth(gam_l2prof, view = 'ClozeScore', plot_all = 'VbType_Cond', rm.ranef=TRUE)
 ```
 
 ```{r}
 # # show by-speaker random smooths and by-item random intercepts
 # par(mfrow = c(1, 2))
-# plot(gam_L2prof, select = 5)
-# plot(gam_L2prof, select = 6)
+# plot(gam_l2prof, select = 5)
+# plot(gam_l2prof, select = 6)
 ```
 
 
@@ -1248,18 +1278,9 @@ plot_smooth(gam_L2prof, view = 'ClozeScore', plot_all = 'VbType_Cond', rm.ranef=
 
 Plot differences between conditions (model estimates):
 
-
-
-
-```{r, fig.height = myfighe_NS_L2, fig.width = myfigwi, echo = TRUE, results = 'hide'}
-plot_L2_profic_singlemodel(gam_L2prof, primed_cond = 'Path')
-plot_L2_profic_singlemodel(gam_L2prof, primed_cond = 'Manner')
-```
-
-
 ```{r, fig.height = 4, fig.width = 8, echo = TRUE, results = 'hide'}
-plot_L2_profic_singlemodel(gam_L2prof, primed_cond = 'Path')
-plot_L2_profic_singlemodel(gam_L2prof, primed_cond = 'Manner')
+plot_L2_profic_singlemodel(gam_l2prof, primed_cond = 'Path')
+plot_L2_profic_singlemodel(gam_l2prof, primed_cond = 'Manner')
 ```
 
 
@@ -1391,15 +1412,72 @@ load_or_fit("glmm_L1L2_dichot_trial", glmm_L1L2_dichot_trial.expr)
 ```
 
 
+Summary of the model with just random intercepts by item and subject
+(see immediately below for a more readable output):
 
 ```{r}
 summary(glmm_L1L2_dichot)
 ```
 
+```
+> summary(glmm_L1L2_dichot)
+Generalized linear mixed model fit by maximum likelihood (Laplace Approximation) ['glmerMod']
+ Family: binomial  ( logit )
+Formula: Used ~ Profic_categ * VerbType * Condition_bin * cTrial + (1 |      Subject) + (1 | VideoName)
+   Data: d_mod_dichot
+Control: glmerControl(optimizer = "bobyqa", optCtrl = list(maxfun = 2e+05))
 
+     AIC      BIC   logLik deviance df.resid 
+  4186.5   4353.4  -2067.3   4134.5     4502 
+
+Scaled residuals: 
+    Min      1Q  Median      3Q     Max 
+-7.3203 -0.4799  0.1597  0.5001  8.6798 
+
+Random effects:
+ Groups    Name        Variance Std.Dev.
+ Subject   (Intercept) 2.856332 1.69007 
+ VideoName (Intercept) 0.002567 0.05067 
+Number of obs: 4528, groups:  Subject, 142; VideoName, 32
+
+Fixed effects:
+                                                                              Estimate Std. Error z value Pr(>|z|)    
+(Intercept)                                                                   0.284584   0.168239   1.692   0.0907 .  
+Profic_categL2hi_vs_NS                                                        0.255132   0.381779   0.668   0.5040    
+Profic_categL2lo_vs_NS                                                       -0.276289   0.386477  -0.715   0.4747    
+VerbTypeM_vs_P                                                               -1.132985   0.168437  -6.726 1.74e-11 ***
+Condition_binPrimed_vs_Baseline                                               1.120883   0.168529   6.651 2.91e-11 ***
+cTrial                                                                        0.033678   0.005692   5.917 3.28e-09 ***
+Profic_categL2hi_vs_NS:VerbTypeM_vs_P                                        -0.972437   0.381805  -2.547   0.0109 *  
+Profic_categL2lo_vs_NS:VerbTypeM_vs_P                                        -0.877453   0.386447  -2.271   0.0232 *  
+Profic_categL2hi_vs_NS:Condition_binPrimed_vs_Baseline                        0.541470   0.381749   1.418   0.1561    
+Profic_categL2lo_vs_NS:Condition_binPrimed_vs_Baseline                        0.862252   0.386321   2.232   0.0256 *  
+VerbTypeM_vs_P:Condition_binPrimed_vs_Baseline                                0.203150   0.168149   1.208   0.2270    
+Profic_categL2hi_vs_NS:cTrial                                                 0.009371   0.012187   0.769   0.4419    
+Profic_categL2lo_vs_NS:cTrial                                                 0.065129   0.013231   4.923 8.54e-07 ***
+VerbTypeM_vs_P:cTrial                                                        -0.033393   0.005683  -5.876 4.21e-09 ***
+Condition_binPrimed_vs_Baseline:cTrial                                        0.027280   0.005683   4.800 1.59e-06 ***
+Profic_categL2hi_vs_NS:VerbTypeM_vs_P:Condition_binPrimed_vs_Baseline         0.754008   0.381956   1.974   0.0484 *  
+Profic_categL2lo_vs_NS:VerbTypeM_vs_P:Condition_binPrimed_vs_Baseline        -0.327421   0.386274  -0.848   0.3966    
+Profic_categL2hi_vs_NS:VerbTypeM_vs_P:cTrial                                  0.026387   0.012187   2.165   0.0304 *  
+Profic_categL2lo_vs_NS:VerbTypeM_vs_P:cTrial                                  0.017271   0.013208   1.308   0.1910    
+Profic_categL2hi_vs_NS:Condition_binPrimed_vs_Baseline:cTrial                 0.022173   0.012183   1.820   0.0688 .  
+Profic_categL2lo_vs_NS:Condition_binPrimed_vs_Baseline:cTrial                 0.029842   0.013206   2.260   0.0238 *  
+VerbTypeM_vs_P:Condition_binPrimed_vs_Baseline:cTrial                         0.012215   0.005691   2.146   0.0318 *  
+Profic_categL2hi_vs_NS:VerbTypeM_vs_P:Condition_binPrimed_vs_Baseline:cTrial  0.021239   0.012182   1.744   0.0812 .  
+Profic_categL2lo_vs_NS:VerbTypeM_vs_P:Condition_binPrimed_vs_Baseline:cTrial  0.004766   0.013220   0.360   0.7185    
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Correlation matrix not shown by default, as p = 24 > 12.
+Use print(x, correlation=TRUE)  or
+	 vcov(x)	 if you need it
 ```
-Model summary here
-```
+
+
+
+Summary of the model that also has a random by-subject slope for `cTrial`
+(see immediately below for a more readable output):
 
 
 ```{r}
@@ -1407,82 +1485,87 @@ summary(glmm_L1L2_dichot_trial)
 ```
 
 
-```{r}
-# summary(glmm_l2_trial)
+```
+> summary(glmm_L1L2_dichot_trial)
+Generalized linear mixed model fit by maximum likelihood (Laplace Approximation) ['glmerMod']
+ Family: binomial  ( logit )
+Formula: Used ~ Profic_categ * VerbType * Condition_bin * cTrial + (1 +      cTrial | Subject) + (1 | VideoName)
+   Data: d_mod_dichot
+Control: glmerControl(optimizer = "bobyqa", optCtrl = list(maxfun = 2e+05))
+
+     AIC      BIC   logLik deviance df.resid 
+  4096.9   4276.6  -2020.4   4040.9     4500 
+
+Scaled residuals: 
+    Min      1Q  Median      3Q     Max 
+-5.6840 -0.4488  0.0993  0.4895  5.4151 
+
+Random effects:
+ Groups    Name        Variance Std.Dev. Corr
+ Subject   (Intercept) 3.651340 1.91085      
+           cTrial      0.006436 0.08022  0.65
+ VideoName (Intercept) 0.003517 0.05930      
+Number of obs: 4528, groups:  Subject, 142; VideoName, 32
+
+Fixed effects:
+                                                                              Estimate Std. Error z value Pr(>|z|)    
+(Intercept)                                                                   0.389424   0.190739   2.042  0.04119 *  
+Profic_categL2hi_vs_NS                                                        0.318211   0.430617   0.739  0.45993    
+Profic_categL2lo_vs_NS                                                       -0.121575   0.438094  -0.278  0.78139    
+VerbTypeM_vs_P                                                               -1.270454   0.191626  -6.630 3.36e-11 ***
+Condition_binPrimed_vs_Baseline                                               1.275634   0.191793   6.651 2.91e-11 ***
+cTrial                                                                        0.040774   0.010053   4.056 4.99e-05 ***
+Profic_categL2hi_vs_NS:VerbTypeM_vs_P                                        -0.938608   0.430697  -2.179  0.02931 *  
+Profic_categL2lo_vs_NS:VerbTypeM_vs_P                                        -0.934082   0.438086  -2.132  0.03299 *  
+Profic_categL2hi_vs_NS:Condition_binPrimed_vs_Baseline                        0.628146   0.430744   1.458  0.14476    
+Profic_categL2lo_vs_NS:Condition_binPrimed_vs_Baseline                        0.981667   0.438107   2.241  0.02505 *  
+VerbTypeM_vs_P:Condition_binPrimed_vs_Baseline                                0.231677   0.190106   1.219  0.22297    
+Profic_categL2hi_vs_NS:cTrial                                                 0.013438   0.022087   0.608  0.54291    
+Profic_categL2lo_vs_NS:cTrial                                                 0.066504   0.023244   2.861  0.00422 ** 
+VerbTypeM_vs_P:cTrial                                                        -0.047318   0.010230  -4.625 3.74e-06 ***
+Condition_binPrimed_vs_Baseline:cTrial                                        0.044775   0.010299   4.348 1.38e-05 ***
+Profic_categL2hi_vs_NS:VerbTypeM_vs_P:Condition_binPrimed_vs_Baseline         0.843630   0.430898   1.958  0.05025 .  
+Profic_categL2lo_vs_NS:VerbTypeM_vs_P:Condition_binPrimed_vs_Baseline        -0.383530   0.437685  -0.876  0.38088    
+Profic_categL2hi_vs_NS:VerbTypeM_vs_P:cTrial                                  0.030821   0.022082   1.396  0.16279    
+Profic_categL2lo_vs_NS:VerbTypeM_vs_P:cTrial                                  0.009004   0.023247   0.387  0.69852    
+Profic_categL2hi_vs_NS:Condition_binPrimed_vs_Baseline:cTrial                 0.027202   0.022094   1.231  0.21825    
+Profic_categL2lo_vs_NS:Condition_binPrimed_vs_Baseline:cTrial                 0.038087   0.023250   1.638  0.10139    
+VerbTypeM_vs_P:Condition_binPrimed_vs_Baseline:cTrial                         0.014734   0.010011   1.472  0.14109    
+Profic_categL2hi_vs_NS:VerbTypeM_vs_P:Condition_binPrimed_vs_Baseline:cTrial  0.032007   0.022136   1.446  0.14820    
+Profic_categL2lo_vs_NS:VerbTypeM_vs_P:Condition_binPrimed_vs_Baseline:cTrial -0.007837   0.023229  -0.337  0.73582    
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Correlation matrix not shown by default, as p = 24 > 12.
+Use print(x, correlation=TRUE)  or
+	 vcov(x)	 if you need it
+
+convergence code: 0
+Model failed to converge with max|grad| = 0.00160191 (tol = 0.001, component 1)
 ```
 
-
-### GLMM fitting -- use data that shows linear trend only
-
-Subset data
-
-```{r}
-# d_mod_dichot_lin <- d_l2 %>% filter(Trial <= 13)
-# # recenter cTrial
-# d_l2_lin$cTrial <- d_l2_lin$Trial - mean(d_l2_lin$Trial) 
-```
-
-The minimal model wrt random effects structure (intercepts-only model)
-
-```{r}
-# # MINIMAL random effects, only by-subject and by-item intercepts
-# # expression to be passed to the load_or_fit function:
-# glmm_l2_lin_min.expr <- "glmer(Used ~ Condition_bin * VerbType * cTrial +
-#                          (1 | Subject) + (1 | VideoName),
-#                        data = d_l2_lin, family = 'binomial',
-#                        control = glmerControl(optimizer='bobyqa', optCtrl=list(maxfun=2e5)))"
-# # load model or fit it
-# load_or_fit("glmm_l2_lin_min", glmm_l2_lin_min.expr)
-```
-
-
-The maximal model (does not converge):
-
-```{r}
-# # MAXIMAL random effects
-# # Fails to converge with error message:
-# # "unable to evaluate scaled gradientModel failed to converge: degenerate
-# # Hessian with 1 negative eigenvalues"
-# # expression to be passed to the load_or_fit function:
-# glmm_l2_lin_max.expr <- "glmer(Used ~ Condition_bin * VerbType * cTrial +
-#                          (1 + cTrial | Subject) + (1 + Condition_bin * VerbType | VideoName),
-#                        data = d_l2_lin, family = 'binomial',
-#                        control = glmerControl(optimizer='bobyqa', optCtrl=list(maxfun=2e5)))"
-# # load model or fit it
-# load_or_fit("glmm_l2_lin_max", glmm_l2_lin_max.expr)
-```
-
-
-Probably the random slope that accounts for most variability is the effect of
-Trial by subject, so fit this model:
-
-```{r}
-# # Like MINIMAL but add random by-subject slope for cTrial
-# # expression to be passed to the load_or_fit function:
-# glmm_l2_lin_trial.expr <- "glmer(Used ~ Condition_bin * VerbType * cTrial +
-#                          (1 + cTrial | Subject) + (1 | VideoName),
-#                        data = d_l2_lin, family = 'binomial',
-#                        control = glmerControl(optimizer='bobyqa', optCtrl=list(maxfun=2e5)))"
-# # load model or fit it
-# load_or_fit("glmm_l2_lin_trial", glmm_l2_lin_trial.expr)
-
-```
-
-
-```{r}
-# summary(glmm_l2_lin_min)
-```
-
-
-```{r}
-# summary(glmm_l2_lin_trial)
-```
 
 
 ### Model interpretation
 
+The two models above yield very similar estimates. The model that includes
+`cTrial` as a random by-subject slope gives a convergence failure message,
+but its value for `max|grad|` (whatever it means) is very close to the threshold
+`tol`, so it might not be reason for great alarm.
 
+None of the models supports the conclusion that high proficiency L2 speakers
+resemble native speakers, while low proficiency L2 speakers differ from
+natives.
+In fact, the pattern of results suggests the opposite: that high proficiency
+L2 speakers differ more from natives than low proficiency L2ers.
+This is not easy reconcile with the pattern of results in the GAMMs.
+Perhaps what is hapeening here is that low proficiency L2ers are more
+variable than high proficiency L2ers, so that no differences become apparent,
+whereas reduced variability in high proficiency L2ers makes differences
+from the natives detectable.
 
 
 ## Conclusion
 
+The pattern of results suggested by the GAMMs we fit to answer Question 3
+are not corroborated by the GLMM analysis.
