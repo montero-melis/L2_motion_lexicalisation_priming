@@ -100,6 +100,9 @@ source("functions/plot_gams_fnc.R")
 ```{r}
 ## Simpler convenience functions:	
 
+# center predictors in a regression
+source("functions/myCenter.R")
+
 # print deviance explained as percentage and rounded to 1 decimal
 dev_expl <- function(fm) {
   devi <- summary(fm)$dev.expl
@@ -470,12 +473,14 @@ interaction.
 
 ### GLMM fitting
 
-Verify factors are contrast coded:
+Verify factors are contrast coded and `cTrial` is centred:
 
 ```{r}
 # Verify factors are contrast coded:
 contrasts(d_ns$Condition_bin)
 contrasts(d_ns$VerbType)
+d_ns$cTrial <- d_ns$cTrial - mean(d_ns$cTrial)  # recentre
+mean(d_ns$cTrial)
 ```
 
 
@@ -525,6 +530,71 @@ load_or_fit("glmm_ns", glmm_ns.expr)
 ```{r}
 summary(glmm_ns)
 ```
+
+
+### Collinearity issue
+
+Florian notes (email 2018-08-17) that adding the random by-subject slope for
+`cTrial` to the REs increases the correlaton between some of the fixed effects.
+Some of these correlations are now > .5, whereas they were mostly <= .1 in the
+random-intercepts-only model (e.g., correlation between intercept and `cTrial`
+or between the interaction `Condition_binPrimed_vs_Baseline:cTrial` and
+the main effect of `Condition_binPrimed_vs_Baseline`, and there's one more).
+
+Florian wonders:
+"I don't understand why trial isn't entirely orthogonal to the other
+factors (which are *between* subjects) and why this only emerges when the
+random slope is involved. could there be some coding issue, or sth like some
+subjects only have some trials?"
+
+Guillermo's comments:
+
+`cTrial` is appropriately centred and the other two factors are contrast coded.
+It is not really the case that some subjects only have some trials. There are
+few missing observations for subject-trial combinations:
+
+```{r}
+sum(with(d_ns, table(Subject, Trial)) != 1)
+```
+
+
+Let us look at the balance between observations in the two factors:
+
+```{r}
+with(d_ns, table(VerbType, Condition_bin))
+```
+
+It is not a huge imbalance, but we can centre the two factors and re-fit the
+model:
+
+```{r}
+# invert sign to keep the original interpretation (Manner vs Path)
+d_ns$cVerbType <- - myCenter(d_ns$VerbType)
+d_ns$cCondition_bin <- myCenter(d_ns$Condition_bin)
+head(d_ns, 3)
+```
+
+
+Fit the model with the slight change in coding:
+
+```{r}
+# Random by-subject/item intercepts and random by-subject slope for cTrial.
+# Expression to be passed to the load_or_fit function:
+glmm_ns_centred.expr <- "glmer(Used ~ cCondition_bin * cVerbType * cTrial +
+                         (1 + cTrial | Subject) + (1 | VideoName),
+                       data = d_ns, family = 'binomial',
+                       control = glmerControl(optimizer='bobyqa', optCtrl=list(maxfun=2e5)))"
+# load model or fit it
+load_or_fit("glmm_ns_centred", glmm_ns_centred.expr)
+```
+
+```{r}
+summary(glmm_ns_centred)
+```
+
+Nothing has changed with respect to collinearity, so coding of the factors
+did not seem to be the issue.
+
 
 
 ### Model interpretation (native speakers)
