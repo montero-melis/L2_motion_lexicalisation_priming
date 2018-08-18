@@ -330,7 +330,7 @@ Plot the results:
 
 ```{r}
 # the function is defined in analysis/functions/plot_glmm_fnc.R
-plot_basel(glmm_basel, d_basel, nb_sims = 2000)  # Adjust nb_sims
+plot_basel(glmm_basel, d_basel, nb_sims = 50)  # Adjust nb_sims (TO DO)
 ```
 
 
@@ -437,7 +437,7 @@ plot(gam_ns, select = 6)
 
 Plot differences between conditions (model estimates):
 
-```{r, fig.height = myfighe_NS_L2, fig.width = myfigwi, echo = FALSE, results = 'hide'}
+```{r, fig.height = myfighe_NS_L2, fig.width = myfigwi, echo = TRUE, results = 'hide'}
 plot_gam_main(gam_ns, "NS")  # choose this on Linux machine
 # on my old windows computer:
 # plot_gam_main(gam_ns, "NS", mark.diff = FALSE)  # use of mark.diff is a hack to
@@ -479,22 +479,37 @@ contrasts(d_ns$VerbType)
 ```
 
 
-The minimal model wrt random effects structure (intercepts-only model)
+In these and all the following GLMMs, we try to stay conceptually close to the
+random effects structure used in the GAMMs. This means we will generally
+try to fit a model with random by-item and by-subject intercepts, as well as
+a random by-subject slope for `cTrial` (corresponding to the smooth term
+`s(Trial, Subject, bs = 'fs')` in the GAMMs).
 
 ```{r}
-# MINIMAL random effects, only by-subject and by-item intercepts
-# expression to be passed to the load_or_fit function:
-glmm_ns_min.expr <- "glmer(Used ~ Condition_bin * VerbType * cTrial +
-                         (1 | Subject) + (1 | VideoName),
+# Random by-subject/item intercepts and random by-subject slope for cTrial.
+# Expression to be passed to the load_or_fit function:
+glmm_ns.expr <- "glmer(Used ~ Condition_bin * VerbType * cTrial +
+                         (1 + cTrial | Subject) + (1 | VideoName),
                        data = d_ns, family = 'binomial',
                        control = glmerControl(optimizer='bobyqa', optCtrl=list(maxfun=2e5)))"
 # load model or fit it
-load_or_fit("glmm_ns_min", glmm_ns_min.expr)
+load_or_fit("glmm_ns", glmm_ns.expr)
 ```
 
-The maximal model does not converge:
 
-```{r}
+```{r, echo = FALSE}
+# # MINIMAL random effects, only by-subject and by-item intercepts
+# # expression to be passed to the load_or_fit function:
+# glmm_ns_min.expr <- "glmer(Used ~ Condition_bin * VerbType * cTrial +
+#                          (1 | Subject) + (1 | VideoName),
+#                        data = d_ns, family = 'binomial',
+#                        control = glmerControl(optimizer='bobyqa', optCtrl=list(maxfun=2e5)))"
+# # load model or fit it
+# load_or_fit("glmm_ns_min", glmm_ns_min.expr)
+```
+
+
+```{r, echo = FALSE}
 # # MAXIMAL random effects -- fails to converge, with error message:
 # # "unable to evaluate scaled gradientModel failed to converge: degenerate
 # # Hessian with 7 negative eigenvalues"
@@ -507,39 +522,15 @@ The maximal model does not converge:
 # load_or_fit("glmm_ns_max", glmm_ns_max.expr)
 ```
 
-
-Probably the random slope that accounts for most variability is the effect of
-Trial by subject, so fit this model:
-
 ```{r}
-# Like MINIMAL but add random by-subject slope for cTrial
-# expression to be passed to the load_or_fit function:
-glmm_ns_trial.expr <- "glmer(Used ~ Condition_bin * VerbType * cTrial +
-                         (1 + cTrial | Subject) + (1 | VideoName),
-                       data = d_ns, family = 'binomial',
-                       control = glmerControl(optimizer='bobyqa', optCtrl=list(maxfun=2e5)))"
-# load model or fit it
-load_or_fit("glmm_ns_trial", glmm_ns_trial.expr)
-
-```
-
-
-
-```{r}
-summary(glmm_ns_min)
-```
-
-
-```{r}
-summary(glmm_ns_trial)
+summary(glmm_ns)
 ```
 
 
 ### Model interpretation (native speakers)
 
-The two GLMMs are qualitatively very similar. The interpretation of the
-estimates for the main effects is as follows (I follow the model output of 
-`glmm_ns_trial`, which is the more conservative one):
+The interpretation of the estimates for the main effects is as follows (following
+the model output of `glmm_ns`, whose RE structure is similar to the GAMM):
 
 - `Condition_binPrimed_vs_Baseline`: On average, participants are more likely
 to use a certain type of verb (path or manner) if there are primed with that
@@ -703,24 +694,34 @@ contrasts(d_l2$Condition_bin)
 contrasts(d_l2$VerbType)
 ```
 
-The minimal model wrt random effects structure (intercepts-only model)
+GLMM with RE structure closest to the GAMM (see section 4.2.2):
 
 ```{r}
-# MINIMAL random effects, only by-subject and by-item intercepts
-# expression to be passed to the load_or_fit function:
-glmm_l2_min.expr <- "glmer(Used ~ Condition_bin * VerbType * cTrial +
-                         (1 | Subject) + (1 | VideoName),
+# Random by-subject/item intercepts and random by-subject slope for cTrial.
+# Expression to be passed to the load_or_fit function:
+glmm_l2.expr <- "glmer(Used ~ Condition_bin * VerbType * cTrial +
+                         (1 + cTrial | Subject) + (1 | VideoName),
                        data = d_l2, family = 'binomial',
                        control = glmerControl(optimizer='bobyqa', optCtrl=list(maxfun=2e5)))"
 # load model or fit it
-load_or_fit("glmm_l2_min", glmm_l2_min.expr)
+load_or_fit("glmm_l2", glmm_l2.expr)
 ```
 
 
-The maximal model (does not converge):
+```{r, echo = FALSE}
+# # MINIMAL random effects, only by-subject and by-item intercepts
+# # expression to be passed to the load_or_fit function:
+# glmm_l2_min.expr <- "glmer(Used ~ Condition_bin * VerbType * cTrial +
+#                          (1 | Subject) + (1 | VideoName),
+#                        data = d_l2, family = 'binomial',
+#                        control = glmerControl(optimizer='bobyqa', optCtrl=list(maxfun=2e5)))"
+# # load model or fit it
+# load_or_fit("glmm_l2_min", glmm_l2_min.expr)
+```
 
-```{r}
-# # MAXIMAL random effects
+
+```{r, echo = FALSE}
+# # MAXIMAL random effects (does not converge)
 # # expression to be passed to the load_or_fit function:
 # glmm_l2_max.expr <- "glmer(Used ~ Condition_bin * VerbType * cTrial +
 #                          (1 + cTrial | Subject) + (1 + Condition_bin * VerbType | VideoName),
@@ -731,36 +732,18 @@ The maximal model (does not converge):
 ```
 
 
-Probably the random slope that accounts for most variability is the effect of
-Trial by subject, so fit this model:
-
 ```{r}
-# Like MINIMAL but add random by-subject slope for cTrial
-# expression to be passed to the load_or_fit function:
-glmm_l2_trial.expr <- "glmer(Used ~ Condition_bin * VerbType * cTrial +
-                         (1 + cTrial | Subject) + (1 | VideoName),
-                       data = d_l2, family = 'binomial',
-                       control = glmerControl(optimizer='bobyqa', optCtrl=list(maxfun=2e5)))"
-# load model or fit it
-load_or_fit("glmm_l2_trial", glmm_l2_trial.expr)
-
-```
-
-
-
-```{r}
-summary(glmm_l2_min)
-```
-
-
-```{r}
-summary(glmm_l2_trial)
+summary(glmm_l2)
 ```
 
 
 ### GLMM fitting -- use data that shows linear trend only
 
-Subset data
+We run an analysis identical  to the one above, but using only the data from
+the trials that show an approximately linear relation with the outcome variable
+(based on visual inspection). This means we keep trials 1 through 13.
+
+Subset data:
 
 ```{r}
 d_l2_lin <- d_l2 %>% filter(Trial <= 13)
@@ -768,24 +751,34 @@ d_l2_lin <- d_l2 %>% filter(Trial <= 13)
 d_l2_lin$cTrial <- d_l2_lin$Trial - mean(d_l2_lin$Trial) 
 ```
 
-The minimal model wrt random effects structure (intercepts-only model)
+GLMM with RE structure closest to the GAMM (see section 4.2.2):
 
 ```{r}
-# MINIMAL random effects, only by-subject and by-item intercepts
-# expression to be passed to the load_or_fit function:
-glmm_l2_lin_min.expr <- "glmer(Used ~ Condition_bin * VerbType * cTrial +
-                         (1 | Subject) + (1 | VideoName),
+# Random by-subject/item intercepts and random by-subject slope for cTrial.
+# Expression to be passed to the load_or_fit function:
+glmm_l2_lin.expr <- "glmer(Used ~ Condition_bin * VerbType * cTrial +
+                         (1 + cTrial | Subject) + (1 | VideoName),
                        data = d_l2_lin, family = 'binomial',
                        control = glmerControl(optimizer='bobyqa', optCtrl=list(maxfun=2e5)))"
 # load model or fit it
-load_or_fit("glmm_l2_lin_min", glmm_l2_lin_min.expr)
+load_or_fit("glmm_l2_lin", glmm_l2_lin.expr)
 ```
 
 
-The maximal model (does not converge):
+```{r, echo = FALSE}
+# # MINIMAL random effects, only by-subject and by-item intercepts
+# # expression to be passed to the load_or_fit function:
+# glmm_l2_lin_min.expr <- "glmer(Used ~ Condition_bin * VerbType * cTrial +
+#                          (1 | Subject) + (1 | VideoName),
+#                        data = d_l2_lin, family = 'binomial',
+#                        control = glmerControl(optimizer='bobyqa', optCtrl=list(maxfun=2e5)))"
+# # load model or fit it
+# load_or_fit("glmm_l2_lin_min", glmm_l2_lin_min.expr)
+```
 
-```{r}
-# # MAXIMAL random effects
+
+```{r, echo = FALSE}
+# # MAXIMAL random effects (does not converge)
 # # Fails to converge with error message:
 # # "unable to evaluate scaled gradientModel failed to converge: degenerate
 # # Hessian with 1 negative eigenvalues"
@@ -799,29 +792,8 @@ The maximal model (does not converge):
 ```
 
 
-Probably the random slope that accounts for most variability is the effect of
-Trial by subject, so fit this model:
-
 ```{r}
-# Like MINIMAL but add random by-subject slope for cTrial
-# expression to be passed to the load_or_fit function:
-glmm_l2_lin_trial.expr <- "glmer(Used ~ Condition_bin * VerbType * cTrial +
-                         (1 + cTrial | Subject) + (1 | VideoName),
-                       data = d_l2_lin, family = 'binomial',
-                       control = glmerControl(optimizer='bobyqa', optCtrl=list(maxfun=2e5)))"
-# load model or fit it
-load_or_fit("glmm_l2_lin_trial", glmm_l2_lin_trial.expr)
-
-```
-
-
-```{r}
-summary(glmm_l2_lin_min)
-```
-
-
-```{r}
-summary(glmm_l2_lin_trial)
+summary(glmm_l2_lin)
 ```
 
 
@@ -836,7 +808,7 @@ approximately linear.
 These four models do not differ substantially from each other.
 
 Below, I interpret the main effects estimates for the model output of 
-`glmm_l2_lin_trial`, which is the one that selects only the linear part of
+`glmm_l2_lin`, which is the one that selects only the linear part of
 the data:
 
 - `Condition_binPrimed_vs_Baseline`: On average, participants are more likely
@@ -862,12 +834,12 @@ results do not support this prediction.
 Combined analysis for questions 2 and 3 (GLMM)
 =======================================
 
-
 This section tests whether there is a difference in adaptation at the group
 level when comparing L1 and L2 speakers.
 It is an analysis that compares the results from Questions 2 and 3,
 and explores whether there is 4-way interaction suggesting that adaptation
 patterns differ for natives and L2ers.
+
 
 ## Background
 
@@ -941,15 +913,14 @@ Random effects structure:
 - By-item and by-subject intercepts
 - `cTrial` as by-subject random slopes
 
-
 ```{r}
 # expression to be passed to the load_or_fit function:
-glmm_L1L2_lin_cTrial.expr <- "glmer(Used ~ Condition_bin * VerbType * Group * cTrial +
+glmm_L1L2_lin.expr <- "glmer(Used ~ Condition_bin * VerbType * Group * cTrial +
                          (1 + cTrial | Subject) + (1 | VideoName),
                        data = d_mod_lin, family = 'binomial',
                        control = glmerControl(optimizer='bobyqa', optCtrl=list(maxfun=2e5)))"
 # load model or fit it
-load_or_fit("glmm_L1L2_lin_cTrial", glmm_L1L2_lin_cTrial.expr)
+load_or_fit("glmm_L1L2_lin", glmm_L1L2_lin.expr)
 ```
 
 
@@ -958,57 +929,15 @@ load_or_fit("glmm_L1L2_lin_cTrial", glmm_L1L2_lin_cTrial.expr)
 Model summary (see immediately below for a more readable output):
 
 ```{r}
-summary(glmm_L1L2_lin_cTrial)
+summary(glmm_L1L2_lin)
 ```
 
+TO DO (update pasted output!)
 
 ```
 # Pasted from console for more readability:
-> summary(glmm_L1L2_lin_cTrial)
-Generalized linear mixed model fit by maximum likelihood (Laplace Approximation) ['glmerMod']
- Family: binomial  ( logit )
-Formula: Used ~ Condition_bin * VerbType * Group * cTrial + (1 + cTrial |      Subject) + (1 | VideoName)
-   Data: d_mod_lin
-Control: glmerControl(optimizer = "bobyqa", optCtrl = list(maxfun = 2e+05))
+> summary(glmm_L1L2_lin)
 
-     AIC      BIC   logLik deviance df.resid 
-  2129.4   2241.9  -1044.7   2089.4     2027 
-
-Scaled residuals: 
-    Min      1Q  Median      3Q     Max 
--6.7972 -0.5259  0.0812  0.5212  3.2799 
-
-Random effects:
- Groups    Name        Variance Std.Dev. Corr
- Subject   (Intercept) 3.094535 1.75913      
-           cTrial      0.020373 0.14274  0.61
- VideoName (Intercept) 0.008656 0.09304      
-Number of obs: 2047, groups:  Subject, 158; VideoName, 32
-
-Fixed effects:
-                                                                    Estimate Std. Error z value Pr(>|z|)    
-(Intercept)                                                          0.22009    0.16123   1.365 0.172215    
-Condition_binPrimed_vs_Baseline                                      0.89731    0.16256   5.520 3.39e-08 ***
-VerbTypeM_vs_P                                                      -0.76474    0.16268  -4.701 2.59e-06 ***
-GroupL2_vs_NS                                                        0.01354    0.16040   0.084 0.932740    
-cTrial                                                               0.06261    0.02181   2.871 0.004092 ** 
-Condition_binPrimed_vs_Baseline:VerbTypeM_vs_P                      -0.04191    0.16025  -0.262 0.793672    
-Condition_binPrimed_vs_Baseline:GroupL2_vs_NS                        0.38710    0.16099   2.404 0.016197 *  
-VerbTypeM_vs_P:GroupL2_vs_NS                                        -0.62265    0.16137  -3.858 0.000114 ***
-Condition_binPrimed_vs_Baseline:cTrial                               0.07399    0.02270   3.259 0.001119 ** 
-VerbTypeM_vs_P:cTrial                                               -0.07868    0.02271  -3.464 0.000531 ***
-GroupL2_vs_NS:cTrial                                                 0.07426    0.02184   3.401 0.000673 ***
-Condition_binPrimed_vs_Baseline:VerbTypeM_vs_P:GroupL2_vs_NS        -0.12941    0.16025  -0.808 0.419355    
-Condition_binPrimed_vs_Baseline:VerbTypeM_vs_P:cTrial               -0.02411    0.02176  -1.108 0.267784    
-Condition_binPrimed_vs_Baseline:GroupL2_vs_NS:cTrial                 0.08683    0.02199   3.949 7.85e-05 ***
-VerbTypeM_vs_P:GroupL2_vs_NS:cTrial                                 -0.03105    0.02215  -1.402 0.160957    
-Condition_binPrimed_vs_Baseline:VerbTypeM_vs_P:GroupL2_vs_NS:cTrial -0.02231    0.02174  -1.026 0.304788    
----
-Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
-
-Correlation matrix not shown by default, as p = 16 > 12.
-Use print(x, correlation=TRUE)  or
-	 vcov(x)	 if you need it
 ```
 
 
@@ -1361,187 +1290,92 @@ contrasts(d_mod_dichot$Profic_categ)
 
 ### GLMM fitting -- using data from all trials
 
-The minimal model wrt random effects structure (intercepts-only model)
+GLMM with RE structure closest to the GAMM (see section 4.2.2):
 
 ```{r}
-glmm_L1L2_dichot.expr <- "glmer(Used ~
-    Profic_categ * VerbType * Condition_bin * cTrial +
-    (1 | Subject) + (1 | VideoName),
-  data = d_mod_dichot, family = 'binomial',
-  control = glmerControl(optimizer='bobyqa', optCtrl=list(maxfun=2e5)))"
-# load model or fit it
-load_or_fit("glmm_L1L2_dichot", glmm_L1L2_dichot.expr)
-```
-
-
-The maximal model (does not converge):
-
-```{r}
-# # MAXIMAL random effects
-# # expression to be passed to the load_or_fit function:
-# glmm_l2_max.expr <- "glmer(Used ~ Condition_bin * VerbType * cTrial +
-#                          (1 + cTrial | Subject) + (1 + Condition_bin * VerbType | VideoName),
-#                        data = d_mod_dichot, family = 'binomial',
-#                        control = glmerControl(optimizer='bobyqa', optCtrl=list(maxfun=2e5)))"
-# # load model or fit it
-# load_or_fit("glmm_l2_max", glmm_l2_max.expr)
-```
-
-
-Probably the random slope that accounts for most variability is the effect of
-Trial by subject, so fit this model:
-
-```{r}
-
-glmm_L1L2_dichot_trial.expr <- "glmer(Used ~
+# Random by-subject/item intercepts and random by-subject slope for cTrial.
+# Expression to be passed to the load_or_fit function:
+glmm_L1L2_dichot_prof.expr <- "glmer(Used ~
     Profic_categ * VerbType * Condition_bin * cTrial +
     (1 + cTrial | Subject) + (1 | VideoName),
   data = d_mod_dichot, family = 'binomial',
   control = glmerControl(optimizer='bobyqa', optCtrl=list(maxfun=2e5)))"
 # load model or fit it
-load_or_fit("glmm_L1L2_dichot_trial", glmm_L1L2_dichot_trial.expr)
-
-# # Like MINIMAL but add random by-subject slope for cTrial
-# # expression to be passed to the load_or_fit function:
-# glmm_l2_trial.expr <- "glmer(Used ~ Condition_bin * VerbType * cTrial +
-#                          (1 + cTrial | Subject) + (1 | VideoName),
-#                        data = d_mod_dichot, family = 'binomial',
-#                        control = glmerControl(optimizer='bobyqa', optCtrl=list(maxfun=2e5)))"
-# # load model or fit it
-# load_or_fit("glmm_l2_trial", glmm_l2_trial.expr)
+load_or_fit("glmm_L1L2_dichot_prof", glmm_L1L2_dichot_prof.expr)
 ```
 
 
-Summary of the model with just random intercepts by item and subject
-(see immediately below for a more readable output):
+The model above fails to converge. Following Florian's advice, we fit a model
+constraining the correlation between random intercept and slope to be 0
+using the double-bar (`||`) syntax.
+(Florian's email 2018-08-17: "The || orthogonalize the different components
+(assuming a covariance of 0), which often converges and tends to *not* result
+in anti-conservativity.)"
+
+Upon reading the lme4 vignette (Bates et al., 2015, *J Stat Softw*), however,
+it seems to me that this simplified model could have some drawbacks. This
+is not based on my understanding of the underlying maths, but more superficially
+on the following passage in Bates et al.:
+
+"The use of models [where random slopes and intercepts are assumed independent]
+should ideally be restricted to cases where the predictor is measured on a
+ratio scale (i.e., the zero point on the scale is meaningful, not just a 
+location defined by convenience or convention)..." (p.8)
+
+In our case, however, the zero point of `cTrial` is not especially meaningful:
+it denotes the centred number of trial (i.e., the middle of the experiment
+or, in this case, the middle of the trials selected for analysis). Here is how
+the authors describe the subtle drawback of this simplification:
+
+"Models in which the slopes and intercepts are allowed to have a nonzero
+correlation [...] are invariant to additive shifts of the continuous predictor
+[...]. This invariance breaks down when the correlation is constrained to zero;
+any shift in the predictor will necessarily lead to a change in the estimated
+correlation, and in the likelihood and predictions of the model." (ibid.)
+
+I don't have a clue if this is a concern in our case.
+
 
 ```{r}
-summary(glmm_L1L2_dichot)
+# Random by-subject/item intercepts and random by-subject slope for cTrial.
+# Expression to be passed to the load_or_fit function:
+glmm_L1L2_dichot_prof_no_corr.expr <- "glmer(Used ~
+    Profic_categ * VerbType * Condition_bin * cTrial +
+    (1 + cTrial || Subject) + (1 | VideoName),
+  data = d_mod_dichot, family = 'binomial',
+  control = glmerControl(optimizer='bobyqa', optCtrl=list(maxfun=2e5)))"
+# load model or fit it
+load_or_fit("glmm_L1L2_dichot_prof_no_corr", glmm_L1L2_dichot_prof_no_corr.expr)
 ```
 
+
+
+```{r, echo = FALSE}
+# glmm_L1L2_dichot_prof_min.expr <- "glmer(Used ~
+#     Profic_categ * VerbType * Condition_bin * cTrial +
+#     (1 | Subject) + (1 | VideoName),
+#   data = d_mod_dichot, family = 'binomial',
+#   control = glmerControl(optimizer='bobyqa', optCtrl=list(maxfun=2e5)))"
+# # load model or fit it
+# load_or_fit("glmm_L1L2_dichot_prof_min", glmm_L1L2_dichot_prof_min.expr)
 ```
-> summary(glmm_L1L2_dichot)
-Generalized linear mixed model fit by maximum likelihood (Laplace Approximation) ['glmerMod']
- Family: binomial  ( logit )
-Formula: Used ~ Profic_categ * VerbType * Condition_bin * cTrial + (1 |      Subject) + (1 | VideoName)
-   Data: d_mod_dichot
-Control: glmerControl(optimizer = "bobyqa", optCtrl = list(maxfun = 2e+05))
-
-     AIC      BIC   logLik deviance df.resid 
-  4186.5   4353.4  -2067.3   4134.5     4502 
-
-Scaled residuals: 
-    Min      1Q  Median      3Q     Max 
--7.3203 -0.4799  0.1597  0.5001  8.6798 
-
-Random effects:
- Groups    Name        Variance Std.Dev.
- Subject   (Intercept) 2.856332 1.69007 
- VideoName (Intercept) 0.002567 0.05067 
-Number of obs: 4528, groups:  Subject, 142; VideoName, 32
-
-Fixed effects:
-                                                                              Estimate Std. Error z value Pr(>|z|)    
-(Intercept)                                                                   0.284584   0.168239   1.692   0.0907 .  
-Profic_categL2hi_vs_NS                                                        0.255132   0.381779   0.668   0.5040    
-Profic_categL2lo_vs_NS                                                       -0.276289   0.386477  -0.715   0.4747    
-VerbTypeM_vs_P                                                               -1.132985   0.168437  -6.726 1.74e-11 ***
-Condition_binPrimed_vs_Baseline                                               1.120883   0.168529   6.651 2.91e-11 ***
-cTrial                                                                        0.033678   0.005692   5.917 3.28e-09 ***
-Profic_categL2hi_vs_NS:VerbTypeM_vs_P                                        -0.972437   0.381805  -2.547   0.0109 *  
-Profic_categL2lo_vs_NS:VerbTypeM_vs_P                                        -0.877453   0.386447  -2.271   0.0232 *  
-Profic_categL2hi_vs_NS:Condition_binPrimed_vs_Baseline                        0.541470   0.381749   1.418   0.1561    
-Profic_categL2lo_vs_NS:Condition_binPrimed_vs_Baseline                        0.862252   0.386321   2.232   0.0256 *  
-VerbTypeM_vs_P:Condition_binPrimed_vs_Baseline                                0.203150   0.168149   1.208   0.2270    
-Profic_categL2hi_vs_NS:cTrial                                                 0.009371   0.012187   0.769   0.4419    
-Profic_categL2lo_vs_NS:cTrial                                                 0.065129   0.013231   4.923 8.54e-07 ***
-VerbTypeM_vs_P:cTrial                                                        -0.033393   0.005683  -5.876 4.21e-09 ***
-Condition_binPrimed_vs_Baseline:cTrial                                        0.027280   0.005683   4.800 1.59e-06 ***
-Profic_categL2hi_vs_NS:VerbTypeM_vs_P:Condition_binPrimed_vs_Baseline         0.754008   0.381956   1.974   0.0484 *  
-Profic_categL2lo_vs_NS:VerbTypeM_vs_P:Condition_binPrimed_vs_Baseline        -0.327421   0.386274  -0.848   0.3966    
-Profic_categL2hi_vs_NS:VerbTypeM_vs_P:cTrial                                  0.026387   0.012187   2.165   0.0304 *  
-Profic_categL2lo_vs_NS:VerbTypeM_vs_P:cTrial                                  0.017271   0.013208   1.308   0.1910    
-Profic_categL2hi_vs_NS:Condition_binPrimed_vs_Baseline:cTrial                 0.022173   0.012183   1.820   0.0688 .  
-Profic_categL2lo_vs_NS:Condition_binPrimed_vs_Baseline:cTrial                 0.029842   0.013206   2.260   0.0238 *  
-VerbTypeM_vs_P:Condition_binPrimed_vs_Baseline:cTrial                         0.012215   0.005691   2.146   0.0318 *  
-Profic_categL2hi_vs_NS:VerbTypeM_vs_P:Condition_binPrimed_vs_Baseline:cTrial  0.021239   0.012182   1.744   0.0812 .  
-Profic_categL2lo_vs_NS:VerbTypeM_vs_P:Condition_binPrimed_vs_Baseline:cTrial  0.004766   0.013220   0.360   0.7185    
----
-Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
-
-Correlation matrix not shown by default, as p = 24 > 12.
-Use print(x, correlation=TRUE)  or
-	 vcov(x)	 if you need it
-```
-
 
 
 Summary of the model that also has a random by-subject slope for `cTrial`
 (see immediately below for a more readable output):
 
-
 ```{r}
-summary(glmm_L1L2_dichot_trial)
+summary(glmm_L1L2_dichot_prof)
+summary(glmm_L1L2_dichot_prof_no_corr)
 ```
 
 
+
+TO DO (update pasted output!)
+
 ```
-> summary(glmm_L1L2_dichot_trial)
-Generalized linear mixed model fit by maximum likelihood (Laplace Approximation) ['glmerMod']
- Family: binomial  ( logit )
-Formula: Used ~ Profic_categ * VerbType * Condition_bin * cTrial + (1 +      cTrial | Subject) + (1 | VideoName)
-   Data: d_mod_dichot
-Control: glmerControl(optimizer = "bobyqa", optCtrl = list(maxfun = 2e+05))
+> summary(glmm_L1L2_dichot_prof_trial)
 
-     AIC      BIC   logLik deviance df.resid 
-  4096.9   4276.6  -2020.4   4040.9     4500 
-
-Scaled residuals: 
-    Min      1Q  Median      3Q     Max 
--5.6840 -0.4488  0.0993  0.4895  5.4151 
-
-Random effects:
- Groups    Name        Variance Std.Dev. Corr
- Subject   (Intercept) 3.651340 1.91085      
-           cTrial      0.006436 0.08022  0.65
- VideoName (Intercept) 0.003517 0.05930      
-Number of obs: 4528, groups:  Subject, 142; VideoName, 32
-
-Fixed effects:
-                                                                              Estimate Std. Error z value Pr(>|z|)    
-(Intercept)                                                                   0.389424   0.190739   2.042  0.04119 *  
-Profic_categL2hi_vs_NS                                                        0.318211   0.430617   0.739  0.45993    
-Profic_categL2lo_vs_NS                                                       -0.121575   0.438094  -0.278  0.78139    
-VerbTypeM_vs_P                                                               -1.270454   0.191626  -6.630 3.36e-11 ***
-Condition_binPrimed_vs_Baseline                                               1.275634   0.191793   6.651 2.91e-11 ***
-cTrial                                                                        0.040774   0.010053   4.056 4.99e-05 ***
-Profic_categL2hi_vs_NS:VerbTypeM_vs_P                                        -0.938608   0.430697  -2.179  0.02931 *  
-Profic_categL2lo_vs_NS:VerbTypeM_vs_P                                        -0.934082   0.438086  -2.132  0.03299 *  
-Profic_categL2hi_vs_NS:Condition_binPrimed_vs_Baseline                        0.628146   0.430744   1.458  0.14476    
-Profic_categL2lo_vs_NS:Condition_binPrimed_vs_Baseline                        0.981667   0.438107   2.241  0.02505 *  
-VerbTypeM_vs_P:Condition_binPrimed_vs_Baseline                                0.231677   0.190106   1.219  0.22297    
-Profic_categL2hi_vs_NS:cTrial                                                 0.013438   0.022087   0.608  0.54291    
-Profic_categL2lo_vs_NS:cTrial                                                 0.066504   0.023244   2.861  0.00422 ** 
-VerbTypeM_vs_P:cTrial                                                        -0.047318   0.010230  -4.625 3.74e-06 ***
-Condition_binPrimed_vs_Baseline:cTrial                                        0.044775   0.010299   4.348 1.38e-05 ***
-Profic_categL2hi_vs_NS:VerbTypeM_vs_P:Condition_binPrimed_vs_Baseline         0.843630   0.430898   1.958  0.05025 .  
-Profic_categL2lo_vs_NS:VerbTypeM_vs_P:Condition_binPrimed_vs_Baseline        -0.383530   0.437685  -0.876  0.38088    
-Profic_categL2hi_vs_NS:VerbTypeM_vs_P:cTrial                                  0.030821   0.022082   1.396  0.16279    
-Profic_categL2lo_vs_NS:VerbTypeM_vs_P:cTrial                                  0.009004   0.023247   0.387  0.69852    
-Profic_categL2hi_vs_NS:Condition_binPrimed_vs_Baseline:cTrial                 0.027202   0.022094   1.231  0.21825    
-Profic_categL2lo_vs_NS:Condition_binPrimed_vs_Baseline:cTrial                 0.038087   0.023250   1.638  0.10139    
-VerbTypeM_vs_P:Condition_binPrimed_vs_Baseline:cTrial                         0.014734   0.010011   1.472  0.14109    
-Profic_categL2hi_vs_NS:VerbTypeM_vs_P:Condition_binPrimed_vs_Baseline:cTrial  0.032007   0.022136   1.446  0.14820    
-Profic_categL2lo_vs_NS:VerbTypeM_vs_P:Condition_binPrimed_vs_Baseline:cTrial -0.007837   0.023229  -0.337  0.73582    
----
-Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
-
-Correlation matrix not shown by default, as p = 24 > 12.
-Use print(x, correlation=TRUE)  or
-	 vcov(x)	 if you need it
-
-convergence code: 0
-Model failed to converge with max|grad| = 0.00160191 (tol = 0.001, component 1)
 ```
 
 
