@@ -170,10 +170,10 @@ ppts$cClozeScore <- as.vector(scale(ppts$ClozeScore, scale = FALSE))
 # Do this by assigning cloze scores <= 40th percentile to "low",
 # scores >= 60th percentile to "high", and the rest to "medium", 
 # which shall not be analyzed in the group comparison followign up on Question 3
-cutoff_prof <- quantile(ppts$ClozeScore, seq(0 , 1, length.out = 6), na.rm = TRUE)
+cutoff_prof <- quantile(ppts$ClozeScore, c(.4, .6), na.rm = TRUE)
 ppts$Profic_categ <- with(ppts,
-                          ifelse(ClozeScore <= cutoff_prof[3], "low prof",
-                                 ifelse(ClozeScore >= cutoff_prof[4], "high prof", 
+                          ifelse(ClozeScore <= cutoff_prof[1], "low prof",
+                                 ifelse(ClozeScore >= cutoff_prof[2], "high prof", 
                                         "medium prof")))
 # native speakers
 ppts$Profic_categ[with(ppts, is.na(Profic_categ) & Group == "NS")] <- "native"
@@ -1313,6 +1313,43 @@ addmargins(with(ppts, table(Profic_categ, Condition)))
 ```
 
 
+Below are a density plot and two histograms (the latter only differing in their
+binwidths) that show the distribution of participant scores on their L2
+proficiency scores.
+The two vertical lines show the value of the 40th and 60th percentiles.
+Participants with scores below the 40th percentile were categorized as low
+proficiency, those above the 60th percentile as high proficiency. Those
+falling in between were dropped from the analyses.
+
+```{r}
+ggplot(ppts %>% filter(Profic_categ != "native"),
+       aes(x = ClozeScore, fill = Condition)) +
+  geom_density(alpha = .5) +
+  geom_vline(xintercept = cutoff_prof) +
+  annotate("text", x = 10, y = .055, label = "low\nproficiency") +
+  annotate("text", x = 33, y = .055, label = "high\nproficiency")
+```
+
+
+```{r}
+ggplot(ppts %>% filter(Profic_categ != "native"),
+       aes(x = ClozeScore, fill = Condition)) +
+  geom_histogram(binwidth = 3) +
+  geom_vline(xintercept = cutoff_prof) +
+  annotate("text", x = 10, y = 12, label = "low\nproficiency") +
+  annotate("text", x = 34, y = 12, label = "high\nproficiency")
+```
+
+
+```{r}
+ggplot(ppts %>% filter(Profic_categ != "native"),
+       aes(x = ClozeScore, fill = Condition)) +
+  geom_histogram(binwidth = 1) +
+  geom_vline(xintercept = cutoff_prof) +
+  annotate("text", x = 10, y = 5, label = "low\nproficiency") +
+  annotate("text", x = 34, y = 5, label = "high\nproficiency")
+```
+
 ```{r}
 # Subset data set and select the variables we need
 d_mod_dichot <- d_mod %>% 
@@ -1419,7 +1456,6 @@ load_or_fit("glmm_L1L2_dichot_prof_no_corr", glmm_L1L2_dichot_prof_no_corr.expr)
 ```
 
 
-
 ```{r, echo = FALSE}
 # glmm_L1L2_dichot_prof_min.expr <- "glmer(Used ~
 #     Profic_categ * VerbType * Condition_bin * cTrial +
@@ -1436,6 +1472,10 @@ Summary of the model that also has a random by-subject slope for `cTrial`
 
 ```{r}
 summary(glmm_L1L2_dichot_prof)
+```
+
+
+```{r}
 summary(glmm_L1L2_dichot_prof_no_corr)
 ```
 
