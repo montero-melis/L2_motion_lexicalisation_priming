@@ -161,6 +161,8 @@ ppts <- read.csv("../data/participants.csv", fileEncoding = "UTF-8",
                  stringsAsFactors = TRUE)
 # No audio data recorded for Subject 14 (L2) due to experimental error; exclude
 ppts <- ppts[ppts$Subject != 14, ]
+ppts$Subject <- factor(ppts$Subject)
+
 # transform ClozeScore to z-score (as.vector prevents it from becoming a matrix)
 ppts$zClozeScore <- as.vector(scale(ppts$ClozeScore))
 # center ClozeScore but not scaling (as.vector prevents it from becoming a matrix)
@@ -184,6 +186,8 @@ addmargins(with(ppts, table(Profic_categ, Condition)))
 # add speakers' clozescore and derived measures to d:
 d <- left_join(d, ppts %>% dplyr::select(Subject, ClozeScore, zClozeScore,
                                          cClozeScore, Profic_categ))
+# NB: Subject NS_1 is in dataframe "d" but missing from df "ppts", while Subject
+# NS_202 is in "ppts" but missing from "d". Both were in the baseline condition.
 # Subject needs to be a factor
 d$Subject <- factor(d$Subject)
 # check out
@@ -273,7 +277,7 @@ Recode subject identifiers:
 ```{r}
 # In the baseline condition, we can model each subject as providing two 
 # observations per trial: whether they produced a path verb and whether they
-# produced a manner verb. The VerbType variable tells indicates that.
+# produced a manner verb. The VerbType variable indicates that.
 # Recode therefore individual subjects reverting the "doubling" of baseline
 # subjects
 # Before:
