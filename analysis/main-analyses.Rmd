@@ -600,8 +600,41 @@ Nothing has changed with respect to collinearity, so coding of the factors
 did not seem to be the issue.
 
 
+### Embedding under `VerbType`
+
+Following Florian's suggestion (2018-08-19), we fit a nested model so that
+the effect of priming and its interactions are nested under condition:
+
+```{r}
+# Expression to be passed to the load_or_fit function:
+glmm_ns_embed.expr <- "glmer(Used ~ VerbType / (Condition_bin * cTrial) +
+                         (1 + cTrial | Subject) + (1 | VideoName),
+                       data = d_ns, family = 'binomial',
+                       control = glmerControl(optimizer='bobyqa', optCtrl=list(maxfun=2e5)))"
+# load model or fit it
+load_or_fit("glmm_ns_embed", glmm_ns_embed.expr)
+```
+
+```{r}
+summary(glmm_ns_embed)
+```
+
 
 ### Model interpretation (native speakers)
+
+
+Quick and dirty plot
+
+```{r}
+glmm_ns_predicted <- data.frame(d_ns, Predicted = predict(glmm_ns))
+glmm_ns_predicted %>%
+  group_by(Condition_bin, VerbType, Trial) %>%
+  summarise(Y = mean(Predicted)) %>%
+  ggplot(aes(x = Trial, y = Y, shape = Condition_bin, colour = VerbType)) +
+  geom_point() +
+  geom_line()
+```
+
 
 The interpretation of the estimates for the main effects is as follows (following
 the model output of `glmm_ns`, whose RE structure is similar to the GAMM):
@@ -870,8 +903,41 @@ load_or_fit("glmm_l2_lin", glmm_l2_lin.expr)
 summary(glmm_l2_lin)
 ```
 
+### Embedding under `VerbType`
+
+Following Florian's suggestion (2018-08-19), we fit a nested model so that
+the effect of priming and its interactions are nested under condition:
+
+```{r}
+# Expression to be passed to the load_or_fit function:
+glmm_l2_lin_embed.expr <- "glmer(Used ~ VerbType / (Condition_bin * cTrial) +
+                         (1 + cTrial | Subject) + (1 | VideoName),
+                       data = d_l2_lin, family = 'binomial',
+                       control = glmerControl(optimizer='bobyqa', optCtrl=list(maxfun=2e5)))"
+# load model or fit it
+load_or_fit("glmm_l2_lin_embed", glmm_l2_lin_embed.expr)
+```
+
+```{r}
+summary(glmm_l2_lin_embed)
+```
+
+
+
 
 ### Model interpretation (L2ers)
+
+Quick and dirty plot
+
+```{r}
+glmm_l2_lin_predicted <- data.frame(d_l2_lin, Predicted = predict(glmm_l2_lin))
+glmm_l2_lin_predicted %>%
+  group_by(Condition_bin, VerbType, Trial) %>%
+  summarise(Y = mean(Predicted)) %>%
+  ggplot(aes(x = Trial, y = Y, shape = Condition_bin, colour = VerbType)) +
+  geom_point() +
+  geom_line()
+```
 
 As was the case for the native speakers, the two GLMMs we fitted for L2 speakers
 are qualitatively very similar.
@@ -999,6 +1065,19 @@ load_or_fit("glmm_L1L2_lin", glmm_L1L2_lin.expr)
 
 
 ## Interpretation
+
+Quick and dirty plot
+
+```{r}
+glmm_L1L2_lin_predicted <- data.frame(d_mod_lin, Predicted = predict(glmm_L1L2_lin))
+glmm_L1L2_lin_predicted %>%
+  group_by(Condition_bin, VerbType, Group, Trial) %>%
+  summarise(Y = mean(Predicted)) %>%
+  ggplot(aes(x = Trial, y = Y, shape = Condition_bin, colour = VerbType)) +
+  geom_point() +
+  geom_line() +
+  facet_grid(. ~ Group)
+```
 
 Model summary (see immediately below for a more readable output):
 
@@ -1493,8 +1572,44 @@ TO DO (update pasted output!)
 ```
 
 
+### Embedding under `VerbType`
+
+Following Florian's suggestion (2018-08-19), we fit a nested model so that
+the effect of priming and its interactions are nested under condition:
+
+```{r}
+# Expression to be passed to the load_or_fit function:
+glmm_L1L2_dichot_prof_no_corr_embed.expr <- "glmer(Used ~ 
+     VerbType / (Profic_categ * Condition_bin * cTrial) +
+    (1 + cTrial || Subject) + (1 | VideoName),
+  data = d_mod_dichot, family = 'binomial',
+  control = glmerControl(optimizer='bobyqa', optCtrl=list(maxfun=2e5)))"
+# load model or fit it
+load_or_fit("glmm_L1L2_dichot_prof_no_corr_embed", glmm_L1L2_dichot_prof_no_corr_embed.expr)
+```
+
+```{r}
+summary(glmm_L1L2_dichot_prof_no_corr_embed)
+```
+
+
+
 
 ### Model interpretation
+
+
+Quick and dirty plot
+
+```{r}
+glmm_L1L2_dichot_prof_no_corr_predicted <- data.frame(d_mod_dichot, Predicted = predict(glmm_L1L2_dichot_prof_no_corr))
+glmm_L1L2_dichot_prof_no_corr_predicted %>%
+  group_by(Condition_bin, VerbType, Profic_categ, Trial) %>%
+  summarise(Y = mean(Predicted)) %>%
+  ggplot(aes(x = Trial, y = Y, shape = Condition_bin, colour = VerbType)) +
+  geom_point() +
+  geom_line() +
+  facet_grid(. ~ Profic_categ)
+```
 
 The two models above yield very similar estimates. The model that includes
 `cTrial` as a random by-subject slope gives a convergence failure message,
