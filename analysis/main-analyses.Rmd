@@ -1632,3 +1632,27 @@ from the natives detectable.
 
 The pattern of results suggested by the GAMMs we fit to answer Question 3
 are not corroborated by the GLMM analysis.
+
+
+Alternatives to double-counting baseline participants
+=================================================
+
+(See Florian's email from 20 augusti 2018 23:57; 
+Subject: Re: draft L2 priming/adaptation paper for BLC)
+
+
+## Treat Path/Manner as binomial choice
+
+TFJ:
+
+"alternative option 2: If there's very little data for the latter two cases (neither, both), one could just exclude those and then treat it as a binomial choice (with some checks to make sure that this exclusion doesn't drive the results). That would be a common and easier to interpret solution (e.g., almost all production experiments I know do something like this when they really should be doing multinomial analyses), but you'd be throwing away data."
+
+How many observations of each type are there?
+
+```{r}
+head(d)
+d$DV_multinom <- with(d, ifelse(P_V == 0 & M_V == 0, "None",
+                                ifelse(P_V == 1 & M_V == 0, "P-verb",
+                                       ifelse(P_V == 1 & M_V == 1, "M-verb", "Both"))))
+with(d, table(Group, DV_multinom, useNA = "ifany"))
+```
