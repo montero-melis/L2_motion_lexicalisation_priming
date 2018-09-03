@@ -226,7 +226,23 @@ d_mod$VbType_Cond <- factor(d_mod$VbType_Cond,
                                        "M_V.Manner"))
 # drop unused factors for subject (important for random effects estimation)
 d_mod$Subject <- factor(d_mod$Subject)
+# Condition recoded as a binary factor (Path/Manner become "Primed")
+d_mod$Condition_bin <- d_mod$Condition
+levels(d_mod$Condition_bin)[levels(d_mod$Condition_bin) %in% c("Path", "Manner")] <- "Primed"	
+table(d_mod$Condition_bin)  # roughly balanced (remember Baseline ppts are "doubled")
+```
 
+
+Coding scheme for factors:
+
+```{r}
+# Keep a dummy coded version of each factor:
+d_mod$Group_dummy <- factor(d_mod$Group, levels = c("NS", "L2"))
+contrasts(d_mod$Group_dummy)
+d_mod$VerbType_dummy <- factor(d_mod$VerbType, levels = c("P_V", "M_V"))
+contrasts(d_mod$VerbType_dummy)
+d_mod$Condition_bin_dummy <- factor(d_mod$Condition_bin)
+contrasts(d_mod$Condition_bin_dummy)
 # define factor coding scheme (contrast coding)
 # group
 contrasts(d_mod$Group) <- contr.sum(2)
@@ -237,17 +253,19 @@ d_mod$VerbType <- factor(d_mod$VerbType)
 contrasts(d_mod$VerbType) <- contr.sum(2)
 colnames(contrasts(d_mod$VerbType)) <- "M_vs_P"
 contrasts(d_mod$VerbType)
-# Condition recoded as a binary factor (Path/Manner become "Primed")
-d_mod$Condition_bin <- d_mod$Condition
-levels(d_mod$Condition_bin)[levels(d_mod$Condition_bin) %in% c("Path", "Manner")] <- "Primed"	
-table(d_mod$Condition_bin)  # roughly balanced (remember Baseline ppts are "doubled")
-# contrast coding	
+# Condition_bin contrast coding	
 contrasts(d_mod$Condition_bin) <- - contr.sum(2)
 colnames(contrasts(d_mod$Condition_bin)) <- "Primed_vs_Baseline"	
 contrasts(d_mod$Condition_bin)	
-
-head(d_mod)
 ```
+
+Show data frame
+
+```{r}
+head(d_mod)
+str(d_mod)
+```
+
 
 
 Baseline condition
