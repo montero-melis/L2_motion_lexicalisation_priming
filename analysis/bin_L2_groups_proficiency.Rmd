@@ -1,0 +1,222 @@
+---
+title: 'What is the best way to bin L2 participants by proficiency?'
+author: '[Guillermo Montero-Melis](http://www.biling.su.se/montero_melis_guillermo)'
+date: '`r as.character(format(Sys.Date(), format="%d/%m/%Y"))`'
+output:
+  html_document:
+    depth: 2
+    number_sections: yes
+    theme: default
+    toc: yes
+  pdf_document:
+    number_sections: yes
+    toc: yes
+  word_document:
+    toc: yes
+---
+
+```{r, message = FALSE}
+library(dplyr)
+library(ggplot2)
+```
+
+
+Aim
+===
+
+What is the best way to bin L2 participants by proficiency?
+
+ We will loop through different values and try to maximize:
+ 
+- The number of participants in low vs high proficiency groups and in each condition
+- The mean difference in Cloze score between the groups
+
+We'll do this by visual inspection.
+
+
+Load data
+=========
+
+```{r}
+d <- read.csv("../data/data_verbs_multinomial.csv")
+# head(d)
+# unique L2 participants and their Cloze scores:
+l2 <- unique(d[, c("Subject", "Group", "Condition", "ClozeScore")])
+l2 <- l2[l2$Group == "L2", ]
+head(l2)
+```
+
+
+Distribution of proficiency scores
+===================================
+
+
+```{r}
+ggplot(l2, aes(x = ClozeScore, fill = Condition)) +
+  geom_density(alpha = .5) 
+```
+
+I had previously chosen the 4th and 6th deciles as cutoff points for low and
+high proficiency speakers, respectively:
+
+```{r}
+cutoff_prof <- quantile(l2$ClozeScore, c(.4, .6), na.rm = TRUE)
+cutoff_prof
+```
+
+
+```{r}
+ggplot(l2, aes(x = ClozeScore, fill = Condition)) +
+  geom_density(alpha = .5) +
+  geom_vline(xintercept = cutoff_prof) +
+  annotate("text", x = 10, y = .055, label = "low\nproficiency") +
+  annotate("text", x = 33, y = .055, label = "high\nproficiency")
+```
+
+
+
+Number of observations depending on threshold
+=============================================
+
+Calculate the precise number of observations we have in each condition
+depending on what we choose as the threshold for:
+
+- `low_profic`: meaning that a participant with ClozeScore *equal or below* that
+value will be assigned to the **low proficiency** group
+- `high_profic`: meaning that a participant with ClozeScore *equal or above* that
+value will be assigned to the **high proficiency** group
+
+
+```{r}
+compute_n <- function(df = l2) {
+  my_n <- data.frame()
+  min_profic <- min(df$ClozeScore)
+  max_profic <- max(df$ClozeScore)
+  for (thresh in seq(min_profic, max_profic)) {
+    curr_low <- df %>% 
+      filter(ClozeScore <= thresh) %>%
+      group_by(Condition) %>%
+      summarise(N = n())
+    curr_low$Threshold_type <- "low_profic"
+    curr_high <- df %>% 
+      filter(ClozeScore >= thresh) %>%
+      group_by(Condition) %>%
+      summarise(N = n())
+    curr_high$Threshold_type <- "high_profic"
+    curr <- rbind(curr_low, curr_high)
+    curr$Threshold <- thresh
+    my_n <- rbind(my_n, curr)
+  }
+  my_n
+}
+my_n <- compute_n()
+head(my_n)
+```
+
+
+Plot the results
+
+```{r, fig.width = 10}
+p <- ggplot(my_n, aes(x = Threshold, y = N, colour = Condition,
+                      linetype = Threshold_type, shape = Threshold_type)) +
+  geom_point() +
+  geom_line()
+p
+```
+
+
+Mean difference depending on threshold
+======================================
+
+```{r}
+min_low_profic_thresh <- 21  # minimum proficiency threshold for low profic speakers
+max_high_profic_thresh <- 28  # maximum proficiency threshold for high profic speakers
+```
+
+
+The previous plot already sets a limit on the range of thresholds we can consider.
+Assuming we don't want there to be less than 6 participans per condition and
+proficiency group...
+
+- We need a `low_profic` theshold of at least `r min_low_profic_thresh`
+- We need a `high_profic` theshold of at most `r max_high_profic_thresh`
+
+Compute the mean difference in proficiency score as a function of
+
+- `low_profic`: meaning that a participant with ClozeScore *equal or below* that
+value will be assigned to the **low proficiency** group
+- `high_profic`: meaning that a participant with ClozeScore *equal or above* that
+value will be assigned to the **high proficiency** group
+
+Note that:
+
+- `low_profic` $<$ `high_profic`: the threshold for low proficiency has to be
+strictly smaller than the threshold for high proficiency
+- However, there can be a gap, i.e. we could set the lower threshold at 22 and
+the upper at 25, thus losing all participants with proficiency in the range [23, 24]
+
+```{r}
+compute_diff <- function(df = l2,
+                         # minimum proficiency threshold for low profic speakers
+                         min_low_profic = min_low_profic_thresh,
+                         # maximum proficiency threshold for high profic speakers
+                         max_high_profic = max_high_profic_thresh) {
+  mean_diff <- data.frame()  # initialize empty data frame
+  for (lower_thresh in min_low_profic : (max_high_profic - 1)){
+    M_low <- mean(df[df$ClozeScore <= lower_thresh, "ClozeScore"])
+    for (upper_thresh in (lower_thresh + 1) : max_high_profic) {  # upper threshold strictly greater than lower
+      curr <- df %>% 
+        filter(ClozeScore >= upper_thresh) %>%
+        summarise(M_high = mean(ClozeScore))
+      curr$Threshold_high <- upper_thresh
+      curr$Threshold_low <- lower_thresh
+      curr$M_low <- M_low
+      mean_diff <- rbind(mean_diff, curr)
+    }
+  }
+  mean_diff$M_diff <- with(mean_diff, M_high - M_low)
+  mean_diff
+}
+my_diff <- compute_diff()
+head(my_diff)
+tail(my_diff)
+```
+
+
+Plot
+
+```{r, fig.height = 4}
+ggplot(my_diff,
+       aes(x = Threshold_high, y = M_diff, colour = factor(Threshold_low))) +
+  geom_point() +
+  geom_line(aes(group = Threshold_low))
+```
+
+We would like to pick a point that has high `M_diff`, but we also need to keep N
+reasonably high. There is a fairly steep increase in the mean proficiency 
+difference...
+
+1) For a `high_profic` threshold of 27 vs 26
+2) For a `low_profic` threshold of 22 vs 23
+
+Unfortunately, the figure below shows that these cutoff points also mean
+a sharp drop in the Ns:
+
+```{r, echo = FALSE}
+my_reasonable <- with(my_n, 
+                      Threshold_type == "low_profic" & Threshold %in%
+                        min_low_profic_thresh : (max_high_profic_thresh - 1) |
+                        Threshold_type == "high_profic" & Threshold %in%
+                        (min_low_profic_thresh + 1) : max_high_profic_thresh)
+```
+
+
+```{r, echo = FALSE, fig.height = 4}
+ggplot(my_n[my_reasonable, ],
+       aes(x = Threshold, y = N, colour = Condition,
+                      linetype = Threshold_type, shape = Threshold_type)) +
+  geom_point() +
+  geom_line() +
+  ylim(6, 16)
+```
+
