@@ -1,11 +1,13 @@
 TO DO
 =====
 
-- Figure out what script I used to generate the figures for my thesis chapter?
+- The current analyses are double-counting baseline participants: what shall we do about this?
+- Follow-up GLMM on Q3: 
+	- how to bin participants by proficiency?
+	- Use forward coding comparing L2 low > L2 high > natives
+- Was Flo going to try out something using multinomial regression?
 
-- Run GAMM analysis with only the data from the two manner verbs that were better known to subjects [almost finished!]
-- Replace Figs. 5&6 in thesis' Study III with figures that show the difference (as in lower panels of Figs 3&4)
-- Model comparison showing that 3-way interaction with proficiency significantly improves the model for L2 speakers adaptation to manner verbs
+--> I've emailed Flo about these issues (180903)
 
 
 Reporting the analysis
@@ -17,4 +19,5 @@ Check out "Analysis approach" section in Fraundorf & Jaeger (2016, p.35)
 Discussion
 ----------
 
-Why upward trend (path verbs) and downward trend (manner verbs) over course of experiment? See Kootstra&Doedens 2016
+- Generally stronger overall priming in L2ers vs natives
+- Why upward trend (path verbs) and downward trend (manner verbs) over course of experiment? See Kootstra&Doedens 2016
