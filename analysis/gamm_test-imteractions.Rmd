@@ -1,0 +1,488 @@
+---
+title: 'Explicit test of interactions using GAMMs'
+author: '[Guillermo Montero-Melis](http://www.biling.su.se/montero_melis_guillermo)'
+date: '`r as.character(format(Sys.Date(), format="%d/%m/%Y"))`'
+output:
+  html_document:
+    depth: 2
+    number_sections: yes
+    theme: default
+    toc: yes
+  pdf_document:
+    number_sections: yes
+    toc: yes
+  word_document:
+    toc: yes
+---
+
+
+Intro
+=====
+
+We have been struggling to test the significance of the non-linear interaction
+of two factor variables (the indicator variable `VerbType` and `Condition_bin`)
+on a continuous variable (`Trial`).
+Our problem has been that we did not know how to do that for GAMMs and our 
+approach has been to create a new 4-level factor `VbType_Cond` (as in e.g., 
+De Cat et al., 2015).
+However, [this thread](https://stackoverflow.com/questions/47934100/how-to-specify-the-non-linear-interaction-of-two-factor-variables-in-generalised)
+on Stackoverflow seems to suggest a way of doing it.
+This report tries to follow that approach, and it also follows up on Simon 
+Wood's suggestions (see Wood's email 180828 and Florian's interpretation 180830,
+Subject: "testing for interactions in GAMs").
+
+
+Set up workspace
+================
+
+##  Load libraries and functions
+
+Libraries:
+
+```{r, message=TRUE}
+library(dplyr)
+library(lme4)
+library(tidyr)
+library(ggplot2)
+library(mgcv)  # GAMs and GAMMs (Wood 2006)
+library(itsadug)
+# library(boot)  # for inv.logit()	
+library(knitr)  # for kable()
+# library(lazyeval)  # lazy evaluation used in bysubj() function [summarise_]	
+# library(effects)	
+# library(xtable)	
+```
+
+
+Functions:
+
+```{r, message=TRUE}
+## Source somewhat more complex functions	
+
+# # source functions to compute collinearity diagnostics	
+# source("functions/kappa_mer_fnc.R")	
+# source("functions/vif_mer_fnc.R")	
+
+# Function that plots mixed model-estimates in logit space from baseline
+# conditions, including speaker estimates
+source("functions/plot_glmm_fnc.R")
+
+# # source multiplot function	
+# source("functions/multiplot_fnc.R")	
+
+# Function used to load models if they have already been saved,
+# rather than fitting them anew each time the script is called
+source("functions/load_or_fit_fnc.R")
+
+# Two functions to a) plot the differences between NS and L2 speakers from GAMMs,
+# and b) plot the effects by L2 speakers' proficiency from GAMMs
+source("functions/plot_gams_fnc.R")
+```
+
+```{r}
+## Simpler convenience functions:	
+
+# center predictors in a regression
+source("functions/myCenter.R")
+
+# print deviance explained as percentage and rounded to 1 decimal
+dev_expl <- function(fm) {
+  devi <- summary(fm)$dev.expl
+  round(100 * devi, 1)
+}
+
+# create a neat table of the summary of fixed effects of a mixed model	
+glmm_tb <- function(fm) {	
+  m <- round(summary(fm)$coefficients, 3)	
+  tb <- as.data.frame(m)	
+  names(tb) <- c("Estimate", "SE", "z-value", "p-value")	
+  kable(tb)	
+}	
+```
+
+
+```{r, include=FALSE}
+## Specify some global parameters
+
+# adjust figure heght/width when not going with default (espec. for 2x2 plots)
+myfighe_NS_L2 <- 6
+myfighe_L2_prof <- 6
+myfigwi <- 7
+```
+
+
+## Load and process data	
+
+Load annotated description data for production task:
+
+```{r}
+# The data is created in the script 'processing/compute_dependent_measures.R'
+# There is the normal and the liberally coded version (see script for difference).	
+# Here I use the normal coding.	
+
+# load	
+d <- read.csv('../data/data_DVs.csv', fileEncoding = 'UTF-8', stringsAsFactors = TRUE)	
+# simplify somewhat	
+d <- d %>%	
+  dplyr::select(Subject:VideoName, P_V, M_V) %>%	
+  rename(Trial = VideoTrial)	
+# Rename "Control" condition to "Baseline"	
+levels(d$Condition)[levels(d$Condition) == "Control"] <- "Baseline"	
+# Centre Trial	
+d$cTrial <- d$Trial - mean(d$Trial)	
+# check out
+head(d)
+str(d)
+```
+
+Add L2 proficiency scores:
+
+```{r}
+# participant data
+ppts <- read.csv("../data/participants.csv", fileEncoding = "UTF-8",
+                 stringsAsFactors = TRUE)
+# No audio data recorded for Subject 14 (L2) due to experimental error; exclude
+ppts <- ppts[ppts$Subject != 14, ]
+ppts$Subject <- factor(ppts$Subject)
+
+# transform ClozeScore to z-score (as.vector prevents it from becoming a matrix)
+ppts$zClozeScore <- as.vector(scale(ppts$ClozeScore))
+# center ClozeScore but not scaling (as.vector prevents it from becoming a matrix)
+ppts$cClozeScore <- as.vector(scale(ppts$ClozeScore, scale = FALSE))
+
+# Turn L2 proficiency into a categorical (ordered) variable.
+# Do this by assigning cloze scores <= 40th percentile to "low",
+# scores >= 60th percentile to "high", and the rest to "medium", 
+# which shall not be analyzed in the group comparison followign up on Question 3
+cutoff_prof <- quantile(ppts$ClozeScore, c(.4, .6), na.rm = TRUE)
+ppts$Profic_categ <- with(ppts,
+                          ifelse(ClozeScore <= cutoff_prof[1], "low prof",
+                                 ifelse(ClozeScore >= cutoff_prof[2], "high prof", 
+                                        "medium prof")))
+# native speakers
+ppts$Profic_categ[with(ppts, is.na(Profic_categ) & Group == "NS")] <- "native"
+# Leads to the following nuber of observations:
+table(ppts$Profic_categ)
+# Note unbalance: high prof group is not equally represented in the three conditions
+addmargins(with(ppts, table(Profic_categ, Condition)))
+# add speakers' clozescore and derived measures to d:
+d <- left_join(d, ppts %>% dplyr::select(Subject, ClozeScore, zClozeScore,
+                                         cClozeScore, Profic_categ))
+# NB: Subject NS_1 is in dataframe "d" but missing from df "ppts", while Subject
+# NS_202 is in "ppts" but missing from "d". Both were in the baseline condition.
+# Subject needs to be a factor
+d$Subject <- factor(d$Subject)
+# check out
+head(d)
+str(d)
+```
+
+
+Reshape data to long format and some further processing:
+
+```{r}
+# Convert data to long format:	
+d_long <- gather(d, VerbType, Used, P_V:M_V)
+
+# Combine VerbType (Path/Manner) and Condition (baseline/primed) into a single
+# factor -- this is needed for the GAMMs
+d_long$VbType_Cond <- with(d_long, interaction(VerbType, Condition))	
+
+# For the subjects  to be properly fitted as random terms in the regression 
+# models, we have to "pretend" that a baseline subject is two different subjects,
+# one for the comparison to path-primed, the other to manner-primed participants;	
+# this may not be ideal statistically (we'll assume independence where there
+# isn't), but not doing this would mess up the estimation of random effects.	
+d_long$Subject <- with(d_long, interaction(Subject, VerbType))	
+
+## Subset data for model fitting:
+# We are removing observations that	
+# correspond to path verbs produced in the manner-primed condition or to manner	
+# verbs produced in the path-primed condition)	
+d_mod <- d_long %>% filter(! VbType_Cond %in% c("P_V.Manner", "M_V.Path"))
+rm(d_long)  # remove to avoid using it by mistake
+
+# drop unused factor levels and order levels correctly
+d_mod$VbType_Cond <- factor(d_mod$VbType_Cond, 
+                            levels = c("P_V.Baseline", "P_V.Path", "M_V.Baseline",
+                                       "M_V.Manner"))
+# drop unused factors for subject (important for random effects estimation)
+d_mod$Subject <- factor(d_mod$Subject)
+# Condition recoded as a binary factor (Path/Manner become "Primed")
+d_mod$Condition_bin <- d_mod$Condition
+levels(d_mod$Condition_bin)[levels(d_mod$Condition_bin) %in% c("Path", "Manner")] <- "Primed"	
+table(d_mod$Condition_bin)  # roughly balanced (remember Baseline ppts are "doubled")
+```
+
+
+Coding scheme for factors:
+
+```{r}
+# Keep a dummy coded version of each factor:
+d_mod$Group_dummy <- factor(d_mod$Group, levels = c("NS", "L2"))
+contrasts(d_mod$Group_dummy)
+d_mod$VerbType_dummy <- factor(d_mod$VerbType, levels = c("P_V", "M_V"))
+contrasts(d_mod$VerbType_dummy)
+d_mod$Condition_bin_dummy <- factor(d_mod$Condition_bin)
+contrasts(d_mod$Condition_bin_dummy)
+# define factor coding scheme (contrast coding)
+# group
+contrasts(d_mod$Group) <- contr.sum(2)
+colnames(contrasts(d_mod$Group)) <- "L2_vs_NS"
+contrasts(d_mod$Group)
+# Verb type
+d_mod$VerbType <- factor(d_mod$VerbType)
+contrasts(d_mod$VerbType) <- contr.sum(2)
+colnames(contrasts(d_mod$VerbType)) <- "M_vs_P"
+contrasts(d_mod$VerbType)
+# Condition_bin contrast coding	
+contrasts(d_mod$Condition_bin) <- - contr.sum(2)
+colnames(contrasts(d_mod$Condition_bin)) <- "Primed_vs_Baseline"	
+contrasts(d_mod$Condition_bin)	
+```
+
+Show data frame
+
+```{r}
+head(d_mod)
+str(d_mod)
+```
+
+
+
+
+Question 1: Trial-by-trial adaptation of native speakers 
+========================================================
+
+Q1:
+
+*Will native speakers show an inverse preference effect in their adaptation to the lexicalization patterns in the input? Theories that attribute adaptation to error-based or related learning mechanisms, predict this to be the case. If so, natives should adapt more strongly to manner verbs (uncommon in Spanish) than to path verbs (preferred in Spanish). This finding would also provide a conceptual replication of previous work on inverse preference effects in L1 syntactic priming (see references in the introduction), but for LEXICAL ENCODING and on another L1, Spanish.*
+
+## GAMM analysis
+
+### Data and processing
+
+```{r}
+## Subset data:
+# Data for analysis of Native speakers
+d_ns <- d_mod %>% filter(Group == "NS")
+# drop unused factors for subject (I think this is important for gam fitting)
+d_ns$Subject <- factor(d_ns$Subject)
+
+# note log-odds of path verbs in baseline condition becomes the reference level
+contrasts(d_ns$VbType_Cond)
+```
+
+
+### Wood's suggestions
+
+```
+> Dear Guillermo and Florian,
+> 
+> I would be inclined to do something like:
+> 
+> m0 <- gam(DV ~ s(Trial, by = AB) + AB,method="REML")
+> AIC(m0)
+> m1 <- gam(DV ~ s(Trial, by = A) + AB,method="REML")
+> AIC(m1)
+> m2 <- gam(DV ~ s(Trial, by = A) + A+B,method="REML")
+> AIC(m2)
+> 
+> rather than use a GLRT, as the AIC is reasonably well justified in a way that the
+> GLRT is not for smooth model comparison.
+
+I think GLRT means (generalized?) likelihood ratio test. And all he's proposing is to compare the models in terms of their Aikeken information criterion (small is better). 
+
+AB is the conjoined (pasted) factor of A and B and thus captures the effects of A, B, and their interaction A:B. A + B is just the main effects. So comparing model m2 against m1 tells you whether the interaction is significant, but not whether trial depends on only the main effect or also the interaction. The comparison of m1 against m0 tests whether condition trial on not only the main effect of A, but also B and A:B. So, it doesn't tell us whether trial should be conditioned specifically on the interaction, but only whether trial conditioned on either B or A:B or both B and A:B improves the model fit. If one further compares against  
+
+> m1.b <- gam(DV ~ s(Trial, by = B) + AB,method="REML")
+> AIC(m1.b)
+> m2.b <- gam(DV ~ s(Trial, by = B) + A+B,method="REML")
+> AIC(m2.b)
+
+One can kinda triangulate whether the interaction is the driving factor (e.g. if trial does not depend on B, but does depend on A, and conditioning trial on A*B makes the model even better, and A and B are orthogonal to each other, I think it follows that the interaction matters. In essence, he's saying: assess the significance through model comparison between models that use condition trial on only one of the two factors or on the conjoined factors (but use the AIC rather than direct model comparison).
+
+> 
+> Alternatively, suppose A = 0 or 1 and B = 0 or 1 (numeric indicators of the
+> factor levels). Then you could use
+> 
+> m <- gam(DV ~ s(Trial) + s(Trial, by = B) + s(Trial,by=A*B),method="REML")
+> summary(m)
+> 
+> to obtain a p-value for the interaction.
+> 
+> In either case there is the inelegant fact that the results for testing the
+> interaction are not invariant to the interchange of the roles A and B, so
+> interpretation requires care.
+
+
+Same issue as above, and as acknowledged by Simon: assessing significance of the dependence of trial on of A*B, i.e., s(trial, by = A*B), means something different if the model contains the dependence of trial on B vs. when the model contains the dependence of trial on A. But I assume that Simon means that the model won't fit/converge if you do ~ ...  s(Trial) + s(Trial, by = A) + s(Trial, by = B) + s(Trial, by=A*B). Because it if does that would be the most obvious solution. 
+
+It might be easiest to try to fit the equivalent of the model he proposes and to visualize the ouput?
+
+gam(DV ~ s(Trial) + s(Trial, by = B) + s(Trial,by=A*B),method="REML")
+
+Flo
+
+
+```
+
+```{r}
+# Model corresponding to Wood's:
+# > m0 <- gam(DV ~ s(Trial, by = AB) + AB,method="REML")
+
+gam_ns_m0.expr <- "gam(Used ~
+                        s(Trial, by = VbType_Cond) + VbType_Cond +
+                        s(Trial, Subject, bs = 'fs') + s(VideoName, bs = 're'),
+                      data = d_ns,
+                      family = 'binomial',
+                      method = 'REML')"
+load_or_fit("gam_ns_m0", gam_ns_m0.expr)  # took 13 minutes to fit
+summary(gam_ns_m0)  # The estimates differ slightly from same model in "main_analyses" -- bc method = "REML"?
+AIC(gam_ns_m0)
+```
+
+```{r}
+# Model corresponding to Wood's:
+# > m1 <- gam(DV ~ s(Trial, by = A) + AB,method="REML")
+
+gam_ns_m1.expr <- "gam(Used ~
+                        s(Trial, by = VerbType_dummy) + VbType_Cond +
+                        s(Trial, Subject, bs = 'fs') + s(VideoName, bs = 're'),
+                      data = d_ns,
+                      family = 'binomial',
+                      method = 'REML')"
+load_or_fit("gam_ns_m1", gam_ns_m1.expr)  # took 10.4 minutes to fit
+summary(gam_ns_m1)
+AIC(gam_ns_m1)
+```
+
+```{r}
+# Model corresponding to Wood's:
+# > m2 <- gam(DV ~ s(Trial, by = A) + A+B,method="REML")
+
+gam_ns_m2.expr <- "gam(Used ~
+                        s(Trial, by = VerbType_dummy) + VerbType_dummy + Condition_bin_dummy +
+                        s(Trial, Subject, bs = 'fs') + s(VideoName, bs = 're'),
+                      data = d_ns,
+                      family = 'binomial',
+                      method = 'REML')"
+load_or_fit("gam_ns_m2", gam_ns_m2.expr)  # took 12.4 minutes to fit
+summary(gam_ns_m2)
+AIC(gam_ns_m2)
+```
+
+
+Florian:
+
+"AB is the conjoined (pasted) factor of A and B and thus captures the effects of A, B, and their interaction A:B. A + B is just the main effects. So comparing model m2 against m1 tells you whether the interaction is significant, but not whether trial depends on only the main effect or also the interaction. The comparison of m1 against m0 tests whether condition trial on not only the main effect of A, but also B and A:B. So, it doesn't tell us whether trial should be conditioned specifically on the interaction, but only whether trial conditioned on either B or A:B or both B and A:B improves the model fit. If one further compares against  
+"
+
+
+```{r}
+# > m1.b <- gam(DV ~ s(Trial, by = B) + AB,method="REML")
+gam_ns_m1b.expr <- "gam(Used ~
+                        s(Trial, by = Condition_bin_dummy) + VbType_Cond +
+                        s(Trial, Subject, bs = 'fs') + s(VideoName, bs = 're'),
+                      data = d_ns,
+                      family = 'binomial',
+                      method = 'REML')"
+load_or_fit("gam_ns_m1b", gam_ns_m1b.expr)  # took 13.2 minutes to fit
+summary(gam_ns_m1b)
+AIC(gam_ns_m1b)
+```
+
+```{r}
+# > m2.b <- gam(DV ~ s(Trial, by = B) + A+B,method="REML")
+gam_ns_m2b.expr <- "gam(Used ~
+                        s(Trial, by = Condition_bin_dummy) + VerbType_dummy + Condition_bin_dummy +
+                        s(Trial, Subject, bs = 'fs') + s(VideoName, bs = 're'),
+                      data = d_ns,
+                      family = 'binomial',
+                      method = 'REML')"
+load_or_fit("gam_ns_m2b", gam_ns_m2b.expr)  # took 10.5 minutes to fit
+summary(gam_ns_m2b)
+AIC(gam_ns_m2b)
+```
+
+
+One can kinda triangulate whether the interaction is the driving factor (e.g. if trial does not depend on B, but does depend on A, and conditioning trial on A*B makes the model even better, and A and B are orthogonal to each other, I think it follows that the interaction matters. In essence, he's saying: assess the significance through model comparison between models that use condition trial on only one of the two factors or on the conjoined factors (but use the AIC rather than direct model comparison).
+
+```{r}
+AIC(gam_ns_m0)
+AIC(gam_ns_m1)
+AIC(gam_ns_m2)
+AIC(gam_ns_m1b)
+AIC(gam_ns_m2b)
+```
+
+
+
+### Explicit test of 3-way interaction?
+
+Florian comments on Simon Wood's email:
+
+"But I assume that Simon means that the model won't fit/converge if you do
+`~ ...  s(Trial) + s(Trial, by = A) + s(Trial, by = B) + s(Trial, by=A*B)`. 
+Because it if does that would be the most obvious solution."
+
+This is exactly what 
+[this thread](https://stackoverflow.com/questions/47934100/how-to-specify-the-non-linear-interaction-of-two-factor-variables-in-generalised)
+mentioned above suggests.
+
+Let's try it out.
+
+Note that I omit the term `s(Trial)` from the model formula, since the 
+corresponding parameter is already in the model when we
+
+```{r}
+# # the expression that is passed to load_or_fit()
+# gam_ns_3way.expr <- "bam(Used ~ 
+#                            VerbType * Condition_bin +
+#                            s(Trial, by = VerbType) +
+#                            s(Trial, by = Condition_bin) +
+#                            s(Trial, by = interaction(VerbType,  Condition_bin)) +
+#                            s(Trial, Subject, bs = 'fs') + 
+#                            s(VideoName, bs = 're'),
+#                          data = d_ns,
+#                          method = 'REML',
+#                          family = 'binomial')"
+# # load model or fit
+# load_or_fit("gam_ns_3way", gam_ns_3way.expr)
+```
+
+
+
+```{r}
+# # the expression that is passed to load_or_fit()
+# gam_ns_inter.expr <- "bam(Used ~ 
+#                            VerbType + Condition_bin +
+#                            s(Trial) +
+#                            s(Trial, by = VerbType) +
+#                            s(Trial, by = Condition_bin) +
+#                            s(Trial, by = interaction(VerbType, Condition_bin)) +
+#                            s(Trial, Subject, bs = 'fs') + 
+#                            s(VideoName, bs = 're'),
+#                          data = d_ns,
+#                          family = 'binomial')"
+# # load model or fit
+# load_or_fit("gam_ns_inter", gam_ns_inter.expr)
+```
+
+
+
+```{r}
+# # the expression that is passed to load_or_fit()
+# gam_ns_inter2.expr <- "bam(Used ~ 
+#                            VerbType * Condition_bin +
+#                            s(Trial, by = VerbType) +
+#                            s(Trial, by = Condition_bin) +
+#                            s(Trial, by = interaction(VerbType, Condition_bin)) +
+#                            s(Trial, Subject, bs = 'fs') + 
+#                            s(VideoName, bs = 're'),
+#                          data = d_ns,
+#                          family = 'binomial')"
+# # load model or fit
+# load_or_fit("gam_ns_inter2", gam_ns_inter2.expr)
+```
+
