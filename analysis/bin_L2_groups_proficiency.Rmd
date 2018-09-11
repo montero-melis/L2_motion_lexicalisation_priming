@@ -217,6 +217,7 @@ ggplot(my_n[my_reasonable, ],
                       linetype = Threshold_type, shape = Threshold_type)) +
   geom_point() +
   geom_line() +
+  geom_vline(xintercept = cutoff_prof) +  # cutoff points I chose earlier
   ylim(6, 16)
 ```
 
