@@ -199,6 +199,7 @@ str(d)
 Reshape data to long format and some further processing:
 
 ```{r}
+# DOUBLE COUNTING APPROACH
 # Convert data to long format:	
 d_long <- gather(d, VerbType, Used, P_V:M_V)
 
@@ -476,6 +477,107 @@ plot_gam_main(gam_ns, "NS")  # choose this on Linux machine
 # plot_gam_main(gam_ns, "NS")
 # dev.off()
 ```
+
+
+
+## GAMM analysis -- without double counting
+
+We repeat the analysis, only we don't double count participants in the
+baseline condition as above. Instead, we use a 2-fold-cross-validation of
+sorts:
+
+1) Randomly assign half of the baseline participants to "path verb" condition
+(`VerbType` = `P_V`) and the other half to the manner verb condition.
+2) Run the same GAMM as before
+3) Invert the assignment in 1) and procede to 2).
+4) Evaluate if the results are stable.
+
+This is achieved using the `load_or_fit_2foldx` function (see script
+`analysis/functions/load_or_fit_fnc.R`).
+
+
+### GAMM fitting
+
+
+
+```{r}
+# check the source code of the function to understand how it works
+load_or_fit_2foldx("gam_ns", gam_ns.expr, myrandseed = 530)
+load_or_fit_2foldx("gam_ns", gam_ns.expr, myrandseed = 330)
+```
+
+
+### Output and summary plots
+
+Summary of the model:
+
+```{r}
+summary(gam_ns_2foldx_530_fold1)
+summary(gam_ns_2foldx_530_fold2)
+summary(gam_ns_2foldx_330_fold1)
+summary(gam_ns_2foldx_330_fold2)
+```
+
+
+Summary using gamtabs:
+
+(NB: Copy function from `supplementary-info.Rmd` if I want to use the function.)
+
+
+```{r, results = "asis"}
+# gam_tb(gam_ns_2foldx_530_fold1)
+```
+
+
+Significance of the different terms in the model:
+
+```{r}
+# anova(gam_ns_2foldx_530_fold1)
+```
+
+
+Plot model estimates by condition, random smooth adjustments by speakers and QQ-plot of random by-item intercepts:
+
+```{r, results = 'hide'}
+## plot
+plot_smooth(gam_ns_2foldx_530_fold1, view = 'Trial', plot_all = 'VbType_Cond', rm.ranef=TRUE)
+plot_smooth(gam_ns_2foldx_530_fold2, view = 'Trial', plot_all = 'VbType_Cond', rm.ranef=TRUE)
+plot_smooth(gam_ns_2foldx_330_fold1, view = 'Trial', plot_all = 'VbType_Cond', rm.ranef=TRUE)
+plot_smooth(gam_ns_2foldx_330_fold2, view = 'Trial', plot_all = 'VbType_Cond', rm.ranef=TRUE)
+```
+
+
+```{r}
+# show by-speaker random smooths and by-item random intercepts
+# par(mfrow = c(1, 2))
+# plot(gam_ns, select = 5)
+# plot(gam_ns, select = 6)
+```
+
+
+### Result plots
+
+Plot differences between conditions (model estimates):
+
+```{r, fig.height = myfighe_NS_L2, fig.width = myfigwi, echo = TRUE, results = 'hide'}
+plot_gam_main(gam_ns_2foldx_530_fold1, "NS")  # choose this on Linux machine
+plot_gam_main(gam_ns_2foldx_530_fold2, "NS")  # choose this on Linux machine
+plot_gam_main(gam_ns_2foldx_330_fold1, "NS")  # choose this on Linux machine
+plot_gam_main(gam_ns_2foldx_330_fold2, "NS")  # choose this on Linux machine
+# on my old windows computer:
+# plot_gam_main(gam_ns, "NS", mark.diff = FALSE)  # use of mark.diff is a hack to
+# avoid an error that will stop the whole thing when I compile it on my work pc
+```
+
+
+```{r}
+# # save to disk for thesis chapter
+# tiff(file = "figures/gam_natives.tiff", width = 5, height = 5.2, units = "in", pointsize = 10, res = 800)
+# plot_gam_main(gam_ns, "NS")
+# dev.off()
+```
+
+
 
 
 ## GLMM analysis
