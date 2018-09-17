@@ -1,9 +1,10 @@
 # Function used to load models if they have already been saved,
 # rather than fitting them anew each time the script is called
 
-require(mgcv)
+require("mgcv")
+require("parallel")
 
-load_or_fit <- function(fm_name, fm_code, forcefit = FALSE, ...) {
+load_or_fit <- function(fm_name, fm_code, forcefit = FALSE, useCluster = TRUE, ...) {
   rel_path <- './gamms/'
   # the string in argument fm_code may contain '\n'; remove them
   fm_code <- gsub('\n', '', fm_code)
@@ -13,22 +14,45 @@ load_or_fit <- function(fm_name, fm_code, forcefit = FALSE, ...) {
   # if forcefit = T it will always fit the model
   if((!forcefit) & model_exists) {
     load(paste0(rel_path, fm_name, '.rda'), .GlobalEnv)
-    
-  } else {  # fit it and save it to right folder
-    # record the time it takes to fit
-    fm_time <- paste0(fm_name, ".t")
-    ptm <- proc.time()
-    assign(fm_name, eval(parse(text = fm_code), ...), envir = .GlobalEnv)
-    assign(fm_time, proc.time() - ptm, envir = .GlobalEnv)
-    # both the model and the time it took can be saved as same file
-    save(list = c(fm_name, fm_time), file = paste0(rel_path, fm_name, '.rda'))
-    # print a brief model summary when it has been fitted and time to fit
-    fm <- get(fm_name)
-    fm_t <- get(fm_time)
-    print(fm)
-    print(fm_t)
+    } else {  # fit it and save it to right folder
+      
+      # use parallel computation if clusters available and if useCluster = T
+      if (useCluster) {
+        nc <- 8  # maximum cluster size
+        if (detectCores() > 1) {
+          cl_nb <- min(nc, detectCores()) #- 1
+          cat(paste0("Making cluster with ", cl_nb, " cores.\n"))
+          cl <- makeCluster(cl_nb)
+          # add the cluster argument to function call
+          fm_code <- gsub("\\)$", ", cluster = cl)", fm_code)
+          ## could also use makeForkCluster, but read warnings first!
+        } else { cl <- NULL }
+      }
+      
+      cat("Fitting model ... ")
+      
+      # record the time it takes to fit
+      fm_time <- paste0(fm_name, ".t")
+      ptm <- proc.time()
+      assign(fm_name, eval(parse(text = fm_code), ...), envir = .GlobalEnv)
+      assign(fm_time, proc.time() - ptm, envir = .GlobalEnv)
+      
+      # both the model and the time it took can be saved as same file
+      save(list = c(fm_name, fm_time), file = paste0(rel_path, fm_name, '.rda'))
+      
+      # print a brief model summary when it has been fitted and time to fit
+      fm <- get(fm_name)
+      fm_t <- get(fm_time)
+      print(fm)
+      print(fm_t)
+      
+      if (useCluster) {
+        stopCluster(cl)
+        rm(cl)
+      }
+      
+    }
   }
-}
 
 
 # A function to fit models using a sort of two-fold cross-validation approach
