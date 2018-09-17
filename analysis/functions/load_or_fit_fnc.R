@@ -45,23 +45,23 @@ load_or_fit <- function(fm_name, fm_code, forcefit = FALSE, ...) {
 # it will split all baseline participants into two folds, irrespective of group.
 load_or_fit_2foldx <- function(fm_name, fm_code, myrandseed = NULL) {
   
-  # randomly choose a random seed if not given as argument
+  # randomly choose a random seed if not passed as an argument
   if (is.null(myrandseed)) {
     myrandseed <- base::sample.int(999, 1)
   }
 
-  # load data used to fit the model (regex to match the data argument in fm_code)
+  # load data used to fit the model (regex matches the data argument in fm_code)
   datafile <- gsub(".*data\\s?=\\s?(.*?),.*", "\\1", fm_code)
   df <- eval(parse(text = datafile))  # it will eventually look for it in .GlobalEnv
   
-  # unique baseline participants
+  # vector of unique baseline participants, e.g. 101.P_V and 101.M_V --> 101
   doubled_ppts <- unique(as.character(df$Subject[df$Condition == "Baseline"]))
-  unique_ppts <- unique(gsub("(.*)\\.[PM]_V", "\\1", doubled_ppts))  # keeps ppt ID only
+  unique_ppts <- unique(gsub("(.*)\\.[PM]_V", "\\1", doubled_ppts))  # keep ppt ID only
   
   # assign half of them to each fold
   set.seed(myrandseed)
   fold1_ids <- base::sample(unique_ppts, floor(length(unique_ppts) / 2))
-  fold2_ids <- unique_ppts[!unique_ppts %in% fold1_ids]
+  fold2_ids <- unique_ppts[! unique_ppts %in% fold1_ids]
   # Data points to be excluded in each fold
   fold1_exclude <- c(paste(fold1_ids, ".P_V", sep =""),
                      paste(fold2_ids, ".M_V", sep =""))
@@ -73,12 +73,12 @@ load_or_fit_2foldx <- function(fm_name, fm_code, myrandseed = NULL) {
   
   # load or fit model for each fold
   for (i in 1:2) {
-    # replace the data argument in model call with folded data
+    # replace data argument in model call with folded data (uses ungreedy quantifiers)
     curr_fm_code <- gsub("data\\s?=\\s?.*?,", paste("data = fold", i, ",", sep =""), fm_code)
-    # load model or fit
     curr_modelname <- paste(fm_name, "_2foldx_", myrandseed, "_fold", i, sep ="")
-    # Take advantage of ellipsis (...) to pass the envir argument; allows for
-    # looking up the data sets fold1 and fold2 in the current environment
+    # load model or fit
+    # Take advantage of ellipsis (...) to pass the envir argument, so that it looks for
+    # the data sets fold1 and fold2 in the current function environment
     load_or_fit(curr_modelname, curr_fm_code, envir = environment())
   }
 }
