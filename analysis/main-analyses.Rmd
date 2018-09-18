@@ -1736,9 +1736,9 @@ The two models above yield very similar estimates. The model that includes
 but its value for `max|grad|` (whatever it means) is very close to the threshold
 `tol`, so it might not be reason for great alarm.
 
-None of the models supports the conclusion that high proficiency L2 speakers
-resemble native speakers, while low proficiency L2 speakers differ from
-natives.
+None of the models strongly supports the conclusion that high proficiency L2
+speakers resemble native speakers, while low proficiency L2 speakers differ 
+from natives.
 In fact, the pattern of results suggests the opposite: that high proficiency
 L2 speakers differ more from natives than low proficiency L2ers.
 This is not easy reconcile with the pattern of results in the GAMMs.
@@ -1751,7 +1751,67 @@ from the natives detectable.
 ## Conclusion
 
 The pattern of results suggested by the GAMMs we fit to answer Question 3
-are not corroborated by the GLMM analysis.
+are not strongly corroborated by the GLMM analysis.
+
+
+
+Follow-up on Q3: How do L2ers at different proficiency levels compare to natives?
+=============================================================================
+
+Take a model of the natives that we already have from Question 1.
+Use the predict function of the gamm (`mgcv::predict.gam()`) to predict the
+data of all non-native participants (i.e., new data with new individuals).
+Store the predicted probability of the actually observed outcome of each trial. 
+
+```{r}
+# Doesn't work bc different participants in the new data set
+gam_ns_fit_to_L2 <- predict.gam(gam_ns, newdata = d_l2, type = "response")
+```
+
+
+```{r}
+# Follow this suggestion:
+# https://stats.stackexchange.com/questions/156718/get-predictions-from-mgcvgam-model-with-a-new-level-in-a-random-effect-smooth
+d_ns_all_ppt_levels <- d_ns
+levels(d_ns_all_ppt_levels$Subject) <- c(levels(d_ns$Subject), levels(d_l2$Subject))
+```
+
+Fit the model using a single cpu.
+
+```{r}
+# the expression that is passed to load_or_fit()
+gam_ns_withL2levels.expr <- "bam(Used ~ VbType_Cond + s(Trial, by = VbType_Cond) +
+                    s(Trial, Subject, bs = 'fs') + s(VideoName, bs = 're'),
+                  data = d_ns_all_ppt_levels,
+                  family = 'binomial')"
+# load model or fit
+load_or_fit("gam_ns_withL2levels", gam_ns_withL2levels.expr, useCluster = FALSE)
+```
+
+
+Fit the model using `parallel` (on Guillermo's machine, three clusters will
+be used).
+
+```{r}
+# the expression that is passed to load_or_fit()
+gam_ns_withL2levels_par.expr <- "bam(Used ~ VbType_Cond + s(Trial, by = VbType_Cond) +
+                    s(Trial, Subject, bs = 'fs') + s(VideoName, bs = 're'),
+                  data = d_ns_all_ppt_levels,
+                  family = 'binomial')"
+# load model or fit (note that default in load_or_fit is useCluster = TRUE)
+load_or_fit("gam_ns_withL2levels_par", gam_ns_withL2levels_par.expr)
+```
+
+
+So does it work now? Still not...
+
+```{r}
+# Doesn't work bc different participants in the new data set
+gam_ns_fit_to_L2 <- predict.gam(gam_ns_withL2levels_par, 
+                                newdata = d_l2, type = "response")
+```
+
+
 
 
 Alternatives to double-counting baseline participants
@@ -1782,3 +1842,6 @@ We'd be throwing away:
 - `r round(100 * (mytb[3,1] + mytb[3,3]) / mytb[3,5], 1)`% of all data:
 - `r round(100 * (mytb[2,1] + mytb[2,3]) / mytb[2,5], 1)`% from native speakers, and
 - `r round(100 * (mytb[1,1] + mytb[1,3]) / mytb[1,5], 1)`% from L2ers.
+
+
+
