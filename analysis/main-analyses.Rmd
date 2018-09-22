@@ -267,6 +267,15 @@ head(d_mod)
 str(d_mod)
 ```
 
+```{r}
+# Save this data set to disk for use with other scripts
+d_mod %>% 
+  dplyr::select(Subject:ClozeScore, VerbType:Condition_bin) %>%
+  write.csv(file = "../data/data_gamms_baseline-doublecounted.csv",
+            row.names = FALSE, fileEncoding = "UTF-8")
+```
+
+
 
 
 Baseline condition
