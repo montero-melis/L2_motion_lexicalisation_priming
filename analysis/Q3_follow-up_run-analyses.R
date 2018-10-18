@@ -146,41 +146,93 @@ load("analysis/gamms/gam_ns.rda")
 
 
 # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-# Function to compute log-likelihood / log-odds under native model --------
+# Function to compute log-likelihood under native model  ------------------
 # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
-# Function
-mypredict <- function(d_new = NULL, N = 20, d_nat = d_ns, mygam = gam_ns) {
+# this function assigns the subject IDs from the natives randomly to the 
+# subjects in "d_new" (the data from which we want to predict); if you do
+# this on many iterations you're getting a distribution for the likelihood
+# of the new data under the native model, while assuming that the random
+# adjustments in natives captures well the randomness of the group you're
+# predicting from (in this case, importantly, L2 speakers).
 
+# Function
+mypredict <- function(
+  d_new = NULL,  # new data to which the predict function will be applied
+  N = 20,  # number of iterations
+  d_nat = d_ns,  # original df for the native speakers (needed to assign subject IDs)
+  mygam = gam_ns,  # native speaker model from which we want to predict
+  print_each_step = FALSE  # for use with myprint() function to understand function
+) {
+  
+  # myprint function to print intermediate objects
+  myprint <- function(x) {
+    if (print_each_step) { 
+      cat("\n"); print(paste("This is ", deparse(substitute(x)))); cat("\n")
+      print(x)}}
+  
   # Initiate data frame with the actual subjects for which values are predicted
+  # NB: Subject needs to be the first grouping variable, so that order matches
+  # the order of the step below where by-subject mean LLs are computed!
   pred <- d_new %>% group_by(Subject, Condition, ClozeScore) %>% summarise()
+  myprint(head(pred))
+  
   # Matrix that will contain the predicted values in each loop
   store_values <- matrix(nrow = length(unique(d_new$Subject)), ncol = N)
-  # We need to keep track of the real subjects before assigning them random IDs
+  myprint(store_values[1:7,])
+  
+  # Add column to keep track of the real subjects before assigning them random IDs
   d_new$TrueSubject <- d_new$Subject
+  myprint(head(d_new))
   
   for (n in 1:N) {
+    myprint(paste("iteration ---", n))
+    
     # Override subject info by randomly assigning native subject IDs with repl.
     levels(d_new$Subject) <- sample(unique(d_nat$Subject), replace = TRUE,
                                     size = length(unique(d_new$Subject)))
+    myprint(head(d_new))
+    
     # predict participant data under native model (includes subject smooths)
     d_new$predicted <- predict.gam(mygam, newdata = d_new, type = "response")
+    myprint(head(d_new))
     
-    # Now log the probability of each observation (=trial) and then average these
-    # log-probabilities by participant, giving you the mean log-likelihoods (LL)
-    # of a participant's data being generated under the native model:
+    # Now log the probability of each observation (=trial) under the current
+    # (native) model (with randomly assigned by-subject smooths), giving you
+    # the log-likelihood (LL) of an observation under the native model:
     d_new$LL <- with(d_new, log(ifelse(Used == 1, predicted, 1 - predicted)))
-    store_values[, n] <- d_new %>% group_by(TrueSubject) %>%
-      summarise(LL = mean(LL)) %>% pull(LL)
+    myprint(head(d_new))
+    # and now average these log-probabilities by participant, to obtain the 
+    # mean log-likelihoods (LL) of a participant's data under the native model
+    mean_sbj_LL <- d_new %>% 
+      group_by(TrueSubject) %>%
+      summarise(LL = mean(LL))
+    myprint(head(mean_sbj_LL))
+    # put these values into the corresponding iteration column of store_values
+    store_values[, n] <- mean_sbj_LL %>% pull(LL)
+    myprint(store_values[1:7,])
   }
-  # N random assignments lead to a distribution of LL / subject
+  
+  # N random assignments lead to a distribution of mean LL by subject
   myConfint <- t(apply(store_values, 1, quantile, probs = c(.05, .5, .95)))
+  myprint(myConfint[1:7,])
+  
   # Join the original information with the estimates (5, 50 and 95 percentiles)
+  myprint(head(pred))
   pred <- data.frame(pred, myConfint)
+  myprint(head(pred))
+  # give meaningful names
   names(pred)[4:6] <- paste("quant", c("05", "50", "95"), sep = "")
+  myprint(head(pred))
+  # add the number of iterations on which this is based
+  pred$nbIterations <- N
+  # good to go!
   pred
 }
 
+# Example that prints out all the intermediate steps to undertand function
+(myex <- mypredict(d_new = d_l2, N = 2, print_each_step = TRUE)) %>% head(., 10)
+rm(myex)
 
 # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 # Log-likelihood of data sets under native model --------------------------
