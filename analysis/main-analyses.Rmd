@@ -426,6 +426,18 @@ load_or_fit("gam_ns", gam_ns.expr)
 ```
 
 
+```{r gam_ns_no_interaction}
+# GAM without the trial:VbType_Cond interaction (to use in other scripts) 
+# the expression that is passed to load_or_fit()
+gam_ns_no_trialinter.expr <- "bam(Used ~ VbType_Cond + s(Trial) +
+                    s(Trial, Subject, bs = 'fs') + s(VideoName, bs = 're'),
+                  data = d_ns,
+                  family = 'binomial')"
+# load model or fit
+load_or_fit("gam_ns_no_trialinter", gam_ns_no_trialinter.expr)
+```
+
+
 ### Output and summary plots
 
 Summary of the model:
@@ -1611,7 +1623,7 @@ contrasts(d_mod_dichot$Profic_categ)
 
 GLMM with RE structure closest to the GAMM (see section 4.2.2):
 
-```{r}
+```{r WP1614}
 # Random by-subject/item intercepts and random by-subject slope for cTrial.
 # Expression to be passed to the load_or_fit function:
 glmm_L1L2_dichot_prof.expr <- "glmer(Used ~
@@ -1761,64 +1773,6 @@ from the natives detectable.
 
 The pattern of results suggested by the GAMMs we fit to answer Question 3
 are not strongly corroborated by the GLMM analysis.
-
-
-
-Follow-up on Q3: How do L2ers at different proficiency levels compare to natives?
-=============================================================================
-
-Take a model of the natives that we already have from Question 1.
-Use the predict function of the gamm (`mgcv::predict.gam()`) to predict the
-data of all non-native participants (i.e., new data with new individuals).
-Store the predicted probability of the actually observed outcome of each trial. 
-
-```{r}
-# Doesn't work bc different participants in the new data set
-gam_ns_fit_to_L2 <- predict.gam(gam_ns, newdata = d_l2, type = "response")
-```
-
-
-```{r}
-# Follow this suggestion:
-# https://stats.stackexchange.com/questions/156718/get-predictions-from-mgcvgam-model-with-a-new-level-in-a-random-effect-smooth
-d_ns_all_ppt_levels <- d_ns
-levels(d_ns_all_ppt_levels$Subject) <- c(levels(d_ns$Subject), levels(d_l2$Subject))
-```
-
-Fit the model using a single cpu.
-
-```{r}
-# the expression that is passed to load_or_fit()
-gam_ns_withL2levels.expr <- "bam(Used ~ VbType_Cond + s(Trial, by = VbType_Cond) +
-                    s(Trial, Subject, bs = 'fs') + s(VideoName, bs = 're'),
-                  data = d_ns_all_ppt_levels,
-                  family = 'binomial')"
-# load model or fit
-load_or_fit("gam_ns_withL2levels", gam_ns_withL2levels.expr, useCluster = FALSE)
-```
-
-
-Fit the model using `parallel` (on Guillermo's machine, three clusters will
-be used).
-
-```{r}
-# the expression that is passed to load_or_fit()
-gam_ns_withL2levels_par.expr <- "bam(Used ~ VbType_Cond + s(Trial, by = VbType_Cond) +
-                    s(Trial, Subject, bs = 'fs') + s(VideoName, bs = 're'),
-                  data = d_ns_all_ppt_levels,
-                  family = 'binomial')"
-# load model or fit (note that default in load_or_fit is useCluster = TRUE)
-load_or_fit("gam_ns_withL2levels_par", gam_ns_withL2levels_par.expr)
-```
-
-
-So does it work now? Still not...
-
-```{r}
-# Doesn't work bc different participants in the new data set
-gam_ns_fit_to_L2 <- predict.gam(gam_ns_withL2levels_par, 
-                                newdata = d_l2, type = "response")
-```
 
 
 
