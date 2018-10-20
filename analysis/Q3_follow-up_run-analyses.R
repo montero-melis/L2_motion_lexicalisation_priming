@@ -141,13 +141,21 @@ d_ns$Subject <- factor(d_ns$Subject)  # drop unused factors for subject
 d_l2 <- d %>% filter(Group == "L2")
 d_l2$Subject <- factor(d_l2$Subject)  # drop unused factors for subject
 
-# load native speaker GAMM (created in "analysis/main-analyses.Rmd")
-load("analysis/gamms/gam_ns.rda")
+
+# load native speaker GAMMs (created in "analysis/main-analyses.Rmd")
+# gam_ns includes trial:condition interaction
+load("analysis/gamms/gam_ns.rda")  
+# gam_ns does not include trial:condition interaction
+load("analysis/gamms/gam_ns_no_trialinter.rda")
 
 
 # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 # Function to compute log-likelihood under native model  ------------------
 # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+## APPROACH 1:
+# LL is only computed under the full native model (with Condition:Trial 
+# interaction)
 
 # this function assigns the subject IDs from the natives randomly to the 
 # subjects in "d_new" (the data from which we want to predict); if you do
@@ -186,7 +194,7 @@ mypredict <- function(
   myprint(head(d_new))
   
   for (n in 1:N) {
-    myprint(paste("iteration ---", n))
+    print(paste("iteration", n))
     
     # Override subject info by randomly assigning native subject IDs with repl.
     levels(d_new$Subject) <- sample(unique(d_nat$Subject), replace = TRUE,
@@ -234,10 +242,10 @@ mypredict <- function(
 (myex <- mypredict(d_new = d_l2, N = 2, print_each_step = TRUE)) %>% head(., 10)
 rm(myex)
 
+
 # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 # Log-likelihood of data sets under native model --------------------------
 # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
 
 # run and time
 ptm <- proc.time()
@@ -307,3 +315,77 @@ combined_preds_LL %>%
   geom_boxplot() +
   ylab("Log-likelihood of data\n(by-subject means)")
 
+
+
+
+# >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+# Log-likelihood of data sets under native models (with vs without interaction)
+# <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+## APPROACH 2:
+# LL is computed once for the full native model (with Condition:Trial
+# interaction) and once for the *relevant* null model (without the interaction)
+# -- it is the difference in LLs between those two models that we plot.
+
+# This suggestion is explained and discussed in email correspondece with TFJ
+# (Jaeger, Florian <fjaeger@UR.Rochester.edu>, Re: testing for interactions in
+# GAMs, ons 2018-09-26 20:07 -- this email includes some discussion points)
+
+
+source("analysis/functions/data-LL_under_native_model.R")
+
+mycompar <- mypredict2(N = 250, d_ns, d_l2, mygam_basel = gam_ns,
+                       mygam_alter = gam_ns_no_trialinter)
+
+mycompar$VbType_Cond <- factor(mycompar$VbType_Cond, 
+                               levels = c("P_V.Path", "P_V.Baseline",
+                                          "M_V.Baseline", "M_V.Manner"))
+
+# Compare L2/NS broken down by condition
+mycompar %>%
+  ggplot(aes(x = Condition, y = quant50, colour = Group)) +
+  geom_boxplot() +
+  ylab("Log-likelihood of data\n(by-subject means)")
+
+# Compare L2/NS broken down by VbType_Cond (more meaningful given the model)
+mycompar %>%
+  ggplot(aes(x = VbType_Cond, y = quant50, colour = Group)) +
+  geom_boxplot() +
+  ylab("Log-likelihood of data\n(by-subject means)")
+
+## L2ers only
+
+# L2 data sorted by Proficiency (Cloze score)
+mycompar %>%
+  filter(Group == "L2") %>%
+  ggplot(aes(x = ClozeScore, y = quant50, colour = Condition)) +
+  geom_point() +
+  geom_smooth(method = "lm") +
+  ylab("Log-likelihood of data\n(by-subject means)")
+
+# L2 data sorted by Proficiency -- broken down by VbType_Cond 
+mycompar %>%
+  filter(Group == "L2") %>%
+  ggplot(aes(x = ClozeScore, y = quant50, colour = VbType_Cond)) +
+  geom_point() +
+  geom_smooth(method = "lm") +
+  ylab("Log-likelihood of data\n(by-subject means)")
+
+# no confidence bands
+mycompar %>%
+  filter(Group == "L2") %>%
+  ggplot(aes(x = ClozeScore, y = quant50, colour = VbType_Cond)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE) +
+  ylab("Log-likelihood of data\n(by-subject means)")
+
+# L2 data sorted by Proficiency with confidence intervals per subject
+# -- note many of them are weird in that they only have one tail!
+mycompar %>%
+  filter(Group == "L2") %>%
+  ggplot(aes(x = ClozeScore, y = quant50, colour = VbType_Cond,
+             ymin = quant05, ymax = quant95)) +
+  geom_point(position = position_dodge(width=0.5)) +
+  geom_errorbar(width=0, position=position_dodge(width=0.5)) +
+  geom_smooth(method = "lm", alpha = .25) +
+  ylab("Log-likelihood of data\n(by-subject means)")
