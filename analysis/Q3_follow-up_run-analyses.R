@@ -334,9 +334,16 @@ combined_preds_LL %>%
 
 source("analysis/functions/data-LL_under_native_model.R")
 
-mycompar <- mypredict2(N = 250, d_ns, d_l2, mygam_basel = gam_ns,
-                       mygam_alter = gam_ns_no_trialinter)
+## Uncomment if you want to run anew but...
+# mycompar <- mypredict2(N = 500, d_ns, d_l2, mygam_basel = gam_ns,
+#                        mygam_alter = gam_ns_no_trialinter)
+# write.csv(mycompar, "analysis/gamms/my-LL-comparison.csv", row.names = FALSE)
 
+# ... otherwise I've saved the data frame to file, so just read it
+mycompar <- read.csv("analysis/gamms/my-LL-comparison.csv")
+head(mycompar)
+
+# Adjust order of factor levels
 mycompar$VbType_Cond <- factor(mycompar$VbType_Cond, 
                                levels = c("P_V.Path", "P_V.Baseline",
                                           "M_V.Baseline", "M_V.Manner"))
@@ -380,7 +387,7 @@ mycompar %>%
   ylab("Log-likelihood of data\n(by-subject means)")
 
 # L2 data sorted by Proficiency with confidence intervals per subject
-# -- note many of them are weird in that they only have one tail!
+# -- note that there are no confidence intervals! (look at mycompar)
 mycompar %>%
   filter(Group == "L2") %>%
   ggplot(aes(x = ClozeScore, y = quant50, colour = VbType_Cond,
