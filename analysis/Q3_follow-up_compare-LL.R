@@ -247,22 +247,25 @@ rm(myex)
 # Log-likelihood of data sets under native model --------------------------
 # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
-# run and time
-ptm <- proc.time()
-l2_under_natmodel_LL <- mypredict(d_new = d_l2, N = 50)
-ns_under_natmodel_LL <- mypredict(d_new = d_ns, N = 50)
-proc.time() - ptm
+## Uncomment to run anew
 
-## combine native and non-native predictions
-l2_under_natmodel_LL$Group <- "L2"
-ns_under_natmodel_LL$Group <- "NS"
-
+# # run and time
+# ptm <- proc.time()
+# l2_under_natmodel_LL <- mypredict(d_new = d_l2, N = 50)
+# ns_under_natmodel_LL <- mypredict(d_new = d_ns, N = 50)
+# proc.time() - ptm
+# 
+# # combine native and non-native predictions
+# l2_under_natmodel_LL$Group <- "L2"
+# ns_under_natmodel_LL$Group <- "NS"
+# 
 # save(l2_under_natmodel_LL, file = "analysis/gamms/l2_under_natmodel_LL.rda")
 # save(ns_under_natmodel_LL, file = "analysis/gamms/ns_under_natmodel_LL.rda")
 
-# load(file = "analysis/gamms/l2_under_natmodel_LL.rda")
-# load(file = "analysis/gamms/ns_under_natmodel_LL.rda")
-
+load(file = "analysis/gamms/l2_under_natmodel_LL.rda")
+head(l2_under_natmodel_LL)
+load(file = "analysis/gamms/ns_under_natmodel_LL.rda")
+head(ns_under_natmodel_LL)
 
 # predict the actual native speaker data under the native model without
 # reassigning the subject IDs! (This should yield the highest log-likelihood)
@@ -392,7 +395,7 @@ mycompar %>%
   filter(Group == "L2") %>%
   ggplot(aes(x = ClozeScore, y = quant50, colour = VbType_Cond,
              ymin = quant05, ymax = quant95)) +
-  geom_point(position = position_dodge(width=0.5)) +
+  geom_point(position = position_dodge(width=0.5), alpha = .5) +
   geom_errorbar(width=0, position=position_dodge(width=0.5)) +
   geom_smooth(method = "lm", alpha = .25) +
   ylab("Log-likelihood of data\n(by-subject means)")
