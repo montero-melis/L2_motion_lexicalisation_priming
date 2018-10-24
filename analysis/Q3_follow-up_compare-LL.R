@@ -123,7 +123,7 @@ library(dplyr)
 # library(tidyr)
 library(ggplot2)
 library(mgcv)  # GAMs and GAMMs (Wood 2006)
-# library(itsadug)
+library(itsadug)
 # library(boot)  # for inv.logit()	
 # library(lazyeval)  # lazy evaluation used in bysubj() function [summarise_]	
 # library(effects)	
@@ -147,6 +147,9 @@ d_l2$Subject <- factor(d_l2$Subject)  # drop unused factors for subject
 load("analysis/gamms/gam_ns.rda")  
 # gam_ns does not include trial:condition interaction
 load("analysis/gamms/gam_ns_no_trialinter.rda")
+
+# Model comparison
+itsadug::compareML(gam_ns, gam_ns_no_trialinter)
 
 
 # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -182,7 +185,7 @@ mypredict <- function(
   # Initiate data frame with the actual subjects for which values are predicted
   # NB: Subject needs to be the first grouping variable, so that order matches
   # the order of the step below where by-subject mean LLs are computed!
-  pred <- d_new %>% group_by(Subject, Condition, ClozeScore) %>% summarise()
+  pred <- d_new %>% group_by(Subject, Condition, VbType_Cond, ClozeScore) %>% summarise()
   myprint(head(pred))
   
   # Matrix that will contain the predicted values in each loop
@@ -230,7 +233,7 @@ mypredict <- function(
   pred <- data.frame(pred, myConfint)
   myprint(head(pred))
   # give meaningful names
-  names(pred)[4:6] <- paste("quant", c("05", "50", "95"), sep = "")
+  names(pred)[5:7] <- paste("quant", c("05", "50", "95"), sep = "")
   myprint(head(pred))
   # add the number of iterations on which this is based
   pred$nbIterations <- N
@@ -251,8 +254,8 @@ rm(myex)
 
 # # run and time
 # ptm <- proc.time()
-# l2_under_natmodel_LL <- mypredict(d_new = d_l2, N = 50)
-# ns_under_natmodel_LL <- mypredict(d_new = d_ns, N = 50)
+# l2_under_natmodel_LL <- mypredict(d_new = d_l2, N = 500)
+# ns_under_natmodel_LL <- mypredict(d_new = d_ns, N = 500)
 # proc.time() - ptm
 # 
 # # combine native and non-native predictions
@@ -273,11 +276,11 @@ d_ns$predicted <- predict.gam(gam_ns, newdata = d_ns, type = "response")
 d_ns$LL <- with(d_ns, log(ifelse(Used == 1, predicted, 1 - predicted)))
 # Store as dataframe with same shape as the two above
 ns_actual_under_natmodel_LL <- d_ns %>%
-  group_by(Subject, Condition, ClozeScore) %>% 
+  group_by(Subject, Condition, VbType_Cond, ClozeScore) %>% 
   summarise(quant50 = mean(LL)) %>% 
-  mutate(quant05 = NA, quant95 = NA, Group = "ActualNS") %>%
+  mutate(quant05 = NA, quant95 = NA, nbIterations = NA, Group = "ActualNS") %>%
   select(Subject:ClozeScore, quant05, quant50, quant95:Group)
-
+head(ns_actual_under_natmodel_LL)
 
 # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 # Visualize log-likelihood ------------------------------------------------
@@ -292,9 +295,31 @@ l2_under_natmodel_LL %>%
   geom_smooth(method = "lm") +
   ylab("Log-likelihood of data\n(by-subject means)")
 
+# L2 data sorted by Proficiency (Cloze score)
+l2_under_natmodel_LL %>%
+  ggplot(aes(x = ClozeScore, y = quant50, colour = VbType_Cond)) +
+  geom_point() +
+  geom_smooth(method = "lm") +
+  ylab("Log-likelihood of data\n(by-subject means)")
+
+# L2 data sorted by Proficiency (Cloze score)
+l2_under_natmodel_LL %>%
+  ggplot(aes(x = ClozeScore, y = quant50, colour = VbType_Cond)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE) +
+  ylab("Log-likelihood of data\n(by-subject means)")
+
 # With confidence intervals
 l2_under_natmodel_LL %>%
   ggplot(aes(x = ClozeScore, y = quant50, colour = Condition,
+             ymin = quant05, ymax = quant95)) +
+  geom_point(position = position_dodge(width=0.5)) +
+  geom_errorbar(width=0, position=position_dodge(width=0.5)) +
+  geom_smooth(method = "lm")
+
+# With confidence intervals
+l2_under_natmodel_LL %>%
+  ggplot(aes(x = ClozeScore, y = quant50, colour = VbType_Cond,
              ymin = quant05, ymax = quant95)) +
   geom_point(position = position_dodge(width=0.5)) +
   geom_errorbar(width=0, position=position_dodge(width=0.5)) +
@@ -305,19 +330,23 @@ l2_under_natmodel_LL %>%
 
 # Native speakers with randomly assigned subject numbers
 ns_under_natmodel_LL %>%
-  ggplot(aes(x = "NULL", y = quant50, colour = Condition)) +
+  ggplot(aes(x = "NULL", y = quant50, colour = VbType_Cond)) +
   geom_boxplot()
-
 
 # Combined predictions
 combined_preds_LL <- rbind(l2_under_natmodel_LL, ns_under_natmodel_LL,
                         data.frame(ns_actual_under_natmodel_LL))
 
 combined_preds_LL %>%
-  ggplot(aes(x = Condition, y = quant50, colour = Group)) +
+  filter(Group != "ActualNS") %>%
+  ggplot(aes(x = VbType_Cond, y = quant50, colour = Group)) +
   geom_boxplot() +
   ylab("Log-likelihood of data\n(by-subject means)")
 
+combined_preds_LL %>%
+  ggplot(aes(x = VbType_Cond, y = quant50, colour = Group)) +
+  geom_boxplot() +
+  ylab("Log-likelihood of data\n(by-subject means)")
 
 
 
@@ -351,17 +380,11 @@ mycompar$VbType_Cond <- factor(mycompar$VbType_Cond,
                                levels = c("P_V.Path", "P_V.Baseline",
                                           "M_V.Baseline", "M_V.Manner"))
 
-# Compare L2/NS broken down by condition
-mycompar %>%
-  ggplot(aes(x = Condition, y = quant50, colour = Group)) +
-  geom_boxplot() +
-  ylab("Log-likelihood of data\n(by-subject means)")
-
 # Compare L2/NS broken down by VbType_Cond (more meaningful given the model)
 mycompar %>%
   ggplot(aes(x = VbType_Cond, y = quant50, colour = Group)) +
   geom_boxplot() +
-  ylab("Log-likelihood of data\n(by-subject means)")
+  ylab("Difference in log-likelihood of data\n(by-subject means)")
 
 ## L2ers only
 
