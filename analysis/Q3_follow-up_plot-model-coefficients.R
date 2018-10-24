@@ -217,10 +217,16 @@ ggplot(sbj_p, aes(x = Intercept, y = Trial, colour = ClozeScore, shape = Group))
 sbj_pl <- gather(sbj_p, coef, estimate, Intercept : Trial)
 
 ggplot(sbj_pl, aes(x = ClozeScore, y = estimate, colour = Group)) +
-  geom_jitter(alpha = .4, size = 1.5) +
+  geom_jitter(alpha = .3, size = 1.5) +
   facet_grid(coef ~ Condition, scales = "free_y") +
-  geom_smooth(method = "lm")
-
+  geom_smooth(method = "lm") +
+  ggtitle("Path model") +
+  stat_summary(
+    data = sbj_pl %>% filter(Group == "NS"),
+    fun.data = mean_cl_boot,
+    geom = "errorbar",
+    size = 1.5, width = 3
+  )
 
 
 # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -316,10 +322,16 @@ ggplot(sbj_m, aes(x = Intercept, y = Trial, colour = ClozeScore, shape = Group))
 sbj_ml <- gather(sbj_m, coef, estimate, Intercept : Trial)
 
 ggplot(sbj_ml, aes(x = ClozeScore, y = estimate, colour = Group)) +
-  geom_jitter(alpha = .4, size = 1.5) +
+  geom_jitter(alpha = .3, size = 1.5) +
   facet_grid(coef ~ Condition, scales = "free_y") +
-  geom_smooth(method = "lm")
-
+  geom_smooth(method = "lm") +
+  ggtitle("Manner model") +
+  stat_summary(
+    data = sbj_pl %>% filter(Group == "NS"),
+    fun.data = mean_cl_boot,
+    geom = "errorbar",
+    size = 1.5, width = 3
+  )
 
 
 # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
