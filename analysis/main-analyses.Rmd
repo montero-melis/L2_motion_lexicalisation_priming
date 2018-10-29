@@ -365,9 +365,16 @@ Plot the results:
 
 ```{r}
 # the function is defined in analysis/functions/plot_glmm_fnc.R
-plot_basel(glmm_basel, d_basel, nb_sims = 50)  # Adjust nb_sims (TO DO)
+plot_basel(glmm_basel, d_basel, nb_sims = 500)  # Adjust nb_sims (TO DO)
 ```
 
+
+```{r}
+# save to disk for thesis chapter
+tiff(file = "figures/glmm_baseline.tiff", width = 4, height = 3, units = "in", pointsize = 10, res = 800)
+plot_basel(glmm_basel, d_basel, nb_sims = 1000)  # Adjust nb_sims (TO DO)
+dev.off()
+```
 
 
 
