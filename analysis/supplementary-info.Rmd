@@ -53,6 +53,7 @@ library(xtable)
 
 ### Load data
 
+
 ```{r}
 ##  Load data
 # The data is created in the script 'processing/compute_dependent_measures.R'
@@ -74,19 +75,12 @@ levels(d$Condition)[levels(d$Condition) == "Control"] <- "Baseline"
 # participant data
 ppts <- read.csv("../data/participants.csv", fileEncoding = "UTF-8",
                  stringsAsFactors = TRUE)
-# head(ppts)
-# participants by group
-with(ppts, table(Group))
-with(ppts, table(Group, Gender))
-with(ppts, table(Group, Condition))
-# age
-ppts %>%
-  group_by(Group) %>%
-  summarise(Mage = mean(Age, na.rm = T), SDage = sd(Age, na.rm = T))
-# Cloze scores
-mean(ppts$ClozeScore, na.rm=T)
-sd(ppts$ClozeScore, na.rm=T)
+head(ppts)
+```
 
+Further processing and adjustments:
+
+```{r}
 # No audio data recorded for Subject 14 (L2) due to experimental error; exclude
 ppts <- ppts[ppts$Subject != 14, ]
 # transform ClozeScore to z-score (as.vector prevents it from becoming a matrix)
@@ -110,10 +104,39 @@ primes <- read.csv("../data/priming-verbs.csv")
 head(primes)
 d <- left_join(d, primes)
 
-
 head(d)
 str(d)
 ```
+
+
+Participant descriptors:
+
+```{r}
+# participants by group
+with(ppts, table(Group))
+with(ppts, table(Group, Gender))
+with(ppts, table(Group, Condition))
+# age
+ppts %>%
+  group_by(Group) %>%
+  summarise(Mage = mean(Age, na.rm = T), SDage = sd(Age, na.rm = T))
+# Cloze scores
+mean(ppts$ClozeScore, na.rm=T)
+sd(ppts$ClozeScore, na.rm=T)
+# By condition
+ppts %>% filter(Group == "L2") %>% group_by(Condition) %>%
+  summarise(M_profic = mean(ClozeScore), SD = sd(ClozeScore))
+```
+Difference in L2 proficiency across conditions?
+
+```{r}
+ppts %>% 
+  filter(Group == "L2") %>%
+  aov(ClozeScore ~ Condition, data = .) %>%
+  summary
+```
+
+
 
 ```{r}
 # Data for translation task
