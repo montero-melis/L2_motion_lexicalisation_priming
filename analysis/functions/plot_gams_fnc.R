@@ -189,6 +189,56 @@ plot_L2_profic_diff_eurosla <- function(fm, primed_cond = NULL, ylim1 = c(-2.5, 
 }
 
 
+# Function to plot the effects by L2 speakers' proficiency from GAMs this
+# time showing DIFFERENCES. It's an adaptation of plot_L2_profic_diff()
+# function to be used when a SINGLE model is fit to path and manner verbs
+# (rather than fitting two separate models).
+# Note, however, that we will still call the function twice, once for each
+# comparison, even if the comparison is extracted from the estimates of the
+# same model.
+plot_L2_profic_diff_singlemodel <- function(
+  fm,
+  primed_cond = NULL, 
+  ylim1 = c(-2.5, 8.5),
+  cloze_range = c(10, 35),
+  nb_plots = 4
+  ) {
+  cloze_scores <- seq(cloze_range[1], cloze_range[2], length.out = nb_plots)
+  # Choose the relevant verb type based on argument "primed_cond"
+  if (! primed_cond %in% c("Path", "Manner")) {
+    stop("argument primed_con has to be either 'Path' or 'Manner'")
+  } else if (primed_cond == "Path") {
+    myverbtype <- "P_V"
+  } else {
+    myverbtype <- "M_V"
+  }
+  my_primed_cond <- paste(myverbtype, primed_cond, sep = ".")
+  baseline_cond <- paste(myverbtype, "Baseline", sep = ".")
+  mytitle <- paste0(primed_cond, ' priming \u2212 baseline')
+  myylab <- paste0('Diff. in log-odds\nof ', tolower(primed_cond), ' verb')
+  
+  # Now make plot for the model estimates at the different cloze scores in cloze_scores
+  layout(matrix(1:nb_plots, ncol = nb_plots, byrow=TRUE))
+  par(mai = c(.4, .6, .7, 0), mgp = c(1.6, .8, 0))
+  print(my_primed_cond)
+  print(baseline_cond)
+  for(cloze in cloze_scores) {
+    plot_diff(fm, view = 'Trial', comp = list(VbType_Cond = c(my_primed_cond, baseline_cond)),
+              cond = list(ClozeScore = cloze),
+              ylim = ylim1, hide.label = TRUE, ylab = myylab, main = "")
+    title(main = paste('L2 proficiency =', round(cloze)), font.main = 1, line = 1)
+    
+  }
+  # https://www.r-bloggers.com/two-tips-adding-title-for-graph-with-multiple-plots-add-significance-asterix-onto-a-boxplot/
+  # mtext("Difference plots", outer = TRUE, cex = 1.5)
+  # mtext("My 'Title' in a strange place", side = 3, line = -1, outer = TRUE)
+  title(mytitle, line = -2, outer = TRUE, cex = 1)
+}
+
+
+
+
+
 ## OLD:
 
 # # function to plot the differences between NS and L2 speakers from GAMs
