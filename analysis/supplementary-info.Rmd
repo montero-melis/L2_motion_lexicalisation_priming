@@ -294,6 +294,12 @@ dev_expl <- function(fm) {
   devi <- summary(fm)$dev.expl
   paste0(round(100 * devi, 1), '% dev. explained')
 }
+# Variation to output a number instead of string
+dev_expl2 <- function(fm) {
+  devi <- summary(fm)$dev.expl
+  round(100 * devi, 1)
+}
+
 
 # create a neat table of the summary of fixed effects of a mixed model
 glmm_tb <- function(fm) {
@@ -334,10 +340,10 @@ mydoctype <- 0
 
 # NB: uncomment following lines before knitting the document!
 
-# mydoctype <- getOutputFormat()
-# # NB: this function call will crash if the document is not being knitted, but
-# # simply sourced from the R session
-# mydoctype
+mydoctype <- getOutputFormat()
+# NB: this function call will crash if the document is not being knitted, but
+# simply sourced from the R session
+mydoctype
 ```
 
 
@@ -926,7 +932,129 @@ plot(allEffects(glmm_adapt_beg))
 ## Changes in adaptation with increasing L2 proficiency
 
 
-### Adaptation to path verbs vs proficiency
+
+Q3:
+
+*Our third and last question is whether L2 learners come to increasingly resemble native speakers in how they adapt to recent input as they become more proficient in their L2. If learners are indeed adapting to the input as a function of their expectations, and if their expectations become more attuned to the L2 (and rely less on the L1) with growing proficiency, we should see that learners progressively come to adapt more strongly to manner verbs and less strongly to path verbs  . This prediction does not follow from classical accounts of transfer in L2 processing/acquisition, and it would provide additional credence to the inverse frequency effects observed for native speakers in the analysis for our first question, and thus for theories that attribute adaptation to error-based or related learning mechanisms.*
+
+
+### GAMM analysis -- single-model approach
+
+The difference with respect to our previous analysis (as reported in, e.g.,
+`adaptation-L2_DRAFT6_180730.docx`) is that we fit a *single* model rather than
+two separate ones for path and manner verbs as DVs.
+In other words, we use the indicator variable approach we used in all previous
+analyses.
+
+We will thus predict the use of either path or manner verbs (depending
+on the value of `VerbType`) as a function of:
+
+- `Condition`: primed vs. baseline
+- `Trial`: 1 through 32 (continuous variable)
+- `ClozeScore`: A continuous measure of L2 proficiency
+- Recall that the indicator variable `VerbType` is combined with `Condition`
+to yield a 4-level factor, `VbType_Cond`.
+
+
+#### Data and processing
+
+The data is the same as we used to address Question 2, only now we will use
+the predictor `ClozeScore` to measure L2 proficiency.
+
+First rows of the data set:
+
+```{r}
+head(d_l2)
+```
+
+
+#### GAMM fitting
+
+
+GAMM:
+
+```{r model_l2prof_with_interac}
+# model with interaction
+gam_l2prof.expr <- "bam(Used ~
+    VbType_Cond +
+    te(Trial, ClozeScore, by = VbType_Cond) +
+    s(Trial, Subject, bs = 'fs') +
+    s(VideoName, bs = 're'),
+  data = d_l2,
+  family = 'binomial')"
+# load model or fit
+load_or_fit("gam_l2prof", gam_l2prof.expr)
+```
+
+
+
+#### Output and summary plots
+
+Summary of the model:
+
+```{r}
+summary(gam_l2prof)
+```
+
+
+Summary using gamtabs:
+
+
+```{r, results = "asis"}
+gam_tb(gam_l2prof)
+```
+
+
+
+Significance of the different terms in the model:
+
+```{r}
+anova(gam_l2prof)
+```
+
+
+Plot model estimates by condition, random smooth adjustments by speakers and QQ-plot of random by-item intercepts:
+
+```{r, results = 'hide'}
+# ## plot
+plot_smooth(gam_l2prof, view = 'Trial', plot_all = 'VbType_Cond', rm.ranef=TRUE)
+```
+
+```{r, results = 'hide'}
+## plot
+plot_smooth(gam_l2prof, view = 'ClozeScore', plot_all = 'VbType_Cond', rm.ranef=TRUE)
+```
+
+```{r}
+# # show by-speaker random smooths and by-item random intercepts
+# par(mfrow = c(1, 2))
+# plot(gam_l2prof, select = 5)
+# plot(gam_l2prof, select = 6)
+```
+
+
+#### Result plots
+
+Plot each comparison showing the two curves (model estimates):
+
+```{r, fig.height = 4, fig.width = 8, echo = TRUE, results = 'hide'}
+plot_L2_profic_singlemodel(gam_l2prof, primed_cond = 'Path')
+plot_L2_profic_singlemodel(gam_l2prof, primed_cond = 'Manner')
+```
+
+
+Plot differences between conditions (model estimates):
+
+```{r, fig.height = 4, fig.width = 8, echo = TRUE, results = 'hide'}
+plot_L2_profic_diff_singlemodel(gam_l2prof, primed_cond = "Path")
+plot_L2_profic_diff_singlemodel(gam_l2prof, primed_cond = "Manner")
+```
+
+
+
+
+
+### Adaptation to path verbs vs proficiency (two-models approach)
 
 We start by fitting two models, one with and one without the interaction term
 `te(Trial, ClozeScore, by = Condition)`
@@ -1036,7 +1164,7 @@ plot_diff2(fm_p_L2prof, view = c('Trial', 'ClozeScore'),
 
 
 
-### Adaptation to manner verbs vs proficiency
+### Adaptation to manner verbs vs proficiency (two-models approach)
 
 
 ```{r}

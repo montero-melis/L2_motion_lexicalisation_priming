@@ -1522,6 +1522,8 @@ plot_L2_profic_diff_singlemodel(gam_l2prof, primed_cond = "Manner")
 ```
 
 
+Save to disk:
+
 ```{r}
 myheight_prof_plots <- 2.8
 mywidth_prof_plots <- 9
@@ -1529,14 +1531,33 @@ mypointsize_prof_plots <- 14
 ```
 
 
+
+Simple plots:
+
 ```{r}
 # Path verb comparison
 tiff(file = "figures/gam_L2_prof_singlemodel_path.tiff", width = mywidth_prof_plots, 
      height = myheight_prof_plots, units = "in", pointsize = mypointsize_prof_plots, res = 800)
-plot_L2_profic_diff_singlemodel(gam_l2prof, primed_cond = "Path")
+plot_L2_profic_singlemodel(gam_l2prof, primed_cond = 'Path')
 dev.off()
 # Manner verb comparison
 tiff(file = "figures/gam_L2_prof_singlemodel_manner.tiff", width = mywidth_prof_plots, 
+     height = myheight_prof_plots, units = "in", pointsize = mypointsize_prof_plots, res = 800)
+plot_L2_profic_singlemodel(gam_l2prof, primed_cond = 'Manner')
+dev.off()
+```
+
+
+Difference plots:
+
+```{r}
+# Path verb comparison
+tiff(file = "figures/gam_L2_prof_singlemodel_diff_path.tiff", width = mywidth_prof_plots, 
+     height = myheight_prof_plots, units = "in", pointsize = mypointsize_prof_plots, res = 800)
+plot_L2_profic_diff_singlemodel(gam_l2prof, primed_cond = "Path")
+dev.off()
+# Manner verb comparison
+tiff(file = "figures/gam_L2_prof_singlemodel_diff_manner.tiff", width = mywidth_prof_plots, 
      height = myheight_prof_plots, units = "in", pointsize = mypointsize_prof_plots, res = 800)
 plot_L2_profic_diff_singlemodel(gam_l2prof, primed_cond = "Manner")
 dev.off()
