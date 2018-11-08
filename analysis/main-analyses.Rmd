@@ -1522,7 +1522,22 @@ plot_L2_profic_diff_singlemodel(gam_l2prof, primed_cond = "Manner")
 ```
 
 
-Save to disk:
+Plot difference surfaces:
+
+```{r}
+plot_diff2(gam_l2prof, view = c("Trial", "ClozeScore"),
+           comp = list(VbType_Cond = c("P_V.Path", "P_V.Baseline")),
+           plotCI=TRUE, rm.ranef=TRUE, main="Adults-Children")
+```
+
+```{r}
+plot_diff2(gam_l2prof, view = c("Trial", "ClozeScore"),
+           comp = list(VbType_Cond = c("M_V.Manner", "M_V.Baseline")),
+           plotCI=TRUE, rm.ranef=TRUE, main="Adults-Children")
+```
+
+
+### Save to disk:
 
 ```{r}
 myheight_prof_plots <- 2.8
