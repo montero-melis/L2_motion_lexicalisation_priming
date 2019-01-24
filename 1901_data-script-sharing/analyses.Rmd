@@ -1,0 +1,121 @@
+---
+title: "Replication of analyses reported in Montero-Melis & Jaeger (2019) in *BLC*"
+author: '[Guillermo Montero-Melis](https://www.mpi.nl/people/montero-melis-guillermo)'
+date: '`r as.character(format(Sys.Date(), format="%d/%m/%Y"))`'
+output:
+  html_document:
+    depth: 2
+    number_sections: yes
+    theme: default
+    toc: yes
+---
+
+
+
+Set up working space
+====================
+
+Load libraries
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, fig.height = 4, fig.width = 5)
+```
+
+```{r, include = TRUE, echo = TRUE, warning = FALSE, message = FALSE}
+library(dplyr)
+packageVersion('dplyr')
+# library(tidyr)
+# packageVersion('tidyr')  # useful for gather() to convert from wide to long
+# library(mgcv)  # GAMs and GAMMs (Wood 2006)
+# packageVersion('mgcv')
+# library(itsadug)
+# packageVersion('itsadug')  # Visualizing GAMMs
+# library(lme4)
+# packageVersion('lme4')
+# library(ggplot2)
+# packageVersion('ggplot2')
+# library(boot)  # for inv.logit()
+# packageVersion('boot')
+# library(knitr)  # for kable()
+# packageVersion('knitr')
+# library(lazyeval)  # lazy evaluation used in bysubj() function [summarise_]
+# packageVersion('lazyeval')
+# library(effects)
+# library(xtable)
+```
+
+
+Load data
+=========
+
+```{r}
+# Make sure you are in the folder where all the scripts and data are located
+getwd()
+```
+
+
+```{r}
+# load data
+d <- read.csv('data.csv', fileEncoding = 'UTF-8', stringsAsFactors = TRUE)
+# Make sure Subject is a factor
+d$Subject <- factor(d$Subject)
+# in Group, let the native speakers (NS) be the reference group
+d$Group <- factor(d$Group, levels = c('NS', 'L2'))
+head(d, 3)
+# load participant information 
+# NB: Accidentally, no audio data was recorded for Subject 14 (L2), so this
+# participant is omitted from all participant descriptors as well.
+ppts <- read.csv("participant-info.csv", fileEncoding = "UTF-8", 
+                 stringsAsFactors = TRUE)
+head(ppts, 3)
+tail(ppts, 3)  # L2 proficiency-related variables only available for L2ers
+```
+
+
+Participant descriptors
+=======================
+
+```{r}
+# participants by group
+with(ppts, table(Group))
+with(ppts, table(Group, Gender))
+with(ppts, table(Group, Condition))
+# age
+ppts %>%
+  group_by(Group) %>%
+  summarise(Mage = mean(Age, na.rm = T), SDage = sd(Age, na.rm = T))
+# Cloze scores
+mean(ppts$ClozeScore, na.rm=T)
+sd(ppts$ClozeScore, na.rm=T)
+# By condition
+ppts %>% filter(Group == "L2") %>% group_by(Condition) %>%
+  summarise(M_profic = mean(ClozeScore), SD = sd(ClozeScore))
+```
+
+Difference in L2 proficiency across conditions?
+
+```{r}
+ppts %>% 
+  filter(Group == "L2") %>%
+  aov(ClozeScore ~ Condition, data = .) %>%
+  summary
+```
+
+
+
+```{r}
+# Data for translation task
+transl <- read.csv("../data/L2_translation-task_scored.csv", fileEncoding = "UTF-8")
+getwd()
+```
+
+
+
+Session info
+============
+
+```{r}
+sessionInfo()
+```
+
+
