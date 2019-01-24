@@ -75,9 +75,86 @@ tail(ppts, 3)  # L2 proficiency-related variables only available for L2ers
 Participant descriptors
 =======================
 
+## As reported in the main text (Method section)
+
+Number of participants by group:
+
 ```{r}
-# participants by group
-with(ppts, table(Group))
+# Number of participants by group that go into the analysis (note data for
+# one L2 speaker was missing because of recording failure)
+table(ppts$Group)
+```
+
+
+Participant age:
+
+```{r}
+# age
+ppts %>%
+  group_by(Group) %>%
+  summarise(Mage = mean(Age, na.rm = T), SDage = sd(Age, na.rm = T))
+```
+
+
+Learners' age of onset for learning Spanish 
+
+```{r}
+# Mean and SD
+ppts %>%
+  filter(Group == "L2") %>%
+  summarise(M  = round(mean(L2_AoO, na.rm = TRUE), 2), 
+            SD = round(sd(L2_AoO, na.rm = TRUE), 2))
+# range
+range(ppts$L2_AoO, na.rm = TRUE)
+```
+
+
+
+Scores on offline cloze test ('proficiency score'):
+
+```{r}
+# Cloze scores
+round(mean(ppts$ClozeScore, na.rm=T), 1)
+round(sd(ppts$ClozeScore, na.rm=T), 1)
+# By condition
+ppts %>% 
+  filter(Group == "L2") %>% 
+  group_by(Condition) %>%
+  summarise(M_profic = mean(ClozeScore), 
+            SD = sd(ClozeScore))
+```
+
+
+Difference in L2 proficiency across conditions?
+
+```{r}
+ppts %>% 
+  filter(Group == "L2") %>%
+  aov(ClozeScore ~ Condition, data = .) %>%
+  summary
+```
+
+
+Computerized vocabulary task (deliberately easy)
+
+```{r}
+# Scores on vocabulary task
+round(mean(ppts$VocabTaskAcc, na.rm=T), 3)
+round(sd(ppts$VocabTaskAcc, na.rm=T), 4)
+# By condition
+ppts %>% 
+  filter(Group == "L2") %>% 
+  group_by(Condition) %>%
+  summarise(M_profic = mean(VocabTaskAcc), 
+            SD = sd(VocabTaskAcc))
+```
+
+
+
+## Participant information reported in the Supplementary Online Information (S2)
+
+
+```{r}
 with(ppts, table(Group, Gender))
 with(ppts, table(Group, Condition))
 # age
@@ -91,25 +168,6 @@ sd(ppts$ClozeScore, na.rm=T)
 ppts %>% filter(Group == "L2") %>% group_by(Condition) %>%
   summarise(M_profic = mean(ClozeScore), SD = sd(ClozeScore))
 ```
-
-Difference in L2 proficiency across conditions?
-
-```{r}
-ppts %>% 
-  filter(Group == "L2") %>%
-  aov(ClozeScore ~ Condition, data = .) %>%
-  summary
-```
-
-
-
-```{r}
-# Data for translation task
-transl <- read.csv("../data/L2_translation-task_scored.csv", fileEncoding = "UTF-8")
-getwd()
-```
-
-
 
 Session info
 ============
