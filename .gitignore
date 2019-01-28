@@ -19,3 +19,5 @@ audiofiles/*
 *.wav
 
 GAMM_examples/*
+
+1901_data-script-sharing/fitted_models/*
