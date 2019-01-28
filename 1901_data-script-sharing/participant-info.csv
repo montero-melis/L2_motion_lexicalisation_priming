@@ -1,4 +1,4 @@
-"Subject","Group","Condition","Gender","Age","ClozeScore","L2_SelfRating","L2_AoO","L2_years_studied","VocabTaskAcc"
+"Subject","Group","Condition","Gender","Age","ClozeScore","L2_SelfRating","L2_AoO","L2_instruction_years","VocabTaskAcc"
 "NS_150","NS","Manner","female",20,NA,NA,NA,NA,NA
 "NS_151","NS","Control","female",20,NA,NA,NA,NA,NA
 "NS_152","NS","Control","male",20,NA,NA,NA,NA,NA
@@ -59,7 +59,7 @@
 "NS_207","NS","Path","male",21,NA,NA,NA,NA,NA
 "NS_208","NS","Manner","female",NA,NA,NA,NA,NA,NA
 "1","L2","Manner","female",31,29,6,13,7.5,1
-"2","L2","Control","female",29,12,4,24,1,0.308
+"2","L2","Control","female",29,12,4,24,1,NA
 "3","L2","Path","female",28,26,4,17,2,1
 "4","L2","Control","male",27,5,4,13,6,0.692
 "5","L2","Manner","male",28,30,4,16,5,0.962
