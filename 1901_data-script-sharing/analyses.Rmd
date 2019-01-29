@@ -103,6 +103,25 @@ source("plot_glmm_fnc.R")
 ```
 
 
+Plot GAMM estimates:
+
+```{r}
+# Two functions to a) plot adaptation effects for native and L2 speakers from
+# GAMMs, and b) plot the effects by L2 speakers' proficiency.
+source("plot_gams_fnc.R")
+```
+
+
+Global variables for figures
+----------------------------
+
+```{r, include=FALSE}
+# adjust figure heght/width when not going with default (espec. for 2x2 plots)
+myfighe_NS_L2 <- 6
+myfighe_L2_prof <- 6
+myfigwi <- 7
+```
+
 
 Load data and set up data frames for analyses
 -------------------------------------------
@@ -396,11 +415,11 @@ d_mod %>%
 ```{r, echo = TRUE}
 # load model or fit
 # First define the expression to be passed to load_or_fit()
-glmm_basel.expr <- "glmer(Used ~ VerbType * Group +
-(1 + VerbType | Subject) + (1 + VerbType * Group | VideoName),
+glmm_basel.expr <- 
+"glmer(Used ~ VerbType * Group + (1 + VerbType | Subject) +
+  (1 + VerbType * Group | VideoName),
 data = d_basel, family = 'binomial',
 control = glmerControl(optimizer='bobyqa', optCtrl=list(maxfun=2e5)))"
-
 # Now pass it to the function (see source code for the inner workings)
 load_or_fit("glmm_basel", glmm_basel.expr)
 ```
@@ -438,22 +457,326 @@ summary(glmm_basel)
 Trial-by-trial adaptation of native speakers (Question 1)
 ---------------------------------------------------------
 
+### Set up data frame:
+
+```{r}
+# Subset data to native speaker data only
+d_ns <- d_mod %>% filter(Group == "NS")
+# drop unused factors for subject (important for gam fitting)
+d_ns$Subject <- factor(d_ns$Subject)
+# note log-odds of path verbs in baseline condition becomes the reference level
+contrasts(d_ns$VbType_Cond)
+```
+
+
+### GAMM specification and fitting
+
+
+First, we fit a more complex GAMM with by-subject and by-item factor smooths
+for Trial (`s(Trial, Subject, bs = 'fs')` and `s(Trial, VideoName, bs = 'fs')`,
+respectively).
+
+```{r}
+# the expression that is passed to load_or_fit()
+gam_ns_itemsmooth.expr <- 
+"bam(Used ~ VbType_Cond + s(Trial, by = VbType_Cond) + 
+  s(Trial, Subject, bs = 'fs') + s(Trial, VideoName, bs = 'fs'),
+data = d_ns,
+family = 'binomial')"
+# load model or fit (fitting took about 10 minutes on my laptop)
+load_or_fit("gam_ns_itemsmooth", gam_ns_itemsmooth.expr)
+```
+
+Model summary:
+
+```{r}
+summary(gam_ns_itemsmooth)
+```
+
+We can see that the by-subject factor smooth for Trial (`s(Trial, Subject)`)
+captures a fair amount of variance, whereas the by-item factor smooth for Trial
+(`s(Trial, VideoName)`) does not.
+Considering the interpretation of each of these factor smooths, this makes sense.
+By-subject factor smooths capture how individual speakers are modifying
+their encoding choices as the experiment progresses. One would indeed expect
+those preferences to change at the individual level above and beyond the
+population-level estimates. For the items, however, the factor smooth is modelling
+the same type of changes at the level of the items (i.e., the individual events
+being seen). Intuitively one expects less variation here: one would expect that
+some items elicit more path encoding while others more manner encoding, but it
+is less likely that the encoding preference associated to an item *changes* over
+the course of the experiment. That effect should a priori be small if at all
+existent. This is how we interpret the small variance associated to the by-item
+factor smooth for Trial.
+
+More practically, since factor smooths will take up many degrees of freedom and
+slow down model fitting (here, it took twice the amount of time), let us compare
+this model with another that has by-item random intercepts instead:
+
+```{r gam_ns}
+# the expression that is passed to load_or_fit()
+gam_ns.expr <- 
+"bam(Used ~ VbType_Cond + s(Trial, by = VbType_Cond) + s(Trial, Subject, bs = 'fs') +
+  s(VideoName, bs = 're'),
+data = d_ns,
+family = 'binomial')"
+# load model or fit (fitting took about 4.5 minutes on my laptop)
+load_or_fit("gam_ns", gam_ns.expr)
+```
+
+
+```{r}
+summary(gam_ns)
+```
+
+Note that the two models are identical in all coefficient estimates, except for
+a very subtle difference for the estimated random effects of items (last line:
+`VideoName`). We thus keep the simpler model.
+
+
+In summary, the model is specified as:
+
+`DV ~ VbType_Cond + s(Trial, by = VbType_Cond) + s(Trial, Subject, bs = 'fs') + s(VideoName, bs = 're')`
+
+Predictors are:
+
+- `VbType_Cond`: VerbType-Condition interaction as a fixed effect. The four levels
+of this variable decompose into two crossed factors:
+  - `VerbType`: Indicator variable that defines what is being measured by the DV,
+  either the occurrence of path verbs or of manner verbs
+  - `Condition`: Primed vs baseline
+- `s(Trial, by = VbType_Cond)`: A smooth function of `Trial` allowing the function to differ for each level of Group-Condition (thin plate regression splines, the default)
+- `s(Trial, Subject, bs = 'fs')`: Factor smooths for `Subject` to capture non-linear random effects of speakers
+- `s(VideoName, bs = 're')`: Random intercepts by items (i.e., `VideoName`)
+
+
 
 ### Reported in main text
 
 
+Plot differences between conditions (model estimates):
+
+```{r, fig.height = myfighe_NS_L2, fig.width = myfigwi, echo = TRUE, results = 'hide'}
+plot_gam_main(gam_ns, "NS")  # choose this on Linux machine
+# On my old computer, the above call threw an warning/error; this was solved by
+# the following argument setting:
+# plot_gam_main(gam_ns, "NS", mark.diff = FALSE)
+```
+
+
 ### Reported in Supplementary Online Material
+
+#### GAMM output
+
+Summary of the GAMM for trial-by-trial adaptation in native speakers:
+
+```{r, results = "asis"}
+itsadug::gamtabs(gam_ns, type = "HTML")
+```
+
+
+#### Follow-up analysis (GLMM)
+
+Rationale:
+
+Based on the GAMM analysis, we can see that for native speakers there was a
+significant adaptation effect for Manner, but not for Path verbs. However, 
+we cannot conclude from one pattern being significant and the other not that
+the two *differ* significantly. 
+Unfortunately, this type of interaction analysis in a factorial design is 
+difficult to implement in the GAM framework we are using (see, e.g.,
+[here](http://grokbase.com/t/r/r-help/113qaadxt4/r-how-to-add-in-interaction-terms-in-gamm)).
+We therefore carry out a follow-up mixed logistic regression analysis to address
+this interaction, while noting that this is not an ideal solution:
+we lose power, either because we model the effect wrongly (assuming linerarity
+in a relation that is non-linear) and thus we may not capture the actual signal,
+or because we reduce the number of observations to include only data points
+that *do* have a linear relationship between predictors and dependent variable.
+Here, we adopt this latter approach.
+
+Since GLMMs assume linearity in log-odds space, We have to subset the data
+to use only those trials that show an approximately linear relation with the
+outcome variable (based on visual inspection). We keep trials 15 through 32.
+
+Subset data:
+
+```{r}
+d_ns_lin <- d_ns %>% filter(Trial >= 15)
+```
+
+
+Verify factors are contrast coded and `cTrial` is centred:
+
+```{r}
+# Verify factors are contrast coded:
+contrasts(d_ns_lin$Condition_bin)
+contrasts(d_ns_lin$VerbType)
+d_ns_lin$cTrial <- d_ns_lin$Trial - mean(d_ns_lin$Trial)  # centre
+round(mean(d_ns_lin$cTrial), 7)  # check
+```
+
+
+In these and all the following GLMMs, we try to stay conceptually close to the
+random effects structure used in the GAMMs. This means we will generally
+try to fit a model with random by-item and by-subject intercepts, as well as
+a random by-subject slope for `cTrial` (corresponding to the smooth term
+`s(Trial, Subject, bs = 'fs')` in the GAMMs).
+
+Fit the model:
+
+```{r}
+# Random by-subject/item intercepts and random by-subject slope for cTrial.
+# Expression to be passed to the load_or_fit function:
+glmm_ns_lin.expr <- 
+"glmer(Used ~ Condition_bin * VerbType * cTrial + (1 + cTrial | Subject) +
+  (1 | VideoName),
+data = d_ns_lin, family = 'binomial',
+control = glmerControl(optimizer='bobyqa', optCtrl=list(maxfun=2e5)))"
+# load model or fit it
+load_or_fit("glmm_ns_lin", glmm_ns_lin.expr)
+```
+
+Model summary:
+
+```{r}
+summary(glmm_ns_lin)
+```
+
+
 
 
 
 Trial-by-trial adaptation of L2 learners (Question 2)
 -----------------------------------------------------
 
+### Set up data frame:
+
+```{r}
+d_l2 <- d_mod %>% filter(Group == "L2")
+# drop unused factors for subject (I think this is important for gam fitting)
+d_l2$Subject <- factor(d_l2$Subject)
+# note log-odds of path verbs in baseline condition becomes the reference level
+contrasts(d_l2$VbType_Cond)
+```
+
+
+### GAMM specification and fitting
+
+We proceed analogously as for native speakers (Question 1). We start by fitting
+a more complex random structure, we then inspect the coefficients, and if warranted,
+we then simplify it and check if anything changes.
+
+```{r}
+# the expression that is passed to load_or_fit()
+gam_l2_itemsmooth.expr <- 
+"bam(Used ~ VbType_Cond + s(Trial, by = VbType_Cond) + 
+  s(Trial, Subject, bs = 'fs') + s(Trial, VideoName, bs = 'fs'),
+data = d_l2,
+family = 'binomial')"
+# load model or fit (fitting took about 13 minutes on my laptop)
+load_or_fit("gam_l2_itemsmooth", gam_l2_itemsmooth.expr)
+```
+
+Model summary:
+
+```{r}
+summary(gam_l2_itemsmooth)
+```
+
+
+```{r gam_l2}
+# the expression that is passed to load_or_fit()
+gam_l2.expr <- 
+"bam(Used ~ VbType_Cond + s(Trial, by = VbType_Cond) + s(Trial, Subject, bs = 'fs') +
+  s(VideoName, bs = 're'),
+data = d_l2,
+family = 'binomial')"
+# load model or fit (fitting took about 5 minutes on my laptop)
+load_or_fit("gam_l2", gam_l2.expr)
+```
+
+
+```{r}
+summary(gam_l2)
+```
+
+The comparison is very similar to what we observed with native speakers:
+The two models are pretty much identical in all coefficient estimates, except
+for a difference for the estimated random effects of items (last line: 
+`VideoName`), which does not affect the rest of the model. We thus retain and
+report the simpler model.
+
 
 ### Reported in main text
 
+Plot differences between conditions (model estimates):
+
+```{r, fig.height = myfighe_NS_L2, fig.width = myfigwi, echo = TRUE, results = 'hide'}
+plot_gam_main(gam_l2, "L2")
+```
+
 
 ### Reported in Supplementary Online Material
+
+#### GAMM output
+
+Summary of the GAMM for trial-by-trial adaptation in L2 speakers:
+
+```{r, results = "asis"}
+itsadug::gamtabs(gam_l2, type = "HTML")
+```
+
+
+#### Follow-up analysis
+
+The rationale for this analysis is analogous to that for the follow-up
+analysis on Question 1 above.
+
+Since GLMMs assume linearity in log-odds space, We have to subset the data
+to use only those trials that show an approximately linear relation with the
+outcome variable (based on visual inspection). We keep trials 1 through 13.
+
+Subset data:
+
+```{r}
+d_l2_lin <- d_l2 %>% filter(Trial <= 13)
+```
+
+Verify factors are contrast coded and `cTrial` is centred:
+
+```{r}
+# Verify factors are contrast coded:
+contrasts(d_l2_lin$Condition_bin)
+contrasts(d_l2_lin$VerbType)
+# recenter cTrial
+d_l2_lin$cTrial <- d_l2_lin$Trial - mean(d_l2_lin$Trial) 
+round(mean(d_l2_lin$cTrial), 7)  # check
+```
+
+
+Fit the model:
+
+```{r}
+# Random by-subject/item intercepts and random by-subject slope for cTrial.
+# Expression to be passed to the load_or_fit function:
+glmm_l2_lin.expr <- 
+"glmer(Used ~ Condition_bin * VerbType * cTrial + (1 + cTrial | Subject) +
+  (1 | VideoName),
+data = d_l2_lin, family = 'binomial',
+control = glmerControl(optimizer='bobyqa', optCtrl=list(maxfun=2e5)))"
+# load model or fit it
+load_or_fit("glmm_l2_lin", glmm_l2_lin.expr)
+```
+
+
+Model summary:
+
+```{r}
+summary(glmm_l2_lin)
+```
+
+
+
 
 
 
