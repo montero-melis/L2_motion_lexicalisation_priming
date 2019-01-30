@@ -5,11 +5,16 @@ load_or_fit <- function(
   fm_name,  # The name or the fitted model, which will also be the file name.
   fm_code,  # A string that will be evaluated as an expression (function call) in R
   forcefit = FALSE,  # If TRUE, the model will be fitted even if there is an object with that name.
+  alternPath = NULL,  # Possibly indicate alternative path to look and save
   ...
   ) {
 
   # path to subfolder where fitted models will be saved and looked for
-  rel_path <- './fitted_models/'
+  if (is.null(alternPath)) {
+    rel_path <- './fitted_models/'
+  } else {
+    rel_path <- alternPath
+  }
 
   # the string in argument fm_code may contain '\n'; remove them
   fm_code <- gsub('\n', '', fm_code)
