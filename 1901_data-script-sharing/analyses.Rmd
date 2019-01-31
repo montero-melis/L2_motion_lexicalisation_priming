@@ -115,7 +115,7 @@ source("plot_gams_fnc.R")
 Global variables for figures
 ----------------------------
 
-```{r, include=FALSE}
+```{r}
 # adjust figure heght/width when not going with default (espec. for 2x2 plots)
 myfighe_NS_L2 <- 6
 myfighe_L2_prof <- 6
@@ -179,11 +179,10 @@ d_mod$VbType_Cond <- with(d_mod, interaction(VerbType, Condition))
 # fit random by-subject smooths for each of those comparisons:
 d_mod$Subject <- with(d_mod, interaction(Subject, VerbType))	
 
-## Subset data for model fitting:
-# We are removing observations that	contain irrelevant comparisons given our
-# research question, namely those that correspond to path verbs produced in the
-# manner-primed condition or to manner	verbs produced in the path-primed 
-# condition.
+# Subset data for model fitting:
+# We remove observations that	contain irrelevant comparisons given our research
+# question, namely those that correspond to path verbs produced in the manner-
+# primed condition or to manner	verbs produced in the path-primed condition.
 d_mod <- d_mod %>% filter(! VbType_Cond %in% c("P_V.Manner", "M_V.Path"))
 # drop unused factor levels and order levels correctly
 d_mod$VbType_Cond <- factor(d_mod$VbType_Cond, 
@@ -402,7 +401,6 @@ Table 3 in main text:
 # Descriptive data for all analysed conditions (only relevant comparisons).
 # Note the table was appropriately formatted in report.
 d_mod %>%
-  # filter(! VbType_Cond %in% c("P_V.Manner", "M_V.Path")) %>%
   group_by(VerbType, Group, Condition) %>%
   summarise(Occurrences = sum(Used),
             TotalN = n(),
@@ -542,9 +540,9 @@ Predictors are:
 
 - `VbType_Cond`: VerbType-Condition interaction as a fixed effect. The four levels
 of this variable decompose into two crossed factors:
-  - `VerbType`: Indicator variable that defines what is being measured by the DV,
+    - `VerbType`: Indicator variable that defines what is being measured by the DV,
   either the occurrence of path verbs or of manner verbs
-  - `Condition`: Primed vs baseline
+    - `Condition`: Primed vs baseline
 - `s(Trial, by = VbType_Cond)`: A smooth function of `Trial` allowing the function to differ for each level of Group-Condition (thin plate regression splines, the default)
 - `s(Trial, Subject, bs = 'fs')`: Factor smooths for `Subject` to capture non-linear random effects of speakers
 - `s(VideoName, bs = 're')`: Random intercepts by items (i.e., `VideoName`)
@@ -784,11 +782,97 @@ summary(glmm_l2_lin)
 Effect of L2 proficiency on trial-by-trial adaptation (Question 3)
 ------------------------------------------------------------------
 
+### Data and processing
+
+The data is the same as we used to address Question 2, only now we will use
+the predictor `ClozeScore` to measure L2 proficiency.
+
+First rows of the data set:
+
+```{r}
+head(d_l2)
+```
+
+
+### GAMM fitting
+
+We start by fitting two models, one with and one without the interaction term
+`te(Trial, ClozeScore, by = Condition)`
+Using model comparison, we can see if this term significantly improves the model.
+
+Model including 3-way interaction
+
+```{r model_l2prof_with_interac}
+# model with interaction
+gam_l2prof.expr <- 
+"bam(Used ~ VbType_Cond + te(Trial, ClozeScore, by = VbType_Cond) +
+  s(Trial, Subject, bs = 'fs') + s(VideoName, bs = 're'),
+data = d_l2,
+family = 'binomial')"
+# load model or fit (fitting took about 6.5 minutes on my laptop)
+load_or_fit("gam_l2prof", gam_l2prof.expr)
+```
+
+Model summary:
+
+```{r}
+summary(gam_l2prof)
+```
+
+
 ### Reported in main text
+
+Plot differences between conditions (model estimates):
+
+```{r, fig.height = 4, fig.width = 8, echo = TRUE, results = 'hide'}
+plot_L2_profic_diff_singlemodel(gam_l2prof, primed_cond = "Path")
+plot_L2_profic_diff_singlemodel(gam_l2prof, primed_cond = "Manner")
+```
 
 
 ### Reported in Supplementary Online Material
 
+
+Model output (properly formatted):
+
+```{r, results = "asis"}
+itsadug::gamtabs(gam_l2prof, type = "HTML")
+```
+
+Plot each comparison showing the two curves (model estimates):
+
+```{r, fig.height = 4, fig.width = 8, echo = TRUE, results = 'hide'}
+plot_L2_profic_singlemodel(gam_l2prof, primed_cond = 'Path')
+plot_L2_profic_singlemodel(gam_l2prof, primed_cond = 'Manner')
+```
+
+
+### Not reported: difference surfaces
+
+This is another way of visualizing the results, which we did not report
+in either the main text or the SOM. These plots are interpreted in an
+analogous fashion to normal maps which show altitude as contour lines.
+The height of the contours gives the model estimate.
+
+So effectively the plots we report in the main paper (Figure 6) take four
+slices of those "hilly landscapes", cut parallel to the x-axis, and rotate
+them so that the former altitude is now plotted along the y axis.
+
+Plot difference surfaces:
+
+```{r}
+plot_diff2(gam_l2prof, view = c("Trial", "ClozeScore"),
+           comp = list(VbType_Cond = c("P_V.Path", "P_V.Baseline")),
+           plotCI = TRUE, rm.ranef = TRUE, 
+           main = "Path verbs: Path-primed -- baseline")
+```
+
+```{r}
+plot_diff2(gam_l2prof, view = c("Trial", "ClozeScore"),
+           comp = list(VbType_Cond = c("M_V.Manner", "M_V.Baseline")),
+           plotCI = TRUE, rm.ranef = TRUE, 
+           main = "Manner verbs: Manner-primed -- baseline")
+```
 
 
 
