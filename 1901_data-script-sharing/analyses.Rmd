@@ -52,11 +52,8 @@ packageVersion('GGally')
 # packageVersion('boot')
 library(knitr)  # for kable()
 packageVersion('knitr')
-# library(lazyeval)  # lazy evaluation used in bysubj() function [summarise_]
-# packageVersion('lazyeval')
-# library(effects)
-# library(xtable)
 ```
+
 
 ```{r}
 # Make sure you are in the folder where all the scripts and data are located,
@@ -824,7 +821,7 @@ summary(gam_l2prof)
 
 Plot differences between conditions (model estimates):
 
-```{r, fig.height = 4, fig.width = 8, echo = TRUE, results = 'hide'}
+```{r, fig.height = 3, fig.width = 9, echo = TRUE, results = 'hide'}
 plot_L2_profic_diff_singlemodel(gam_l2prof, primed_cond = "Path")
 plot_L2_profic_diff_singlemodel(gam_l2prof, primed_cond = "Manner")
 ```
@@ -841,7 +838,7 @@ itsadug::gamtabs(gam_l2prof, type = "HTML")
 
 Plot each comparison showing the two curves (model estimates):
 
-```{r, fig.height = 4, fig.width = 8, echo = TRUE, results = 'hide'}
+```{r, fig.height = 4, fig.width = 9, echo = TRUE, results = 'hide'}
 plot_L2_profic_singlemodel(gam_l2prof, primed_cond = 'Path')
 plot_L2_profic_singlemodel(gam_l2prof, primed_cond = 'Manner')
 ```
