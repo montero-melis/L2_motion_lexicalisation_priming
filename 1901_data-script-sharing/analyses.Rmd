@@ -48,8 +48,8 @@ library(ggplot2)
 packageVersion('ggplot2')
 library(GGally)
 packageVersion('GGally')
-# library(boot)  # for inv.logit()
-# packageVersion('boot')
+library(arm)  # used in script "plot_glmm_fnc.R"
+packageVersion('arm')
 library(knitr)  # for kable()
 packageVersion('knitr')
 ```
@@ -180,7 +180,7 @@ d_mod$Subject <- with(d_mod, interaction(Subject, VerbType))
 # We remove observations that	contain irrelevant comparisons given our research
 # question, namely those that correspond to path verbs produced in the manner-
 # primed condition or to manner	verbs produced in the path-primed condition.
-d_mod <- d_mod %>% filter(! VbType_Cond %in% c("P_V.Manner", "M_V.Path"))
+d_mod <- d_mod %>% dplyr::filter(! VbType_Cond %in% c("P_V.Manner", "M_V.Path"))
 # drop unused factor levels and order levels correctly
 d_mod$VbType_Cond <- factor(d_mod$VbType_Cond, 
                             levels = c("P_V.Baseline", "P_V.Path", "M_V.Baseline",
@@ -250,7 +250,7 @@ Learners' age of onset for learning Spanish
 ```{r}
 # Mean and SD
 ppts %>%
-  filter(Group == "L2") %>%
+  dplyr::filter(Group == "L2") %>%
   summarise(M  = round(mean(L2_AoO, na.rm = TRUE), 2), 
             SD = round(sd(L2_AoO, na.rm = TRUE), 2))
 # range
@@ -267,7 +267,7 @@ round(mean(ppts$ClozeScore, na.rm=T), 1)
 round(sd(ppts$ClozeScore, na.rm=T), 1)
 # By condition
 ppts %>% 
-  filter(Group == "L2") %>% 
+  dplyr::filter(Group == "L2") %>% 
   group_by(Condition) %>%
   summarise(M_profic = mean(ClozeScore), 
             SD = sd(ClozeScore))
@@ -279,7 +279,7 @@ Difference in L2 proficiency across conditions (one-way ANOVA):
 ```{r}
 # one-way ANOVA
 ppts %>% 
-  filter(Group == "L2") %>%
+  dplyr::filter(Group == "L2") %>%
   aov(ClozeScore ~ Condition, data = .) %>%
   summary
 ```
@@ -294,7 +294,7 @@ round(mean(ppts$VocabTaskAcc, na.rm=T), 3)
 round(sd(ppts$VocabTaskAcc, na.rm=T), 4)
 # By condition
 ppts %>% 
-  filter(Group == "L2") %>% 
+  dplyr::filter(Group == "L2") %>% 
   group_by(Condition) %>%
   summarise(M_profic = mean(VocabTaskAcc, na.rm = TRUE), 
             SD = sd(VocabTaskAcc, na.rm = TRUE))
@@ -310,7 +310,7 @@ ppts %>%
 Distribution of Cloze scores
 
 ```{r}
-ppts %>% filter(Group == "L2") %>%
+ppts %>% dplyr::filter(Group == "L2") %>%
   ggplot(aes(x = ClozeScore, colour = Condition)) +
   geom_density() +
   geom_rug() +
@@ -321,8 +321,8 @@ ppts %>% filter(Group == "L2") %>%
 Numerical summaries of L2 variables potentially related to L2 proficiency:
 
 ```{r, warning=FALSE}
-ppts %>% filter(Group == "L2") %>% 
-  select(ClozeScore, L2_SelfRating, L2_AoO, L2_instruction_years, VocabTaskAcc) %>%
+ppts %>% dplyr::filter(Group == "L2") %>% 
+  dplyr::select(ClozeScore, L2_SelfRating, L2_AoO, L2_instruction_years, VocabTaskAcc) %>%
   summary
 ```
 
@@ -330,8 +330,8 @@ ppts %>% filter(Group == "L2") %>%
 Correlation between different L2-related measures that were collected:
 
 ```{r, warning=FALSE, fig.width=6.5, fig.height=5}
-ppts %>% filter(Group == "L2") %>% 
-  select(ClozeScore, L2_SelfRating, L2_AoO, L2_instruction_years, VocabTaskAcc) %>%
+ppts %>% dplyr::filter(Group == "L2") %>% 
+  dplyr::select(ClozeScore, L2_SelfRating, L2_AoO, L2_instruction_years, VocabTaskAcc) %>%
   ggpairs(upper = list(
     continuous = wrap('cor', method = "spearman")
   ))
@@ -373,8 +373,8 @@ Baseline condition: Native and L2 speakers’ lexical preferences in the absence
 ```{r, echo = T}
 # Subset data from baseline condition only
 d_basel <- d_long %>% 
-  filter(Condition == "Baseline") %>%
-  select(Subject : ClozeScore, VerbType, Used)
+  dplyr::filter(Condition == "Baseline") %>%
+  dplyr::select(Subject : ClozeScore, VerbType, Used)
 # Use contrast coding to compare groups...
 contrasts(d_basel$Group) <- - contr.sum(2)
 colnames(contrasts(d_basel$Group)) <- "L2_vs_NS"
@@ -456,7 +456,7 @@ Trial-by-trial adaptation of native speakers (Question 1)
 
 ```{r}
 # Subset data to native speaker data only
-d_ns <- d_mod %>% filter(Group == "NS")
+d_ns <- d_mod %>% dplyr::filter(Group == "NS")
 # drop unused factors for subject (important for gam fitting)
 d_ns$Subject <- factor(d_ns$Subject)
 # note log-odds of path verbs in baseline condition becomes the reference level
@@ -596,7 +596,7 @@ outcome variable (based on visual inspection). We keep trials 15 through 32.
 Subset data:
 
 ```{r}
-d_ns_lin <- d_ns %>% filter(Trial >= 15)
+d_ns_lin <- d_ns %>% dplyr::filter(Trial >= 15)
 ```
 
 
@@ -647,7 +647,7 @@ Trial-by-trial adaptation of L2 learners (Question 2)
 ### Set up data frame:
 
 ```{r}
-d_l2 <- d_mod %>% filter(Group == "L2")
+d_l2 <- d_mod %>% dplyr::filter(Group == "L2")
 # drop unused factors for subject (I think this is important for gam fitting)
 d_l2$Subject <- factor(d_l2$Subject)
 # note log-odds of path verbs in baseline condition becomes the reference level
@@ -734,7 +734,7 @@ outcome variable (based on visual inspection). We keep trials 1 through 13.
 Subset data:
 
 ```{r}
-d_l2_lin <- d_l2 %>% filter(Trial <= 13)
+d_l2_lin <- d_l2 %>% dplyr::filter(Trial <= 13)
 ```
 
 Verify factors are contrast coded and `cTrial` is centred:
