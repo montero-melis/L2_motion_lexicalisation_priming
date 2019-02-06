@@ -14,17 +14,17 @@ Note on reproducing the analyses
 To reproduce the analyses, please make sure you have all the necessary
 packages installed (see the last section of the knitr report in `analyses.html`,
 which shows the session info at the time of running). Apart from R itself and
-the packages, you will probably also need RStudio (I used version 1.1.463).
+the packages, you will also need RStudio (I used version 1.1.463).
 
-Please check also path specifications if you run into errors of not finding
+Please star by checking path specifications if you run into errors of not finding
 an object loaded from disk.
 
-If you discover errors or have any other queries, please contact the first
-author Guillermo Montero-Melis at <guillermo.monteromelis@mpi.nl>.
+If you discover errors or have any other queries, contact the first author,
+Guillermo Montero-Melis at <guillermo.monteromelis@mpi.nl>.
 
 
-File description
-----------------
+Description of files
+--------------------
 
 
 ### `analyses.html`
@@ -99,3 +99,8 @@ section Method > Procedure (L2 learners only)
 
 Scripts containing custom function to generate the result plots reported in
 the paper and the SOM. Both are called from the script `analyses.Rmd`. 
+
+
+### `README.md`
+
+Please read the file to understand its content (this is a recursive joke).
