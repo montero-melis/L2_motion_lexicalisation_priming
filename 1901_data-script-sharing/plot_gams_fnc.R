@@ -56,8 +56,14 @@ plot_gam_main <- function(fm, mygroup = NULL, show_xaxis = 'Trial',
 # Function to plot the effects by L2 speakers' proficiency from GAMs.
 # Note we call the function twice, once for each comparison, even though the
 # comparison is extracted from the estimates of the same model.
-plot_L2_profic_singlemodel <- function(fm, primed_cond = NULL, ylim1 = c(-6, 8),
-                                   cloze_range = c(10, 35), nb_plots = 4) {
+plot_L2_profic <- function(
+  fm,
+  primed_cond = NULL,
+  show_xaxis = 'Trial',
+  ylim1 = c(-6, 8),
+  cloze_range = c(10, 35),
+  nb_plots = 4
+  ) {
   cloze_scores <- seq(cloze_range[1], cloze_range[2], length.out = nb_plots)
   # Choose the relevant verb type based on argument "primed_cond"
   if (! primed_cond %in% c("Path", "Manner")) {
@@ -80,11 +86,11 @@ plot_L2_profic_singlemodel <- function(fm, primed_cond = NULL, ylim1 = c(-6, 8),
   # par(mai=rep(0.2, 4))
   par(mai = c(.4, .6, .3, 0), mgp = c(1.6, .8, 0))
   for(cloze in cloze_scores) {
-    plot_smooth(fm, view = 'Trial', cond = list(VbType_Cond = baseline_cond, ClozeScore = cloze),
+    plot_smooth(fm, view = show_xaxis, cond = list(VbType_Cond = baseline_cond, ClozeScore = cloze),
                 col = 'blue', lty = 2, rug = FALSE, ylim = ylim1, rm.ranef = TRUE,
                 hide.label = TRUE, ylab = paste0('Log-odds\nof ', tolower(primed_cond), ' verb'),
                 main = paste('L2 proficiency =', round(cloze)))
-    plot_smooth(fm, view = 'Trial', cond = list(VbType_Cond = my_primed_cond, ClozeScore = cloze),
+    plot_smooth(fm, view = show_xaxis, cond = list(VbType_Cond = my_primed_cond, ClozeScore = cloze),
                 col = 'red', rug = FALSE, rm.ranef = TRUE, hide.label = TRUE, add = TRUE)
   }
 }
@@ -94,9 +100,10 @@ plot_L2_profic_singlemodel <- function(fm, primed_cond = NULL, ylim1 = c(-6, 8),
 # time showing DIFFERENCES.
 # It relies on itsadug::plot_diff (rather than itsadug::plot_smooth), but the
 # idea is quite similar.
-plot_L2_profic_diff_singlemodel <- function(
+plot_L2_profic_diff <- function(
   fm,
   primed_cond = NULL, 
+  show_xaxis = 'Trial',
   ylim1 = c(-2.5, 8.5),
   cloze_range = c(10, 35),
   nb_plots = 4
@@ -121,7 +128,7 @@ plot_L2_profic_diff_singlemodel <- function(
   print(my_primed_cond)
   print(baseline_cond)
   for(cloze in cloze_scores) {
-    plot_diff(fm, view = 'Trial', comp = list(VbType_Cond = c(my_primed_cond, baseline_cond)),
+    plot_diff(fm, view = show_xaxis, comp = list(VbType_Cond = c(my_primed_cond, baseline_cond)),
               cond = list(ClozeScore = cloze),
               ylim = ylim1, hide.label = TRUE, ylab = myylab, main = "")
     title(main = paste('L2 proficiency =', round(cloze)), font.main = 1, line = 1)
