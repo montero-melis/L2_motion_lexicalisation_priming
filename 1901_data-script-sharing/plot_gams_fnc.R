@@ -9,18 +9,18 @@
 
 # function to plot the differences between Path/Manner and Baseline
 # There are two models to be plotted, one for NS, one for L2 speakers
-plot_gam_main <- function(fm, mygroup = NULL, 
+plot_gam_main <- function(fm, mygroup = NULL, show_xaxis = 'Trial',
                           ylim1 = c(-4, 6), ylim2 = c(-.5, 6), ...) {
   layout(matrix(1:4, ncol = 2, byrow=TRUE), heights = c(1.5, 1))
   par(mai = c(.7, .8, .5, 0.2))
   mycex <- 0.9
   # plot path verbs Baseline
-  plot_smooth(fm, view = 'Trial', cond = list(VbType_Cond = 'P_V.Baseline'),
+  plot_smooth(fm, view = show_xaxis, cond = list(VbType_Cond = 'P_V.Baseline'),
               col = 'blue', lty = 2, rug = FALSE, ylim = ylim1, rm.ranef=TRUE,
               main = paste0(mygroup, ': Path verbs'), ylab = 'Log-odds\nof path verb',
               hide.label = TRUE)
   # plot Path Verbs in path-primed condition
-  plot_smooth(fm, view = 'Trial', cond = list(VbType_Cond = 'P_V.Path'),
+  plot_smooth(fm, view = show_xaxis, cond = list(VbType_Cond = 'P_V.Path'),
               col = 'red', rug = FALSE, rm.ranef = TRUE, add = TRUE,
               hide.label = TRUE)
   # add legend
@@ -28,12 +28,12 @@ plot_gam_main <- function(fm, mygroup = NULL,
          col = c('red', 'blue'), lty = 1:2, cex = mycex, box.lty = 0)
   
   # Manner verbs Baseline
-  plot_smooth(fm, view = 'Trial', cond = list(VbType_Cond = 'M_V.Baseline'),
+  plot_smooth(fm, view = show_xaxis, cond = list(VbType_Cond = 'M_V.Baseline'),
               col = 'blue', lty = 2, rug = FALSE, ylim = ylim1, rm.ranef = TRUE,
               main = paste0(mygroup, ': Manner verbs'), ylab = 'Log-odds\nof manner verb',
               hide.label = TRUE)
   # Manner verbs in manner-primed condition
-  plot_smooth(fm, view = 'Trial', cond = list(VbType_Cond = 'M_V.Manner'),
+  plot_smooth(fm, view = show_xaxis, cond = list(VbType_Cond = 'M_V.Manner'),
               col = 'red', rug = FALSE, rm.ranef = TRUE, add = TRUE,
               hide.label = TRUE)
   # add legend
@@ -41,12 +41,12 @@ plot_gam_main <- function(fm, mygroup = NULL,
          col = c('red', 'blue'), lty = 1:2, cex = mycex, box.lty = 0)
   
   # Now plot the estimated differences with itsadug::plot_diff()
-  plot_diff(fm, view = 'Trial', comp = list(VbType_Cond = c('P_V.Path', 'P_V.Baseline')),
+  plot_diff(fm, view = show_xaxis, comp = list(VbType_Cond = c('P_V.Path', 'P_V.Baseline')),
             ylim = ylim2, rm.ranef=TRUE, 
             main = 'Path-primed \u2212 Baseline',
             ylab = 'Diff. in log-odds\nof path verb', hide.label = TRUE,
             ...)  # a hack I need to set the mark.diff argument as F, bc of some bug?
-  plot_diff(fm, view = 'Trial', comp = list(VbType_Cond = c('M_V.Manner', 'M_V.Baseline')),
+  plot_diff(fm, view = show_xaxis, comp = list(VbType_Cond = c('M_V.Manner', 'M_V.Baseline')),
             ylim = ylim2, rm.ranef=TRUE, 
             main = 'Manner-primed \u2212 Baseline',
             ylab = 'Diff. in log-odds\nof manner verb', hide.label = TRUE)
