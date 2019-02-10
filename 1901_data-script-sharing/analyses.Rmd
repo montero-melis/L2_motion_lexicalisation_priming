@@ -315,7 +315,8 @@ ppts %>% dplyr::filter(Group == "L2") %>%
   ggplot(aes(x = ClozeScore, colour = Condition)) +
   geom_density() +
   geom_rug() +
-  facet_grid(Condition ~ .)
+  facet_grid(Condition ~ .) +
+  theme_bw()
 ```
 
 
@@ -393,7 +394,8 @@ ppts %>%
   ggplot(aes(x = Age, colour = Condition)) +
   geom_density() +
   geom_rug() +
-  facet_grid(Condition ~ Group)
+  facet_grid(Condition ~ Group) + 
+  theme_bw()
 ```
 
 
