@@ -19,8 +19,9 @@ This knitr document accompanies the paper
 Montero-Melis, G., & Jaeger, T. F. (2019). Changing expectations mediate
 adaptation in L2 production. Submitted to *Bilingualism: Language and Cognition*
 
-For details, please refer to the main text and the Supplementary Online 
-Material.
+For details about the paper, please refer to the main text and the Supplementary
+Online  Material.
+For details about how this report was generated, see the README file.
 
 
 Set up working space
@@ -329,12 +330,49 @@ ppts %>% dplyr::filter(Group == "L2") %>%
 
 Correlation between different L2-related measures that were collected:
 
-```{r, warning=FALSE, fig.width=6.5, fig.height=5}
-ppts %>% dplyr::filter(Group == "L2") %>% 
-  dplyr::select(ClozeScore, L2_SelfRating, L2_AoO, L2_instruction_years, VocabTaskAcc) %>%
-  ggpairs(upper = list(
-    continuous = wrap('cor', method = "spearman")
-  ))
+```{r, warning=FALSE, fig.width=9, fig.height=9}
+my_dens <- function(data, mapping, ...) {
+  ggplot(data = data, mapping=mapping) +
+    geom_density(..., alpha = 0.7) 
+}
+ppts %>% 
+  dplyr::filter(Group == "L2") %>% 
+  dplyr::select(ClozeScore, L2_SelfRating, L2_AoO, L2_instruction_years, VocabTaskAcc,
+                Condition) %>%
+  ggpairs(
+    mapping=ggplot2::aes(color = Condition),
+    diag = list(continuous = my_dens),
+    upper = list(continuous = wrap('cor', method = "spearman", size = 2.75, hjust=0.8)),
+    lower=list(continuous="smooth")
+    )
+```
+
+
+Do L2 participants in the different conditions differ along any of these measures?
+
+
+```{r}
+## Use Kruskal-Wallis test for this data 
+# Cloze score (again)
+ppts %>% 
+  dplyr::filter(Group == "L2") %>%
+  kruskal.test(ClozeScore ~ Condition, data = .)
+# L2 self-rated proficiency
+ppts %>% 
+  dplyr::filter(Group == "L2") %>%
+  kruskal.test(L2_SelfRating ~ Condition, data = .)
+# L2 Age of onset
+ppts %>% 
+  dplyr::filter(Group == "L2") %>%
+  kruskal.test(L2_AoO ~ Condition, data = .)
+# Self-reported years of formal instruction
+ppts %>% 
+  dplyr::filter(Group == "L2") %>%
+  kruskal.test(L2_instruction_years ~ Condition, data = .)
+# Accuracy in vocabulary task
+ppts %>% 
+  dplyr::filter(Group == "L2") %>%
+  kruskal.test(VocabTaskAcc ~ Condition, data = .)
 ```
 
 
