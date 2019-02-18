@@ -1,0 +1,417 @@
+---
+title: "Self-priming"
+author: '[Guillermo Montero-Melis](https://www.mpi.nl/people/montero-melis-guillermo)'
+date: '`r as.character(format(Sys.Date(), format="%d/%m/%Y"))`'
+output:
+  html_document:
+    depth: 2
+    number_sections: yes
+    theme: default
+    toc: yes
+---
+
+
+Introduction
+============
+
+We look into possible effects of self-priming, as touched upon by reviewers
+1 and 2
+
+
+Reviewer concerns
+-------------------
+
+R1:
+
+"5. Strictly speaking, each priming trial consists of two different types of
+utterances: the written and orally repeated sentence, and the sentence
+produced by the participant to describe the picture. I take it that in the
+adaptation analysis, only the number of trials has been taken into
+consideration (that is, each prime+target pair is counted as 1). Would the
+result be any different if in addition to the number of primes, also the
+number of path or manner constructions produced as descriptions by the
+participant were taken into consideration as well? (I am thinking of a paper
+by Jacobs et al. https://psyarxiv.com/brcv2/ for an analysis taking into
+account self-priming)"
+
+
+
+Our approach 
+------------
+
+Following Florian's suggestion:
+
+Repeat the analysis while substituting Trial by:
+
+a) The number of times the structure has been used in just production (only
+   production primes) or
+b) Trial + the number of times it has been used in production (both p+c
+   primes).
+
+See whether the results change and report it in the letter.
+
+From Florian's email 2019-02-03:
+
+"See p.77-78 in Jaeger and Snider (2013), Section 5.4. It is directly related
+to this point and also contains language that might be part of our reply. On
+p.78 it describes how we repeated our test (in our case, the calculation of
+surprisal, in your case how you count 'trial')."
+
+
+
+Libraries etc.
+=============
+
+```{r}
+knitr::opts_chunk$set(echo = TRUE)
+# Libraries and functions -------------------------------------------------
+
+library(dplyr)
+library(tidyr)  # useful for gather() to convert from wide to long
+library(mgcv)     # v. 1.8-17
+library(itsadug)  # v. 2.2
+library(ggplot2)
+
+source("../1901_data-script-sharing/load_or_fit_fnc.R")
+# path where to look for the models and save them if fitted
+model_path <- '../1901_data-script-sharing/fitted_models/'
+
+# Two functions to a) plot adaptation effects for native and L2 speakers from
+# GAMMs, and b) plot the effects by L2 speakers' proficiency.
+source("../1901_data-script-sharing/plot_gams_fnc.R")
+```
+
+
+```{r}
+fighe_l2 <- 3
+figwi_l2 <- 9
+```
+
+
+Data
+====
+
+```{r}
+# Data --------------------------------------------------------------------
+
+# load data
+d <- read.csv('../1901_data-script-sharing/data.csv', fileEncoding = 'UTF-8', 
+              stringsAsFactors = TRUE) 
+
+# Make sure Subject is a factor
+d$Subject <- factor(d$Subject)
+# in Group, let the native speakers (NS) be the reference group
+d$Group <- factor(d$Group, levels = c('NS', 'L2'))
+head(d, 3)
+
+# Convert data to long format: each description will now have two rows, one for
+# each value of VerbType (P_V = Path verb; M_V = Manner verb); note that these
+# two rows were previously two different columns showing whether what was 
+# encoded in the main verb in a given description encoded was path, manner,
+# both or neither (see data frame d above).
+d_long <- gather(d, VerbType, Used, P_V : M_V)
+
+# Create copy of long data set, which we will further process for model fitting
+d_mod <- d_long
+
+# Combine VerbType (Path/Manner) and Condition (baseline/primed) into a single
+# factor -- this is needed for the GAMMs. (The way to analyze crossed factors
+# is to combine their levels into a single factor, see Wood's comment here:
+# http://grokbase.com/t/r/r-help/113qaadxt4/r-how-to-add-in-interaction-terms-in-gamm)
+d_mod$VbType_Cond <- with(d_mod, interaction(VerbType, Condition))	
+
+# In order to make the relevant comparisons (see point 1 here above), baseline
+# participants have to be compared twice, once for their path verb use to path-
+# primed participants, once for their manner verb use to manner-primed 
+# participants. This means that each of the two rows defined by VerbType will
+# be used in one of the comparisons. The following renaming allows us to
+# fit random by-subject smooths for each of those comparisons:
+d_mod$Subject <- with(d_mod, interaction(Subject, VerbType))	
+
+# Subset data for model fitting:
+# We remove observations that	contain irrelevant comparisons given our research
+# question, namely those that correspond to path verbs produced in the manner-
+# primed condition or to manner	verbs produced in the path-primed condition.
+d_mod <- d_mod %>% dplyr::filter(! VbType_Cond %in% c("P_V.Manner", "M_V.Path"))
+# drop unused factor levels and order levels correctly
+d_mod$VbType_Cond <- factor(d_mod$VbType_Cond, 
+                            levels = c("P_V.Baseline", "P_V.Path", "M_V.Baseline",
+                                       "M_V.Manner"))
+# drop unused factors for subject (important for random effects estimation)
+d_mod$Subject <- factor(d_mod$Subject)
+# Condition recoded as a binary factor (Path/Manner become "Primed")
+d_mod$Condition_bin <- d_mod$Condition
+levels(d_mod$Condition_bin)[levels(d_mod$Condition_bin) %in% c("Path", "Manner")] <- "Primed"	
+```
+
+
+Add participant's cumulative productions as a predictor:
+
+```{r}
+# Add number of produced structures as predictor --------------------------
+
+# The cumulative number of productions is equal to the number of times the target
+# structure # was used up until the last trial. This is what the following function
+# comptues, where v is the vector of a subject's uses of the structure ordered by trial:
+my_cumsum <- function(v) {
+  out <- c(0, cumsum(v)[ 1 : (length(v) - 1) ])
+  out
+}
+
+# Add the following predictors:
+# a) prod_primes: number of times the structure has been used in just production 
+# b) prod_compr: Trial + the number of times it has been used in production. 
+d_mod <- d_mod %>%
+  group_by(Subject) %>%
+  mutate(prod_primes = my_cumsum(Used),
+         prod_compr = prod_primes + Trial)
+head(data.frame(d_mod))
+```
+
+
+Correlations between Trial and own productions
+==========================================
+
+Visually:
+
+```{r}
+# Correlations ------------------------------------------------------------
+
+ggplot(d_mod, aes(x = Trial, y = prod_primes)) +
+  geom_jitter(alpha = .4) +
+  facet_grid(VbType_Cond ~ Group) +
+  geom_smooth(method = "lm")
+
+# showing individual speakers as lines
+ggplot(d_mod, aes(x = Trial, y = prod_primes)) +
+  geom_jitter(alpha = .4) +
+  facet_grid(VbType_Cond ~ Group) +
+  geom_smooth(method = "lm") +
+  geom_line(aes(group = Subject, colour = Subject)) +
+  theme(legend.position = "none") 
+```
+
+Numerically (Pearson correlations)
+
+```{r}
+by(d_mod, list(d_mod$Group, d_mod$VbType_Cond), 
+   function(df) cor.test(df$Trial, df$prod_primes))
+```
+
+
+Q1 re-analysis
+==============
+
+## Subset data
+
+```{r}
+# Subset data to native speaker data only
+d_ns <- d_mod %>% dplyr::filter(Group == "NS")
+# drop unused factors for subject (important for gam fitting)
+d_ns$Subject <- factor(d_ns$Subject)
+# note log-odds of path verbs in baseline condition becomes the reference level
+contrasts(d_ns$VbType_Cond)
+```
+
+
+## Model with Trial only (= model reported in the paper)
+
+```{r, results = 'hide'}
+## Model with Trial only [= model reported in the paper]
+
+# the expression that is passed to load_or_fit()
+gam_ns.expr <- 
+  "bam(Used ~ VbType_Cond + s(prod_primes, by = VbType_Cond) + s(prod_primes, Subject, bs = 'fs') +
+s(VideoName, bs = 're'),
+data = d_ns,
+family = 'binomial')"
+# load model or fit (fitting took about 4.5 minutes on my laptop)
+load_or_fit("gam_ns", gam_ns.expr, alternPath = model_path)
+# plot
+plot_gam_main(gam_ns, "NS")  # choose this on Linux machine
+```
+
+
+## Model with self-priming from own production only
+
+
+```{r, results = 'hide'}
+## Model with self-priming in production only
+
+# the expression that is passed to load_or_fit()
+gam_ns_prod.expr <- 
+  "bam(Used ~ VbType_Cond + s(prod_primes, by = VbType_Cond) + s(prod_primes, Subject, bs = 'fs') +
+s(VideoName, bs = 're'),
+data = d_ns,
+family = 'binomial')"
+# load model or fit (fitting took about 4.5 minutes on my laptop)
+load_or_fit("gam_ns_prod", gam_ns_prod.expr, alternPath = model_path)
+
+plot_gam_main(gam_ns_prod, "NS", show_xaxis = 'prod_primes')
+```
+
+
+## Model with self-priming in production and comprehension priming
+
+```{r, results = 'hide'}
+## Model with self-priming in production and comprehension priming
+# the expression that is passed to load_or_fit()
+gam_ns_prod_compr.expr <- 
+  "bam(Used ~ VbType_Cond + s(prod_compr, by = VbType_Cond) + s(prod_compr, Subject, bs = 'fs') +
+s(VideoName, bs = 're'),
+data = d_ns,
+family = 'binomial')"
+# load model or fit (fitting took about 4.5 minutes on my laptop)
+load_or_fit("gam_ns_prod_compr", gam_ns_prod_compr.expr, alternPath = model_path)
+
+plot_gam_main(gam_ns_prod_compr, "NS", show_xaxis = 'prod_compr')
+```
+
+
+Q2 re-analysis
+==============
+
+## Subset data
+
+```{r}
+# Subset data to L2 speaker data only
+d_l2 <- d_mod %>% dplyr::filter(Group == "L2")
+# drop unused factors for subject (I think this is important for gam fitting)
+d_l2$Subject <- factor(d_l2$Subject)
+# note log-odds of path verbs in baseline condition becomes the reference level
+contrasts(d_l2$VbType_Cond)
+```
+
+
+## Model with Trial only [= model reported in the paper]
+
+```{r, results = 'hide'}
+## Model with Trial only [= model reported in the paper]
+
+# the expression that is passed to load_or_fit()
+gam_l2.expr <- 
+  "bam(Used ~ VbType_Cond + s(prod_primes, by = VbType_Cond) + s(prod_primes, Subject, bs = 'fs') +
+s(VideoName, bs = 're'),
+data = d_l2,
+family = 'binomial')"
+# load model or fit (fitting took about 4.5 minutes on my laptop)
+load_or_fit("gam_l2", gam_l2.expr, alternPath = model_path)
+
+plot_gam_main(gam_l2, "L2")  # choose this on Linux machine
+```
+
+
+## Model with self-priming in production only
+
+```{r, results = 'hide'}
+## Model with self-priming in production only
+
+# the expression that is passed to load_or_fit()
+gam_l2_prod.expr <- 
+  "bam(Used ~ VbType_Cond + s(prod_primes, by = VbType_Cond) + s(prod_primes, Subject, bs = 'fs') +
+s(VideoName, bs = 're'),
+data = d_l2,
+family = 'binomial')"
+# load model or fit (fitting took about 4.5 minutes on my laptop)
+load_or_fit("gam_l2_prod", gam_l2_prod.expr, alternPath = model_path)
+
+plot_gam_main(gam_l2_prod, "L2", show_xaxis = 'prod_primes')
+```
+
+
+## Model with self-priming in production and comprehension priming
+
+```{r, results = 'hide'}
+## Model with self-priming in production and comprehension priming
+
+# the expression that is passed to load_or_fit()
+gam_l2_prod_compr.expr <- 
+  "bam(Used ~ VbType_Cond + s(prod_compr, by = VbType_Cond) + s(prod_compr, Subject, bs = 'fs') +
+s(VideoName, bs = 're'),
+data = d_l2,
+family = 'binomial')"
+# load model or fit (fitting took about 4.5 minutes on my laptop)
+load_or_fit("gam_l2_prod_compr", gam_l2_prod_compr.expr, alternPath = model_path)
+
+plot_gam_main(gam_l2_prod_compr, "L2", show_xaxis = 'prod_compr')
+```
+
+
+Q3 re-analysis
+==============
+
+We use the same data as in Q2.
+
+
+## Model with Trial only [= model reported in the paper]
+
+```{r, results = 'hide', fig.height = fighe_l2, fig.width = figwi_l2}
+## Model with Trial only [= model reported in the paper]
+
+gam_l2prof.expr <- 
+  "bam(Used ~ VbType_Cond + te(Trial, ClozeScore, by = VbType_Cond) +
+s(Trial, Subject, bs = 'fs') + s(VideoName, bs = 're'),
+data = d_l2,
+family = 'binomial')"
+# load model or fit (fitting took about 6.5 minutes on my laptop)
+load_or_fit("gam_l2prof", gam_l2prof.expr, alternPath = model_path)
+
+# Plot effects by condition
+plot_L2_profic(gam_l2prof, primed_cond = 'Path')
+plot_L2_profic(gam_l2prof, primed_cond = 'Manner')
+
+# Plot differences between conditions (model estimates):
+plot_L2_profic_diff(gam_l2prof, primed_cond = "Path")
+plot_L2_profic_diff(gam_l2prof, primed_cond = "Manner")
+```
+
+
+## Model with self-priming in production only
+
+
+```{r, results = 'hide', fig.height = fighe_l2, fig.width = figwi_l2}
+## Model with self-priming in production only
+
+# the expression that is passed to load_or_fit()
+gam_l2prof_prod.expr <- 
+  "bam(Used ~ VbType_Cond + te(prod_primes, ClozeScore, by = VbType_Cond) +
+s(prod_primes, Subject, bs = 'fs') + s(VideoName, bs = 're'),
+data = d_l2,
+family = 'binomial')"
+# load model or fit (fitting took about X minutes on my laptop)
+load_or_fit("gam_l2prof_prod", gam_l2prof_prod.expr, alternPath = model_path)
+
+# Plot effects by condition
+plot_L2_profic(gam_l2prof_prod, primed_cond = 'Path', show_xaxis = 'prod_primes')
+plot_L2_profic(gam_l2prof_prod, primed_cond = 'Manner', show_xaxis = 'prod_primes')
+
+# Plot differences between conditions (model estimates):
+plot_L2_profic_diff(gam_l2prof_prod, primed_cond = "Path", show_xaxis = 'prod_primes')
+plot_L2_profic_diff(gam_l2prof_prod, primed_cond = "Manner", show_xaxis = 'prod_primes')
+```
+
+
+## Model with self-priming in production and comprehension priming
+
+```{r, results = 'hide', fig.height = fighe_l2, fig.width = figwi_l2}
+
+## Model with self-priming in production and comprehension priming
+
+# the expression that is passed to load_or_fit()
+gam_l2prof_prod_compr.expr <- 
+  "bam(Used ~ VbType_Cond + te(prod_compr, ClozeScore, by = VbType_Cond) +
+s(prod_compr, Subject, bs = 'fs') + s(VideoName, bs = 're'),
+data = d_l2,
+family = 'binomial')"
+# load model or fit (fitting took about X minutes on my laptop)
+load_or_fit("gam_l2prof_prod_compr", gam_l2prof_prod_compr.expr, alternPath = model_path)
+
+# Plot effects by condition
+plot_L2_profic(gam_l2prof_prod_compr, primed_cond = 'Path', show_xaxis = 'prod_compr')
+plot_L2_profic(gam_l2prof_prod_compr, primed_cond = 'Manner', show_xaxis = 'prod_compr')
+
+# Plot differences between conditions (model estimates):
+plot_L2_profic_diff(gam_l2prof_prod_compr, primed_cond = "Path", show_xaxis = 'prod_compr')
+plot_L2_profic_diff(gam_l2prof_prod_compr, primed_cond = "Manner", show_xaxis = 'prod_compr')
+```
+

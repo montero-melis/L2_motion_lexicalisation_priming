@@ -47,7 +47,7 @@ library(lme4)
 packageVersion('lme4')
 library(ggplot2)
 packageVersion('ggplot2')
-library(GGally)
+library(GGally)  # for ggpairs()
 packageVersion('GGally')
 library(arm)  # used in script "plot_glmm_fnc.R"
 packageVersion('arm')
@@ -336,16 +336,19 @@ my_dens <- function(data, mapping, ...) {
   ggplot(data = data, mapping=mapping) +
     geom_density(..., alpha = 0.7) 
 }
+# Improved correlation matrix with ggpairs
 ppts %>% 
   dplyr::filter(Group == "L2") %>% 
   dplyr::select(ClozeScore, L2_SelfRating, L2_AoO, L2_instruction_years, VocabTaskAcc,
                 Condition) %>%
-  ggpairs(
+  GGally::ggpairs(
     mapping=ggplot2::aes(color = Condition),
     diag = list(continuous = my_dens),
     upper = list(continuous = wrap('cor', method = "spearman", size = 2.75, hjust=0.8)),
     lower=list(continuous="smooth")
-    )
+    ) +
+  # removes grid from correlations but not from other panels:
+  theme(panel.grid.major = element_blank())
 ```
 
 
@@ -814,8 +817,6 @@ summary(glmm_l2_lin)
 
 
 
-
-
 Effect of L2 proficiency on trial-by-trial adaptation (Question 3)
 ------------------------------------------------------------------
 
@@ -878,6 +879,215 @@ Plot each comparison showing the two curves (model estimates):
 plot_L2_profic(gam_l2prof, primed_cond = 'Path')
 plot_L2_profic(gam_l2prof, primed_cond = 'Manner')
 ```
+
+
+
+Self-priming (Appendix S7)
+=========================
+
+One of the reviewers brought to our attention the issue of self-priming, 
+in the following terms:
+
+> Strictly speaking, each priming trial consists of two different types of
+utterances: the written and orally repeated sentence, and the sentence
+produced by the participant to describe the picture. I take it that in the
+adaptation analysis, only the number of trials has been taken into
+consideration (that is, each prime+target pair is counted as 1). Would the
+result be any different if in addition to the number of primes, also the
+number of path or manner constructions produced as descriptions by the
+participant were taken into consideration as well?
+
+To address the reviewer's question, we take the following approach:
+
+1. We compute a new variable `SelfProduction` that counts, for each trial, the
+(cumulative) number of times a speaker has produced the target verb type (path or
+manner verb, depending on the value of the `VerbType` variable) in all trials
+up to the last one. This variable is always zero on the first trial and
+goes up to maximally 31 (in trial 32, the last trial) if the participant
+has produced the target verb throughout the whole experiment.
+2. We fit a GAMM identical to the ones reported in the main paper, except we
+use `SelfProduction` as a predictor *instead* of `Trial`.
+
+The logic is as follows:
+
+If self-priming can account for the results we observed, then we should see
+*no differences* between the groups in the analysis below. This is because,
+when using `SelfProduction` as the predictor, speakers in the different
+conditions are being treated the same: a speaker for whom, say, `SelfProduction`
+= 7 in a given trial, has been self-primed seven times, irrespective of whether
+he or she is in the baseline or in the primed condition.
+Conversely, to the extent that we still see a difference between the conditions,
+this difference cannot be due to self-priming, but has to be attributed to the
+only factor that differed between conditions, namely the fact that primed
+participants also had to read and repeat the priming sentences.
+
+
+
+## Create new variable `SelfProduction`
+
+Add participant's cumulative productions, `SelfProduction` as a predictor:
+
+```{r}
+# Add number of produced structures as predictor --------------------------
+
+# The cumulative number of productions is equal to the number of times the target
+# structure # was used up until the last trial. This is what the following function
+# comptues, where v is the vector of a subject's uses of the structure ordered by trial:
+my_cumsum <- function(v) {
+  out <- c(0, cumsum(v)[ 1 : (length(v) - 1) ])
+  out
+}
+
+# Add the following predictors:
+# a) SelfProduction: number of times the structure has been used in just production 
+# b) prod_compr: Trial + the number of times it has been used in production. 
+d_mod <- d_mod %>%
+  group_by(Subject) %>%
+  mutate(SelfProduction = my_cumsum(Used))
+head(data.frame(d_mod))
+```
+
+
+Q1 re-analysis
+--------------
+
+### Subset data
+
+```{r}
+# Subset data to native speaker data only
+d_ns <- d_mod %>% dplyr::filter(Group == "NS")
+# drop unused factors for subject (important for gam fitting)
+d_ns$Subject <- factor(d_ns$Subject)
+```
+
+
+### Model with self-priming from own production only
+
+
+```{r, results = 'hide'}
+## Model with self-priming in production only
+
+# the expression that is passed to load_or_fit()
+gam_ns_prod.expr <- 
+  "bam(Used ~ VbType_Cond + s(SelfProduction, by = VbType_Cond) + s(SelfProduction, Subject, bs = 'fs') +
+s(VideoName, bs = 're'),
+data = d_ns,
+family = 'binomial')"
+# load model or fit (fitting took about 4.5 minutes on my laptop)
+load_or_fit("gam_ns_prod", gam_ns_prod.expr)
+```
+
+Model summary:
+
+```{r}
+summary(gam_ns_prod)
+```
+
+Plot:
+
+```{r, fig.height = myfighe_NS_L2, fig.width = myfigwi, echo = TRUE, results = 'hide'}
+plot_gam_main(gam_ns_prod, "NS", show_xaxis = 'SelfProduction')
+```
+
+
+
+Q2 re-analysis
+--------------
+
+### Subset data
+
+```{r}
+# Subset data to L2 speaker data only
+d_l2 <- d_mod %>% dplyr::filter(Group == "L2")
+# drop unused factors for subject (I think this is important for gam fitting)
+d_l2$Subject <- factor(d_l2$Subject)
+# note log-odds of path verbs in baseline condition becomes the reference level
+contrasts(d_l2$VbType_Cond)
+```
+
+
+### Model with self-priming in production only
+
+```{r, results = 'hide'}
+## Model with self-priming in production only
+
+# the expression that is passed to load_or_fit()
+gam_l2_prod.expr <- 
+  "bam(Used ~ VbType_Cond + s(SelfProduction, by = VbType_Cond) + s(SelfProduction, Subject, bs = 'fs') +
+s(VideoName, bs = 're'),
+data = d_l2,
+family = 'binomial')"
+# load model or fit (fitting took about 4.5 minutes on my laptop)
+load_or_fit("gam_l2_prod", gam_l2_prod.expr)
+```
+
+Model summary:
+
+```{r}
+summary(gam_l2_prod)
+```
+
+
+Plot:
+
+```{r, fig.height = myfighe_NS_L2, fig.width = myfigwi, echo = TRUE, results = 'hide'}
+plot_gam_main(gam_l2_prod, "L2", show_xaxis = 'SelfProduction',
+              ylim1 = c(-6, 6), ylim2 = c(-.5, 8))
+```
+
+
+
+Q3 re-analysis
+--------------
+
+We use the same data as in Q2.
+
+
+### Model with self-priming in production only
+
+```{r}
+## Model with self-priming in production only
+
+# the expression that is passed to load_or_fit()
+gam_l2prof_prod.expr <- 
+  "bam(Used ~ VbType_Cond + te(SelfProduction, ClozeScore, by = VbType_Cond) +
+s(SelfProduction, Subject, bs = 'fs') + s(VideoName, bs = 're'),
+data = d_l2,
+family = 'binomial')"
+# load model or fit (fitting took about X minutes on my laptop)
+load_or_fit("gam_l2prof_prod", gam_l2prof_prod.expr)
+```
+
+
+Model summary:
+
+```{r}
+summary(gam_l2prof_prod)
+```
+
+
+Plot effects by condition:
+
+```{r, fig.height = 4, fig.width = 9, echo = TRUE, results = 'hide'}
+# Plot effects by condition
+plot_L2_profic(gam_l2prof_prod, primed_cond = 'Path', show_xaxis = 'SelfProduction',
+               ylim1 = c(-9, 8))
+plot_L2_profic(gam_l2prof_prod, primed_cond = 'Manner', show_xaxis = 'SelfProduction',
+               ylim1 = c(-9, 8))
+```
+
+
+Plot differences between conditions
+
+```{r, fig.height = 3, fig.width = 9, echo = TRUE, results = 'hide'}
+# Plot differences between conditions (model estimates):
+plot_L2_profic_diff(gam_l2prof_prod, primed_cond = "Path", show_xaxis = 'SelfProduction',
+                    ylim1 = c(-2.5, 11))
+plot_L2_profic_diff(gam_l2prof_prod, primed_cond = "Manner", show_xaxis = 'SelfProduction',
+                    ylim1 = c(-2.5, 11))
+```
+
+
 
 
 
