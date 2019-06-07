@@ -2,30 +2,38 @@ README
 ======
 
 This folder contains all the data and R-scripts necessary to reproduce the
-analyses reported in
+analyses reported in:
 
-Montero-Melis, G., & Jaeger, T. F. (2019). Changing expectations mediate
-adaptation in L2 production, submitted to Bilingualism: Language and Cognition.
+Montero-Melis, G., & Jaeger, T. F. (accepted). Changing expectations mediate
+adaptation in L2 production. Bilingualism: Language and Cognition.
 
 
 Note on reproducing the analyses
 --------------------------------
 
-To reproduce the analyses, please make sure you have all the necessary
-packages installed (see the last section of the knitr report in `analyses.html`,
-which shows the session info at the time of running). Apart from R itself and
-the packages, you will also need RStudio (I used version 1.1.463).
+To reproduce the analyses, download all the files in this repository into one
+single folder, open the `analyses.Rmd` script with RStudio and "knit" (generate)
+a knitr report. 
 
-Please star by checking path specifications if you run into errors of not finding
-an object loaded from disk.
+Please make sure you have all the necessary packages installed. See the last
+section of the report `analyses.html`, which shows the session info at the time
+of running, including all loaded packages. 
+
+If you run into errors of not finding an object loaded from disk, please start
+by checking path specifications.
 
 If you discover errors or have any other queries, contact the first author,
 Guillermo Montero-Melis at <guillermo.monteromelis@mpi.nl>.
 
 
+Dependencies
+------------
+
+R, relevant R packages (see previous point), RStudio (I used version 1.2.1335).
+
+
 Description of files
 --------------------
-
 
 ### `analyses.html`
 
@@ -97,7 +105,7 @@ section Method > Procedure (L2 learners only)
 
 ### `plot_gams_fnc.R` and `plot_glmm_fnc.R`
 
-Scripts containing custom function to generate the result plots reported in
+Scripts containing custom functions to generate the result plots reported in
 the paper and the SOM. Both are called from the script `analyses.Rmd`. 
 
 

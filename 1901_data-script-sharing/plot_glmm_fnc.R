@@ -11,7 +11,7 @@
 
 # theme for ggplot
 mytheme <- theme_bw() + 
-  theme(text = element_text(size = 9),
+  theme(text = element_text(size = 12),
         # panel.border = element_blank(),
         panel.grid.major = element_blank(),
         # panel.grid.minor = element_blank(),

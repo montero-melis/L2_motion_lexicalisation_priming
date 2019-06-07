@@ -77,6 +77,8 @@ it loads it, otherwise it fits it and saves it to that folder.
 source("load_or_fit_fnc.R")
 # This function expects a subfolder "fitted_models/"; create it
 dir.create(file.path("fitted_models/"))
+# Create subfolder to save figures
+dir.create(file.path("myfigures/"))
 ```
 
 Format table for GLMM output
@@ -478,6 +480,12 @@ Plot the results:
 plot_basel(glmm_basel, d_basel, nb_sims = 500)
 ```
 
+```{r}
+# save to disk
+ggsave("myfigures/Figure3.pdf", height = 4, width = 5)
+ggsave("myfigures/Figure3.tiff", height = 4, width = 5, units = 'in', dpi = 600)
+```
+
 
 
 
@@ -595,11 +603,22 @@ of this variable decompose into two crossed factors:
 Plot differences between conditions (model estimates):
 
 ```{r, fig.height = myfighe_NS_L2, fig.width = myfigwi, echo = TRUE, results = 'hide'}
-plot_gam_main(gam_ns, "NS")  # choose this on Linux machine
+plot_gam_main(gam_ns, "NS")
 # On my old computer, the above call threw an warning/error; this was solved by
 # the following argument setting:
 # plot_gam_main(gam_ns, "NS", mark.diff = FALSE)
 ```
+
+```{r}
+# Save to disk
+tiff("myfigures/Figure4.tiff", width = 6, height = 5, units = "in", res = 600)
+plot_gam_main(gam_ns, "NS")
+dev.off()
+pdf("myfigures/Figure4.pdf", width = 6, height = 5)
+plot_gam_main(gam_ns, "NS")
+dev.off()
+```
+
 
 
 ### Reported in Supplementary Online Material
@@ -753,6 +772,16 @@ Plot differences between conditions (model estimates):
 plot_gam_main(gam_l2, "L2")
 ```
 
+```{r}
+# Save to disk
+tiff("myfigures/Figure5.tiff", width = 6, height = 5, units = "in", res = 600)
+plot_gam_main(gam_l2, "L2")
+dev.off()
+pdf("myfigures/Figure5.pdf", width = 6, height = 5)
+plot_gam_main(gam_l2, "L2")
+dev.off()
+```
+
 
 ### Reported in Supplementary Online Material
 
@@ -862,6 +891,23 @@ Plot differences between conditions (model estimates):
 plot_L2_profic_diff(gam_l2prof, primed_cond = "Path")
 plot_L2_profic_diff(gam_l2prof, primed_cond = "Manner")
 ```
+
+```{r}
+# Save to disk
+tiff("myfigures/Figure6a.tiff", width = 7, height = 2.3, units = "in", res = 600)
+plot_L2_profic_diff(gam_l2prof, primed_cond = "Path")
+dev.off()
+tiff("myfigures/Figure6b.tiff", width = 7, height = 2.3, units = "in", res = 600)
+plot_L2_profic_diff(gam_l2prof, primed_cond = "Manner")
+dev.off()
+pdf("myfigures/Figure6a.pdf", width = 7, height = 2.3)
+plot_L2_profic_diff(gam_l2prof, primed_cond = "Path")
+dev.off()
+pdf("myfigures/Figure6b.pdf",width = 7, height = 2.3)
+plot_L2_profic_diff(gam_l2prof, primed_cond = "Manner")
+dev.off()
+```
+
 
 
 ### Reported in Supplementary Online Material
